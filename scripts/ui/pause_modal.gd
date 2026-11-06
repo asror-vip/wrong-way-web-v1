@@ -95,6 +95,9 @@ func open_pause() -> void:
 	_update_texts()
 	visible = true
 	get_tree().paused = true
+	var poki = get_node_or_null("/root/PokiService")
+	if poki and poki.has_method("gameplay_stop"):
+		poki.gameplay_stop()
 	if card:
 		card.queue_redraw()
 	SoundManager.play("click")
@@ -105,6 +108,9 @@ func _on_resume_pressed() -> void:
 	SoundManager.set_music_volume_pause(false)
 	visible = false
 	get_tree().paused = false
+	var poki = get_node_or_null("/root/PokiService")
+	if poki and poki.has_method("gameplay_start"):
+		poki.gameplay_start()
 
 func _on_restart_pressed() -> void:
 	SoundManager.play("click")

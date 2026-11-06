@@ -32,6 +32,9 @@ func hide_banner() -> void:
 func show_interstitial_replay(on_completed: Callable = Callable()) -> void:
 	show_interstitial(on_completed)
 
+func show_interstitial_ad(on_completed: Callable = Callable()) -> void:
+	show_interstitial(on_completed)
+
 func show_interstitial(on_completed: Callable = Callable()) -> void:
 	var poki = get_node_or_null("/root/PokiService")
 	if poki and poki.has_method("commercial_break"):

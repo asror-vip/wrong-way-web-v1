@@ -4,7 +4,6 @@
 /build/
 *.apk
 *.translation
-export_presets.cfg
 
 # IDE & local editor configs
 .idea/
