@@ -53,6 +53,8 @@ func _physics_process(delta: float) -> void:
 			current_y = original_pos.y
 			velocity_y = 0.0
 		position.y = current_y
+		for b in get_overlapping_bodies():
+			_on_body_entered(b)
 		
 	queue_redraw()
 

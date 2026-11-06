@@ -17,6 +17,7 @@ var shake_timer: float = 0.0
 func _ready() -> void:
 	add_to_group("traps")
 	initial_position = global_position
+	shake_duration = minf(shake_duration, 0.12)
 	# Pastdagi tuzoq polini ham ekranning eng pastigacha uzaytiramiz
 	if position.y >= 360.0 and (position.y + platform_size.y) < 540.0:
 		platform_size.y = 540.0 - position.y
@@ -40,6 +41,19 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not is_triggered:
+		if trigger_area:
+			for b in trigger_area.get_overlapping_bodies():
+				_on_trigger_body_entered(b)
+		var p := get_tree().get_first_node_in_group("player") as Node2D
+		if p != null and is_instance_valid(p):
+			if not ("is_dead" in p and p.is_dead) and not ("is_invulnerable" in p and p.is_invulnerable):
+				var px: float = p.global_position.x
+				var py: float = p.global_position.y
+				if px >= (global_position.x - 4.0) and px <= (global_position.x + platform_size.x + 4.0):
+					if py >= (global_position.y - 32.0) and py <= (global_position.y + 12.0):
+						_on_trigger_body_entered(p)
+
 	if is_triggered and not is_falling:
 		shake_timer -= delta
 		if visual:
@@ -50,7 +64,6 @@ func _physics_process(delta: float) -> void:
 			is_falling = true
 
 	if is_falling:
-		# Original: fallSpeed += 3200 * dt
 		fall_speed += 3200.0 * delta
 		global_position.y += fall_speed * delta
 

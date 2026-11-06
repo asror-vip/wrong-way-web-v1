@@ -23,6 +23,7 @@ var crack_tw: Tween
 func _ready() -> void:
 	add_to_group("traps")
 	original_pos = position
+	collapse_delay = minf(collapse_delay, 0.18)
 	_update_shapes()
 	
 	if step_area:
@@ -45,6 +46,19 @@ func _update_shapes() -> void:
 			s_shape.position = Vector2(platform_size.x / 2.0, -4.0)
 
 func _physics_process(delta: float) -> void:
+	if not is_triggered:
+		if step_area:
+			for b in step_area.get_overlapping_bodies():
+				_on_step_entered(b)
+		var p := get_tree().get_first_node_in_group("player") as Node2D
+		if p != null and is_instance_valid(p):
+			if not ("is_dead" in p and p.is_dead) and not ("is_invulnerable" in p and p.is_invulnerable):
+				var px: float = p.global_position.x
+				var py: float = p.global_position.y
+				if px >= (global_position.x - 2.0) and px <= (global_position.x + platform_size.x + 2.0):
+					if py >= (global_position.y - 20.0) and py <= (global_position.y + 8.0):
+						_on_step_entered(p)
+
 	if is_falling:
 		fall_velocity += 1600.0 * delta
 		position.y += fall_velocity * delta

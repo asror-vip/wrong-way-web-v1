@@ -50,6 +50,10 @@ func _physics_process(delta: float) -> void:
 		crash_velocity += 2400.0 * delta
 		position.y += crash_velocity * delta
 		
+		if kill_area:
+			for b in kill_area.get_overlapping_bodies():
+				_on_kill_entered(b)
+		
 		# Polga urilish (yerni topsin)
 		# Qattiq 190.0 o'rniga parametr orqali
 		var drop_dist = 190.0

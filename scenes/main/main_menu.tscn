@@ -180,36 +180,29 @@ theme_override_styles/pressed = ExtResource("7_glass_press")
 text = "   DARAJALAR"
 alignment = 0
 
-[node name="BottomRow" type="HBoxContainer" parent="MenuStack"]
+[node name="SettingsBtn" type="Button" parent="MenuStack"]
 custom_minimum_size = Vector2(300, 44)
 layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="SettingsBtn" type="Button" parent="MenuStack/BottomRow"]
-custom_minimum_size = Vector2(145, 44)
-layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = " SOZLAMALAR"
-alignment = 1
+text = "   SOZLAMALAR"
+alignment = 0
 
-[node name="QuitBtn" type="Button" parent="MenuStack/BottomRow"]
-custom_minimum_size = Vector2(145, 44)
+[node name="QuitBtn" type="Button" parent="MenuStack"]
+custom_minimum_size = Vector2(300, 44)
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
 theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = " CHIQISH"
-alignment = 1
+text = "   CHIQISH"
+alignment = 0
 
 [node name="SettingsModal" parent="." instance=ExtResource("11_sm")]
 visible = false
@@ -316,8 +309,8 @@ autowrap_mode = 3
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[connection signal="pressed" from="TopBar/SettingsTopBtn" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="TopBar/QuitTopBtn" to="." method="_on_quit_pressed"]
 [connection signal="pressed" from="MenuStack/PlayBtn" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="MenuStack/LevelSelectBtn" to="." method="_on_level_select_pressed"]
+[connection signal="pressed" from="MenuStack/SettingsBtn" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="MenuStack/QuitBtn" to="." method="_on_quit_pressed"]
 [connection signal="pressed" from="InfoModal/Card/CloseBtn" to="." method="_on_info_close_pressed"]

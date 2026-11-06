@@ -13,8 +13,8 @@ extends Control
 @onready var play_btn_icon: TextureRect = get_node_or_null("MenuStack/PlayBtn/HBox/PlayIcon")
 @onready var play_btn_chevron: TextureRect = get_node_or_null("MenuStack/PlayBtn/HBox/ChevronIcon")
 @onready var level_select_btn: Button = get_node_or_null("MenuStack/LevelSelectBtn")
-@onready var settings_btn: Button = get_node_or_null("MenuStack/BottomRow/SettingsBtn")
-@onready var quit_btn: Button = get_node_or_null("MenuStack/BottomRow/QuitBtn")
+@onready var settings_btn: Button = get_node_or_null("MenuStack/SettingsBtn")
+@onready var quit_btn: Button = get_node_or_null("MenuStack/QuitBtn")
 
 @onready var settings_modal: Control = get_node_or_null("SettingsModal")
 @onready var info_modal: Control = get_node_or_null("InfoModal")
@@ -33,8 +33,18 @@ func _ready() -> void:
 				_on_info_close_pressed()
 		)
 	
-	if play_btn and not play_btn.pressed.is_connected(_on_play_pressed):
-		play_btn.pressed.connect(_on_play_pressed)
+	if play_btn:
+		if not play_btn.pressed.is_connected(_on_play_pressed):
+			play_btn.pressed.connect(_on_play_pressed)
+		if menu_character:
+			play_btn.mouse_entered.connect(func():
+				if menu_character.has_method("trigger_happy_reaction"):
+					menu_character.trigger_happy_reaction()
+			)
+			play_btn.mouse_exited.connect(func():
+				if menu_character.has_method("set_happy_emotion"):
+					menu_character.set_happy_emotion(false)
+			)
 	if level_select_btn and not level_select_btn.pressed.is_connected(_on_level_select_pressed):
 		level_select_btn.pressed.connect(_on_level_select_pressed)
 	if settings_btn and not settings_btn.pressed.is_connected(_on_settings_pressed):
@@ -148,9 +158,9 @@ func _update_all_texts() -> void:
 	if level_select_btn:
 		level_select_btn.text = "   " + LocaleManager.t("btn_levels")
 	if settings_btn:
-		settings_btn.text = " " + LocaleManager.t("btn_settings")
+		settings_btn.text = "   " + LocaleManager.t("btn_settings")
 	if quit_btn:
-		quit_btn.text = " " + LocaleManager.t("btn_quit")
+		quit_btn.text = "   " + LocaleManager.t("btn_quit")
 	_update_record()
 
 func _update_record() -> void:

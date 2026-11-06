@@ -56,6 +56,16 @@ func _physics_process(delta: float) -> void:
 		State.FALLING:
 			speed += 3600.0 * delta
 			global_position.y += speed * delta
+			for b in get_overlapping_bodies():
+				_on_body_entered(b)
+			var p := get_tree().get_first_node_in_group("player") as Node2D
+			if p != null and is_instance_valid(p):
+				if not ("is_dead" in p and p.is_dead) and not ("is_invulnerable" in p and p.is_invulnerable):
+					var px: float = p.global_position.x
+					var py: float = p.global_position.y
+					if px + 8.0 >= global_position.x and px - 8.0 <= (global_position.x + crusher_size.x):
+						if py >= global_position.y and py <= (global_position.y + crusher_size.y + 12.0):
+							_on_body_entered(p)
 			if global_position.y >= target_y:
 				global_position.y = target_y
 				var sm = get_node_or_null("/root/SaveManager")

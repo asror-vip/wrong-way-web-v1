@@ -50,6 +50,20 @@ func _trigger_hop() -> void:
 	if sm and sm.has_method("play"):
 		sm.play("click")
 
+func trigger_happy_reaction() -> void:
+	if is_sad:
+		return
+	_trigger_hop()
+
+func set_happy_emotion(happy: bool) -> void:
+	if is_sad:
+		return
+	if happy:
+		_trigger_hop()
+	else:
+		if happy_timer > 0.2:
+			happy_timer = 0.2
+
 func set_sad_emotion(sad: bool) -> void:
 	is_sad = sad
 	queue_redraw()
