@@ -45,32 +45,6 @@ anchor_right = 1.0
 offset_bottom = 60.0
 grow_horizontal = 2
 
-[node name="SettingsTopBtn" type="Button" parent="TopBar"]
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 1
-offset_left = 24.0
-offset_top = 20.0
-offset_right = 68.0
-offset_bottom = 64.0
-focus_mode = 0
-theme_override_styles/normal = ExtResource("12_focus")
-theme_override_styles/hover = ExtResource("12_focus")
-theme_override_styles/pressed = ExtResource("12_focus")
-theme_override_styles/focus = ExtResource("12_focus")
-
-[node name="QuitTopBtn" type="Button" parent="TopBar"]
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 1
-offset_left = 24.0
-offset_top = 74.0
-offset_right = 68.0
-offset_bottom = 118.0
-focus_mode = 0
-theme_override_styles/normal = ExtResource("12_focus")
-theme_override_styles/hover = ExtResource("12_focus")
-theme_override_styles/pressed = ExtResource("12_focus")
-theme_override_styles/focus = ExtResource("12_focus")
-
 [node name="BestBadge" type="Panel" parent="TopBar"]
 custom_minimum_size = Vector2(105, 36)
 layout_mode = 1
@@ -203,8 +177,39 @@ theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   LEVEL SELECT"
+text = "   DARAJALAR"
 alignment = 0
+
+[node name="BottomRow" type="HBoxContainer" parent="MenuStack"]
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SettingsBtn" type="Button" parent="MenuStack/BottomRow"]
+custom_minimum_size = Vector2(145, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = ExtResource("5_glass")
+theme_override_styles/hover = ExtResource("6_glass_hov")
+theme_override_styles/pressed = ExtResource("7_glass_press")
+text = " SOZLAMALAR"
+alignment = 1
+
+[node name="QuitBtn" type="Button" parent="MenuStack/BottomRow"]
+custom_minimum_size = Vector2(145, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = ExtResource("5_glass")
+theme_override_styles/hover = ExtResource("6_glass_hov")
+theme_override_styles/pressed = ExtResource("7_glass_press")
+text = " CHIQISH"
+alignment = 1
 
 [node name="SettingsModal" parent="." instance=ExtResource("11_sm")]
 visible = false

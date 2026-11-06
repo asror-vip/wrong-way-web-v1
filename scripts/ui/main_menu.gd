@@ -7,14 +7,14 @@ extends Control
 @onready var best_chip_lbl: Label = get_node_or_null("TopBar/BestBadge/HBox/BestLabel")
 @onready var best_crown_icon: TextureRect = get_node_or_null("TopBar/BestBadge/HBox/CrownIcon")
 @onready var menu_character: Control = get_node_or_null("MenuCharacter")
-@onready var settings_top_btn: Button = get_node_or_null("TopBar/SettingsTopBtn")
-@onready var quit_top_btn: Button = get_node_or_null("TopBar/QuitTopBtn")
 
 @onready var play_btn: Button = get_node_or_null("MenuStack/PlayBtn")
 @onready var play_btn_label: Label = get_node_or_null("MenuStack/PlayBtn/HBox/PlayLabel")
 @onready var play_btn_icon: TextureRect = get_node_or_null("MenuStack/PlayBtn/HBox/PlayIcon")
 @onready var play_btn_chevron: TextureRect = get_node_or_null("MenuStack/PlayBtn/HBox/ChevronIcon")
 @onready var level_select_btn: Button = get_node_or_null("MenuStack/LevelSelectBtn")
+@onready var settings_btn: Button = get_node_or_null("MenuStack/BottomRow/SettingsBtn")
+@onready var quit_btn: Button = get_node_or_null("MenuStack/BottomRow/QuitBtn")
 
 @onready var settings_modal: Control = get_node_or_null("SettingsModal")
 @onready var info_modal: Control = get_node_or_null("InfoModal")
@@ -33,19 +33,27 @@ func _ready() -> void:
 				_on_info_close_pressed()
 		)
 	
+	if play_btn and not play_btn.pressed.is_connected(_on_play_pressed):
+		play_btn.pressed.connect(_on_play_pressed)
+	if level_select_btn and not level_select_btn.pressed.is_connected(_on_level_select_pressed):
+		level_select_btn.pressed.connect(_on_level_select_pressed)
+	if settings_btn and not settings_btn.pressed.is_connected(_on_settings_pressed):
+		settings_btn.pressed.connect(_on_settings_pressed)
+	if quit_btn and not quit_btn.pressed.is_connected(_on_quit_pressed):
+		quit_btn.pressed.connect(_on_quit_pressed)
+		if menu_character:
+			quit_btn.mouse_entered.connect(func():
+				if menu_character.has_method("set_sad_emotion"):
+					menu_character.set_sad_emotion(true)
+			)
+			quit_btn.mouse_exited.connect(func():
+				if menu_character.has_method("set_sad_emotion"):
+					menu_character.set_sad_emotion(false)
+			)
+	
 	_setup_icons()
 	_update_all_texts()
 	_update_record()
-	
-	if quit_top_btn and menu_character:
-		quit_top_btn.mouse_entered.connect(func():
-			if menu_character.has_method("set_sad_emotion"):
-				menu_character.set_sad_emotion(true)
-		)
-		quit_top_btn.mouse_exited.connect(func():
-			if menu_character.has_method("set_sad_emotion"):
-				menu_character.set_sad_emotion(false)
-		)
 		
 	get_viewport().size_changed.connect(_apply_responsive_layout)
 	_apply_responsive_layout()
@@ -71,13 +79,6 @@ func _apply_responsive_layout() -> void:
 		ox = 0.0
 		oy = (vp.y - 540.0 * s) * 0.5
 	
-	if settings_top_btn:
-		settings_top_btn.position.x = 24.0 + insets["left"]
-		settings_top_btn.position.y = 20.0 + insets["top"]
-	if quit_top_btn:
-		quit_top_btn.position.x = 24.0 + insets["left"]
-		quit_top_btn.position.y = 74.0 + insets["top"]
-		
 	var best_badge = get_node_or_null("TopBar/BestBadge")
 	if best_badge:
 		best_badge.position.x = vp.x - 140.0 - insets["right"]
@@ -120,14 +121,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _setup_icons() -> void:
 	if best_crown_icon:
 		best_crown_icon.texture = IconFactory.get_icon("crown_gold", 0.85)
-	if settings_top_btn:
-		settings_top_btn.icon = IconFactory.get_icon("circle_btn_gear", 1.0)
-		settings_top_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		settings_top_btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-	if quit_top_btn:
-		quit_top_btn.icon = IconFactory.get_icon("circle_btn_quit", 1.0)
-		quit_top_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		quit_top_btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	if settings_btn:
+		settings_btn.icon = IconFactory.get_icon("gear", 0.75)
+	if quit_btn:
+		quit_btn.icon = IconFactory.get_icon("circle_btn_quit", 0.75)
 	if play_btn_icon:
 		play_btn_icon.texture = IconFactory.get_icon("play_dark", 0.9)
 	if play_btn_chevron:
@@ -150,6 +147,10 @@ func _update_all_texts() -> void:
 		play_btn_label.text = LocaleManager.t("btn_continue") if has_progress else LocaleManager.t("btn_play")
 	if level_select_btn:
 		level_select_btn.text = "   " + LocaleManager.t("btn_levels")
+	if settings_btn:
+		settings_btn.text = " " + LocaleManager.t("btn_settings")
+	if quit_btn:
+		quit_btn.text = " " + LocaleManager.t("btn_quit")
 	_update_record()
 
 func _update_record() -> void:

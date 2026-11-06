@@ -23,7 +23,9 @@ const STRINGS = {
 		
 		# Main Menu
 		"btn_play": "O'YNASH",
+		"btn_continue": "DAVOM ETISH",
 		"btn_level_select": "DARAJALAR",
+		"btn_levels": "DARAJALAR",
 		"btn_multiplayer": "MULTIPLAYER",
 		"btn_leaderboard": "REKORDLAR",
 		"btn_settings": "SOZLAMALAR",
@@ -157,7 +159,9 @@ const STRINGS = {
 		
 		# Main Menu
 		"btn_play": "ИГРАТЬ",
+		"btn_continue": "ПРОДОЛЖИТЬ",
 		"btn_level_select": "ВЫБОР УРОВНЯ",
+		"btn_levels": "ВЫБОР УРОВНЯ",
 		"btn_multiplayer": "МУЛЬТИПЛЕЕР",
 		"btn_leaderboard": "РЕКОРДЫ",
 		"btn_settings": "НАСТРОЙКИ",
@@ -291,7 +295,9 @@ const STRINGS = {
 		
 		# Main Menu
 		"btn_play": "PLAY",
+		"btn_continue": "CONTINUE",
 		"btn_level_select": "LEVEL SELECT",
+		"btn_levels": "LEVEL SELECT",
 		"btn_multiplayer": "MULTIPLAYER",
 		"btn_leaderboard": "LEADERBOARD",
 		"btn_settings": "SETTINGS",
@@ -425,7 +431,9 @@ const STRINGS = {
 		
 		# Main Menu
 		"btn_play": "OYNA",
+		"btn_continue": "DEVAM ET",
 		"btn_level_select": "SEVİYELER",
+		"btn_levels": "SEVİYELER",
 		"btn_multiplayer": "ÇOK OYUNCULU",
 		"btn_leaderboard": "LİDERLİK",
 		"btn_settings": "AYARLAR",
