@@ -11,6 +11,16 @@ func _ready() -> void:
 		adm.hide_banner()
 	GameManager.request_screen_shake.connect(_on_screen_shake)
 	GameManager.level_started.connect(_load_level)
+	GameManager.player_died.connect(func(_d):
+		var poki = get_node_or_null("/root/PokiService")
+		if poki and poki.has_method("gameplay_stop"):
+			poki.gameplay_stop()
+	)
+	GameManager.level_completed.connect(func(_lvl, _t, _d, _s):
+		var poki = get_node_or_null("/root/PokiService")
+		if poki and poki.has_method("gameplay_stop"):
+			poki.gameplay_stop()
+	)
 	_load_level(GameManager.current_level_id)
 	
 	var sm = get_node_or_null("/root/SaveManager")
@@ -22,10 +32,6 @@ func _ready() -> void:
 			win_overlay.restore_result(sm.pending_result_data)
 		if level_holder:
 			level_holder.process_mode = Node.PROCESS_MODE_DISABLED
-	elif GameManager.is_duel_mode:
-		var hud = get_node_or_null("CanvasLayer/GameHUD")
-		if hud and hud.has_method("start_duel_countdown"):
-			hud.start_duel_countdown()
 
 func _process(delta: float) -> void:
 	if shake_intensity > 0.0:
@@ -59,6 +65,9 @@ func reload_to_level(lvl: int) -> void:
 	GameManager.level_started.emit(lvl)
 
 func _load_level(lvl: int) -> void:
+	var poki = get_node_or_null("/root/PokiService")
+	if poki and poki.has_method("gameplay_start"):
+		poki.gameplay_start()
 	if level_holder:
 		level_holder.process_mode = Node.PROCESS_MODE_INHERIT
 	for child in level_holder.get_children():

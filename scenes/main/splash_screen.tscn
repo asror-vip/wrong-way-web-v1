@@ -1,15 +1,7 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/splash_screen.gd" id="1_splash"]
 [ext_resource type="Texture2D" path="res://assets/images/home-img.png" id="2_bg"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_white.tres" id="3_white"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_white_hover.tres" id="4_white_hov"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_white_pressed.tres" id="5_white_press"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_glass.tres" id="6_glass"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_glass_hover.tres" id="7_glass_hov"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_glass_pressed.tres" id="8_glass_press"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_focus_empty.tres" id="9_focus"]
-[ext_resource type="PackedScene" path="res://scenes/ui/auth_modal.tscn" id="10_auth"]
 
 [sub_resource type="SystemFont" id="SystemFont_title"]
 font_names = PackedStringArray("Impact", "Arial Black", "Trebuchet MS", "sans-serif")
@@ -141,134 +133,8 @@ show_percentage = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.42, 0.55, 0.7)
 theme_override_font_sizes/font_size = 11
-text = "v1.2.0 • Competitive Edition"
+text = "v1.2.0 • Web Edition"
 horizontal_alignment = 1
-
-[node name="AuthBox" type="VBoxContainer" parent="."]
-visible = false
-modulate = Color(1, 1, 1, 0)
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -180.0
-offset_right = 170.0
-offset_bottom = -25.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 10
-alignment = 1
-
-[node name="AuthTitle" type="Label" parent="AuthBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.92, 1, 0.95)
-theme_override_font_sizes/font_size = 13
-text = "O'yinga kirish usulini tanlang:"
-horizontal_alignment = 1
-
-[node name="GoogleBtn" type="Button" parent="AuthBox"]
-custom_minimum_size = Vector2(300, 46)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(0.08, 0.1, 0.15, 1)
-theme_override_colors/font_hover_color = Color(0.08, 0.1, 0.15, 1)
-theme_override_colors/font_hover_pressed_color = Color(0.08, 0.1, 0.15, 1)
-theme_override_colors/font_pressed_color = Color(0.08, 0.1, 0.15, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("3_white")
-theme_override_styles/hover = ExtResource("4_white_hov")
-theme_override_styles/pressed = ExtResource("5_white_press")
-theme_override_styles/focus = ExtResource("9_focus")
-text = "   Google orqali kirish"
-alignment = 1
-
-[node name="GuestBtn" type="Button" parent="AuthBox"]
-custom_minimum_size = Vector2(300, 44)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(0.85, 0.9, 0.98, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("6_glass")
-theme_override_styles/hover = ExtResource("7_glass_hov")
-theme_override_styles/pressed = ExtResource("8_glass_press")
-theme_override_styles/focus = ExtResource("9_focus")
-text = "   Mehmon sifatida davom etish"
-alignment = 1
-
-[node name="AuthHint" type="Label" parent="AuthBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.40, 0.48, 0.60, 0.75)
-theme_override_font_sizes/font_size = 10
-text = "Hisob bilan yutuqlaringiz bulutda saqlanadi"
-horizontal_alignment = 1
-
-[node name="StartBox" type="VBoxContainer" parent="."]
-visible = false
-modulate = Color(1, 1, 1, 0)
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -180.0
-offset_right = 170.0
-offset_bottom = -25.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="GreetingLabel" type="Label" parent="StartBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.75, 0.82, 0.92, 0.90)
-theme_override_font_sizes/font_size = 13
-text = "Xush kelibsiz!"
-horizontal_alignment = 1
-
-[node name="StartBtn" type="Button" parent="StartBox"]
-custom_minimum_size = Vector2(240, 40)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
-theme_override_colors/font_hover_color = Color(0.22, 0.74, 0.97, 1)
-theme_override_colors/font_pressed_color = Color(0.02, 0.52, 0.78, 1)
-theme_override_constants/letter_spacing = 4
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = ExtResource("9_focus")
-theme_override_styles/hover = ExtResource("9_focus")
-theme_override_styles/pressed = ExtResource("9_focus")
-theme_override_styles/focus = ExtResource("9_focus")
-text = "BOSHLASH"
-alignment = 1
-
-[node name="SwitchAccountBtn" type="Button" parent="StartBox"]
-custom_minimum_size = Vector2(200, 26)
-layout_mode = 2
-size_flags_horizontal = 4
-focus_mode = 0
-theme_override_colors/font_color = Color(0.45, 0.52, 0.65, 0.85)
-theme_override_colors/font_hover_color = Color(0.85, 0.92, 1, 1)
-theme_override_colors/font_pressed_color = Color(0.35, 0.42, 0.55, 1)
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = ExtResource("9_focus")
-theme_override_styles/hover = ExtResource("9_focus")
-theme_override_styles/pressed = ExtResource("9_focus")
-theme_override_styles/focus = ExtResource("9_focus")
-text = "Hisobni almashtirish"
-alignment = 1
-
-[node name="AuthModal" parent="." instance=ExtResource("10_auth")]
-visible = false
-layout_mode = 1
 
 [node name="Curtain" type="ColorRect" parent="."]
 modulate = Color(1, 1, 1, 0)

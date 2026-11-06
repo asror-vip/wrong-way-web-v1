@@ -172,10 +172,6 @@ func record_result(lvl: int, time_ms: float, deaths: int) -> int:
 			unlocked_levels.append(next_lvl)
 
 	save_data()
-	
-	var pm = get_node_or_null("/root/ProfileManager")
-	if pm and pm.has_method("sync_save_to_cloud"):
-		pm.sync_save_to_cloud()
 		
 	return stars
 

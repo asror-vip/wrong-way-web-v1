@@ -2,8 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/objects/atmospheric_backdrop.tscn" id="2_bg"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_circle_glass.tres" id="3_circ"]
-[ext_resource type="StyleBox" path="res://resources/themes/btn_circle_glass_hover.tres" id="4_circ_hov"]
 [ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_glass.tres" id="5_glass"]
 [ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_glass_hover.tres" id="6_glass_hov"]
 [ext_resource type="StyleBox" path="res://resources/themes/btn_capsule_glass_pressed.tres" id="7_glass_press"]
@@ -13,10 +11,6 @@
 [ext_resource type="PackedScene" path="res://scenes/main/settings_modal.tscn" id="11_sm"]
 [ext_resource type="StyleBox" path="res://resources/themes/btn_focus_empty.tres" id="12_focus"]
 [ext_resource type="StyleBox" path="res://resources/themes/panel_obsidian_modal.tres" id="13_card"]
-[ext_resource type="PackedScene" path="res://scenes/ui/leaderboard_modal.tscn" id="14_lm"]
-[ext_resource type="PackedScene" path="res://scenes/multiplayer/duel_lobby_modal.tscn" id="15_dlm"]
-[ext_resource type="PackedScene" path="res://scenes/ui/profile_modal.tscn" id="16_prm"]
-[ext_resource type="PackedScene" path="res://scenes/ui/global_duel_feed.tscn" id="17_gdf"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menu_character.tscn" id="18_mc"]
 
 [sub_resource type="SystemFont" id="SystemFont_title"]
@@ -62,29 +56,16 @@ theme_override_styles/hover = ExtResource("12_focus")
 theme_override_styles/pressed = ExtResource("12_focus")
 theme_override_styles/focus = ExtResource("12_focus")
 
-[node name="QuitTopBtn" type="Button" parent="TopBar"]
-custom_minimum_size = Vector2(44, 44)
-layout_mode = 1
-offset_left = 24.0
-offset_top = 74.0
-offset_right = 68.0
-offset_bottom = 118.0
-focus_mode = 0
-theme_override_styles/normal = ExtResource("12_focus")
-theme_override_styles/hover = ExtResource("12_focus")
-theme_override_styles/pressed = ExtResource("12_focus")
-theme_override_styles/focus = ExtResource("12_focus")
-
 [node name="BestBadge" type="Panel" parent="TopBar"]
-custom_minimum_size = Vector2(105, 36)
+custom_minimum_size = Vector2(110, 36)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -288.0
-offset_top = 17.0
-offset_right = -182.0
-offset_bottom = 53.0
+offset_left = -134.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 56.0
 grow_horizontal = 0
 theme_override_styles/panel = ExtResource("5_glass")
 
@@ -107,130 +88,100 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
 theme_override_font_sizes/font_size = 12
-text = "Best: 12"
+text = "Best: 0"
 
-[node name="ProfileTopBtn" type="Button" parent="TopBar"]
-custom_minimum_size = Vector2(160, 42)
+[node name="Header" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -174.0
-offset_top = 14.0
-offset_right = -14.0
-offset_bottom = 56.0
-grow_horizontal = 0
-focus_mode = 0
-theme_override_styles/normal = ExtResource("5_glass")
-theme_override_styles/hover = ExtResource("6_glass_hov")
-theme_override_styles/pressed = ExtResource("7_glass_press")
-
-[node name="HBox" type="HBoxContainer" parent="TopBar/ProfileTopBtn"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = 2.0
-offset_right = -8.0
-offset_bottom = -2.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -260.0
+offset_top = 50.0
+offset_right = 260.0
+offset_bottom = 150.0
 grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
-alignment = 2
-
-[node name="VBox" type="VBoxContainer" parent="TopBar/ProfileTopBtn/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 2
 alignment = 1
 
-[node name="ProfileNameLabel" type="Label" parent="TopBar/ProfileTopBtn/HBox/VBox"]
+[node name="GameLogo" type="Label" parent="Header"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "Player"
-horizontal_alignment = 2
-clip_text = true
-
-[node name="ProfileAvatar" type="TextureRect" parent="TopBar/ProfileTopBtn/HBox"]
-custom_minimum_size = Vector2(28, 28)
-layout_mode = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Header" type="Control" parent="."]
-layout_mode = 1
-anchors_preset = 0
-offset_left = 72.0
-offset_top = 100.0
-offset_right = 380.0
-offset_bottom = 240.0
-
-[node name="GameLogo" type="Label" parent="Header"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.96, 0.97, 1, 1)
-theme_override_colors/font_shadow_color = Color(0.04, 0.05, 0.08, 0.7)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_x = 0
-theme_override_constants/shadow_offset_y = 4
+theme_override_constants/shadow_offset_y = 5
 theme_override_constants/shadow_outline_size = 6
-theme_override_constants/letter_spacing = 4
+theme_override_constants/letter_spacing = 6
 theme_override_fonts/font = SubResource("SystemFont_title")
-theme_override_font_sizes/font_size = 54
-text = "WRONG
-WAY"
+theme_override_font_sizes/font_size = 56
+text = "WRONG WAY"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.65, 0.8, 0.9)
+theme_override_constants/letter_spacing = 3
+theme_override_font_sizes/font_size = 12
+text = "— NOT A TROLL GAME —"
+horizontal_alignment = 1
 
 [node name="MenuCharacter" parent="." instance=ExtResource("18_mc")]
-layout_mode = 0
-offset_left = 78.0
-offset_top = 265.0
-offset_right = 128.0
-offset_bottom = 321.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -60.0
+offset_right = -140.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="MenuStack" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -380.0
-offset_top = -140.0
-offset_right = -80.0
-offset_bottom = 145.0
-grow_horizontal = 0
+offset_left = -150.0
+offset_top = -30.0
+offset_right = 150.0
+offset_bottom = 120.0
+grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 14
+alignment = 1
 
 [node name="PlayBtn" type="Button" parent="MenuStack"]
 custom_minimum_size = Vector2(300, 52)
 layout_mode = 2
 focus_mode = 0
+theme_override_colors/font_color = Color(0.08, 0.1, 0.15, 1)
+theme_override_colors/font_hover_color = Color(0.08, 0.1, 0.15, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.08, 0.1, 0.15, 1)
+theme_override_colors/font_pressed_color = Color(0.08, 0.1, 0.15, 1)
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = ExtResource("8_white")
 theme_override_styles/hover = ExtResource("9_white_hov")
 theme_override_styles/pressed = ExtResource("10_white_press")
+theme_override_styles/focus = ExtResource("12_focus")
 
 [node name="HBox" type="HBoxContainer" parent="MenuStack/PlayBtn"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_right = -20.0
+offset_left = 18.0
+offset_right = -18.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_constants/separation = 12
 
 [node name="PlayIcon" type="TextureRect" parent="MenuStack/PlayBtn/HBox"]
-custom_minimum_size = Vector2(20, 20)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 1
@@ -239,10 +190,10 @@ stretch_mode = 5
 [node name="PlayLabel" type="Label" parent="MenuStack/PlayBtn/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.06, 0.07, 0.1, 1)
-theme_override_font_sizes/font_size = 16
-text = "PLAY"
-horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.08, 0.1, 0.15, 1)
+theme_override_constants/letter_spacing = 2
+theme_override_font_sizes/font_size = 14
+text = "DAVOM ETISH"
 
 [node name="ChevronIcon" type="TextureRect" parent="MenuStack/PlayBtn/HBox"]
 custom_minimum_size = Vector2(16, 16)
@@ -252,227 +203,53 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="LevelSelectBtn" type="Button" parent="MenuStack"]
-custom_minimum_size = Vector2(300, 46)
+custom_minimum_size = Vector2(300, 48)
 layout_mode = 2
 focus_mode = 0
-theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   LEVEL SELECT"
-alignment = 0
+theme_override_styles/focus = ExtResource("12_focus")
 
-[node name="EditorBtn" type="Button" parent="MenuStack"]
-custom_minimum_size = Vector2(300, 46)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("5_glass")
-theme_override_styles/hover = ExtResource("6_glass_hov")
-theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   LEVEL EDITOR"
-alignment = 0
-
-[node name="LeaderboardBtn" type="Button" parent="MenuStack"]
-custom_minimum_size = Vector2(300, 46)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("5_glass")
-theme_override_styles/hover = ExtResource("6_glass_hov")
-theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   LEADERBOARD"
-alignment = 0
-
-[node name="MultiplayerBtn" type="Button" parent="MenuStack"]
-visible = false
-custom_minimum_size = Vector2(300, 46)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.95, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = ExtResource("5_glass")
-theme_override_styles/hover = ExtResource("6_glass_hov")
-theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   MULTIPLAYER"
-alignment = 0
-
-[node name="InfoModal" type="Control" parent="."]
-visible = false
+[node name="HBox" type="HBoxContainer" parent="MenuStack/LevelSelectBtn"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 18.0
+offset_right = -18.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Backdrop" type="ColorRect" parent="InfoModal"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.04, 0.05, 0.07, 0.75)
-
-[node name="Card" type="Panel" parent="InfoModal"]
-custom_minimum_size = Vector2(440, 310)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -155.0
-offset_right = 220.0
-offset_bottom = 155.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = ExtResource("13_card")
-
-[node name="TitleRow" type="HBoxContainer" parent="InfoModal/Card"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 24.0
-offset_top = 18.0
-offset_right = -50.0
-offset_bottom = 46.0
-grow_horizontal = 2
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
-[node name="TitleIcon" type="TextureRect" parent="InfoModal/Card/TitleRow"]
-custom_minimum_size = Vector2(22, 22)
+[node name="GridIcon" type="TextureRect" parent="MenuStack/LevelSelectBtn/HBox"]
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TitleLabel" type="Label" parent="InfoModal/Card/TitleRow"]
+[node name="LevelsLabel" type="Label" parent="MenuStack/LevelSelectBtn/HBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "INFO"
-
-[node name="CloseBtn" type="Button" parent="InfoModal/Card"]
-custom_minimum_size = Vector2(36, 36)
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -44.0
-offset_top = 10.0
-offset_right = -8.0
-offset_bottom = 46.0
-grow_horizontal = 0
-focus_mode = 0
-mouse_filter = 0
-theme_override_styles/normal = ExtResource("12_focus")
-theme_override_styles/hover = ExtResource("12_focus")
-theme_override_styles/pressed = ExtResource("12_focus")
-theme_override_styles/focus = ExtResource("12_focus")
-icon_alignment = 1
-
-[node name="Content" type="VBoxContainer" parent="InfoModal/Card"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 64.0
-offset_right = -24.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
-
-[node name="DescLabel" type="Label" parent="InfoModal/Card/Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.80, 0.85, 0.94, 1)
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
 theme_override_font_sizes/font_size = 13
-autowrap_mode = 3
+text = "DARAJALAR"
 
-[node name="StatsBox" type="VBoxContainer" parent="InfoModal/Card/Content"]
+[node name="CountLabel" type="Label" parent="MenuStack/LevelSelectBtn/HBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_colors/font_color = Color(0.45, 0.55, 0.7, 0.8)
+theme_override_font_sizes/font_size = 11
+text = "60 / 60"
 
 [node name="SettingsModal" parent="." instance=ExtResource("11_sm")]
 visible = false
 layout_mode = 1
 
-[node name="LeaderboardModal" parent="." instance=ExtResource("14_lm")]
-visible = false
-layout_mode = 1
-
-[node name="GlobalDuelFeed" parent="." instance=ExtResource("17_gdf")]
-layout_mode = 1
-
-[node name="ProfileModal" parent="." instance=ExtResource("16_prm")]
-visible = false
-layout_mode = 1
-
-[node name="DuelLobbyModal" parent="." instance=ExtResource("15_dlm")]
-visible = false
-layout_mode = 1
-
-[node name="IncomingInviteCard" type="PanelContainer" parent="."]
-visible = false
-custom_minimum_size = Vector2(460, 48)
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -230.0
-offset_top = 16.0
-offset_right = 230.0
-offset_bottom = 64.0
-grow_horizontal = 2
-theme_override_styles/panel = ExtResource("5_glass")
-
-[node name="HBox" type="HBoxContainer" parent="IncomingInviteCard"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="InviteText" type="Label" parent="IncomingInviteCard/HBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "Raqib sizni 1v1 duelga chaqirdi!"
-
-[node name="DeclineBtn" type="Button" parent="IncomingInviteCard/HBox"]
-custom_minimum_size = Vector2(85, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = ExtResource("5_glass")
-text = "Rad etish"
-
-[node name="AcceptBtn" type="Button" parent="IncomingInviteCard/HBox"]
-custom_minimum_size = Vector2(95, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.08, 0.1, 0.15, 1)
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = ExtResource("8_white")
-text = "Qabul qilish"
-
-[connection signal="pressed" from="TopBar/ProfileTopBtn" to="." method="_on_profile_pressed"]
-[connection signal="pressed" from="IncomingInviteCard/HBox/DeclineBtn" to="." method="_on_invite_declined"]
-[connection signal="pressed" from="IncomingInviteCard/HBox/AcceptBtn" to="." method="_on_invite_accepted"]
-
 [connection signal="pressed" from="TopBar/SettingsTopBtn" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="TopBar/QuitTopBtn" to="." method="_on_quit_pressed"]
 [connection signal="pressed" from="MenuStack/PlayBtn" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="MenuStack/LevelSelectBtn" to="." method="_on_level_select_pressed"]
-[connection signal="pressed" from="MenuStack/EditorBtn" to="." method="_on_editor_pressed"]
-[connection signal="pressed" from="MenuStack/LeaderboardBtn" to="." method="_on_leaderboard_pressed"]
-[connection signal="pressed" from="MenuStack/MultiplayerBtn" to="." method="_on_multiplayer_pressed"]
-[connection signal="pressed" from="InfoModal/Card/CloseBtn" to="." method="_on_info_close_pressed"]

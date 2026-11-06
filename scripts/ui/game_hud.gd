@@ -120,43 +120,8 @@ func _on_level_started(_level_id: int) -> void:
 
 func _update_texts() -> void:
 	if level_label:
-		if GameManager.is_duel_mode:
-			level_label.text = "DUEL · DARAJA %d" % GameManager.current_level_id
-		else:
-			level_label.text = LocaleManager.t("level_header", [GameManager.current_level_id])
+		level_label.text = LocaleManager.t("level_header", [GameManager.current_level_id])
 	_update_deaths_display()
-
-func start_duel_countdown() -> void:
-	if not countdown_box or not countdown_label:
-		GameManager.is_countdown_active = false
-		GameManager.is_level_running = true
-		DuelService.start_match()
-		return
-		
-	countdown_box.visible = true
-	GameManager.is_countdown_active = true
-	GameManager.is_level_running = false
-	
-	for count in [3, 2, 1]:
-		countdown_label.text = str(count)
-		countdown_label.scale = Vector2(1.6, 1.6)
-		var tw := create_tween()
-		tw.tween_property(countdown_label, "scale", Vector2.ONE, 0.35)
-		SoundManager.play("click")
-		await get_tree().create_timer(0.85).timeout
-		
-	countdown_label.text = "START!"
-	countdown_label.scale = Vector2(1.6, 1.6)
-	var tw2 := create_tween()
-	tw2.tween_property(countdown_label, "scale", Vector2.ONE, 0.35)
-	SoundManager.play("win")
-	await get_tree().create_timer(0.45).timeout
-	countdown_box.visible = false
-	
-	GameManager.is_countdown_active = false
-	GameManager.is_level_running = true
-	GameManager.level_start_time = Time.get_ticks_msec()
-	DuelService.start_match()
 
 func _on_player_died(deaths_count: int) -> void:
 	current_deaths = deaths_count

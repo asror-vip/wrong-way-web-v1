@@ -18,17 +18,14 @@ config/windows_native_icon="res://icon.ico"
 
 [autoload]
 
+PokiService="*res://scripts/core/poki_service.gd"
 SaveManager="*res://scripts/core/save_manager.gd"
 LocaleManager="*res://scripts/core/locale_manager.gd"
 IconFactory="*res://scripts/core/icon_factory.gd"
 SoundManager="*res://scripts/core/sound_manager.gd"
 GameManager="*res://scripts/core/game_manager.gd"
 AdManager="*res://scripts/core/ad_manager.gd"
-CustomLevelManager="*res://scripts/editor/custom_level_manager.gd"
 LevelDatabase="*res://scripts/core/level_database.gd"
-ProfileManager="*res://scripts/core/profile_manager.gd"
-DuelService="*res://scripts/multiplayer/duel_service.gd"
-GoogleAuthService="*res://scripts/core/google_auth_service.gd"
 
 [display]
 

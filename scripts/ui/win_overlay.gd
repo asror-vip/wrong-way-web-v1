@@ -24,7 +24,6 @@ func _ready() -> void:
 	visible = false
 	GameManager.level_completed.connect(_on_level_completed)
 	GameManager.level_started.connect(func(_lvl): visible = false)
-	DuelService.match_finished.connect(_on_duel_match_finished)
 	LocaleManager.language_changed.connect(_on_language_changed)
 	
 	if spotlight_fx:
@@ -137,44 +136,9 @@ func _on_level_completed(lvl: int, time_ms: float, deaths: int, stars: int) -> v
 	last_time_ms = time_ms
 	last_deaths = deaths
 	last_stars = stars
-	
-	if GameManager.is_duel_mode:
-		# Duel rejimida finishni serverga yuborish
-		DuelService.claim_finish(time_ms, deaths)
-		return
 
 	_render_win_data()
 	visible = true
-	if spotlight_fx: spotlight_fx.queue_redraw()
-	if line_accent: line_accent.queue_redraw()
-
-func _on_duel_match_finished(is_victory: bool, _winner_id: String) -> void:
-	if not GameManager.is_duel_mode:
-		return
-	get_tree().paused = true
-	visible = true
-	
-	if last_time_ms <= 0.0:
-		last_time_ms = float(Time.get_ticks_msec()) - GameManager.level_start_time
-		last_deaths = GameManager.level_deaths
-	
-	if is_victory:
-		if win_title: win_title.text = "VICTORY"
-		if subtitle: subtitle.text = "Siz duelda g'alaba qozondingiz!"
-		SoundManager.play("win")
-	else:
-		if win_title: win_title.text = "DEFEAT"
-		if subtitle: subtitle.text = "Raqibingiz marraga birinchi yetdi!"
-		SoundManager.play("death")
-		
-	if stats_label:
-		var time_sec: int = maxi(1, int(round(last_time_ms / 1000.0)))
-		stats_label.text = "Vaqt: %ds   •   O'limlar: %d" % [time_sec, last_deaths]
-		
-	if next_btn:
-		next_btn.text = "  Lobbyga qaytish"
-		next_btn.visible = true
-		
 	if spotlight_fx: spotlight_fx.queue_redraw()
 	if line_accent: line_accent.queue_redraw()
 
@@ -210,39 +174,16 @@ func _render_win_data() -> void:
 func _on_next_pressed() -> void:
 	SoundManager.play("click")
 	visible = false
-	if GameManager.is_duel_mode:
-		GameManager.is_duel_mode = false
-		get_tree().paused = false
-		get_tree().change_scene_to_file("res://scenes/multiplayer/multiplayer_menu.tscn")
-		return
 	GameManager.start_game(last_lvl + 1)
 
 func _on_replay_pressed() -> void:
 	SoundManager.play("click")
 	visible = false
-	if GameManager.is_duel_mode:
-		get_tree().paused = false
-		last_time_ms = 0.0
-		if DuelService.is_bot_duel:
-			var ch: int = 1 if last_lvl <= 20 else (2 if last_lvl <= 40 else 3)
-			var lvl_in_ch: int = ((last_lvl - 1) % 20) + 1
-			DuelService.setup_bot_duel(ch, lvl_in_ch)
-			GameManager.start_duel_game(last_lvl, randi())
-			return
-		else:
-			GameManager.is_duel_mode = false
-			get_tree().change_scene_to_file("res://scenes/multiplayer/multiplayer_menu.tscn")
-			return
 	GameManager.start_game(last_lvl)
 
 func _on_map_pressed() -> void:
 	SoundManager.play("click")
 	visible = false
-	if GameManager.is_duel_mode:
-		GameManager.is_duel_mode = false
-		get_tree().paused = false
-		get_tree().change_scene_to_file("res://scenes/multiplayer/multiplayer_menu.tscn")
-		return
 	var sm = get_node_or_null("/root/SaveManager")
 	if sm:
 		sm.navigation_source = "result_modal"
@@ -259,11 +200,6 @@ func _on_map_pressed() -> void:
 func _on_home_pressed() -> void:
 	SoundManager.play("click")
 	visible = false
-	if GameManager.is_duel_mode:
-		GameManager.is_duel_mode = false
-		get_tree().paused = false
-		get_tree().change_scene_to_file("res://scenes/multiplayer/multiplayer_menu.tscn")
-		return
 	var sm = get_node_or_null("/root/SaveManager")
 	if sm:
 		sm.navigation_source = "home_menu"
