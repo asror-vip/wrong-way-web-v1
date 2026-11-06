@@ -25,7 +25,6 @@ SoundManager="*res://scripts/core/sound_manager.gd"
 GameManager="*res://scripts/core/game_manager.gd"
 AdManager="*res://scripts/core/ad_manager.gd"
 CustomLevelManager="*res://scripts/editor/custom_level_manager.gd"
-SaveSystem="*res://scripts/core/save_manager.gd"
 LevelDatabase="*res://scripts/core/level_database.gd"
 ProfileManager="*res://scripts/core/profile_manager.gd"
 DuelService="*res://scripts/multiplayer/duel_service.gd"
@@ -37,10 +36,6 @@ window/size/viewport_width=960
 window/size/viewport_height=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/admob/plugin.cfg")
 
 [input]
 
