@@ -56,6 +56,20 @@ func _ready() -> void:
 func _apply_responsive_layout() -> void:
 	var insets := UIResponsive.get_safe_insets(self)
 	var vp := UIResponsive.get_viewport_size(self)
+	var aspect: float = 960.0 / 540.0
+	
+	var s: float = 1.0
+	var ox: float = 0.0
+	var oy: float = 0.0
+	
+	if vp.y > 0.0 and (vp.x / vp.y) < aspect:
+		s = vp.y / 540.0
+		ox = 0.0
+		oy = 0.0
+	else:
+		s = vp.x / 960.0
+		ox = 0.0
+		oy = (vp.y - 540.0 * s) * 0.5
 	
 	if settings_top_btn:
 		settings_top_btn.position.x = 24.0 + insets["left"]
@@ -69,19 +83,27 @@ func _apply_responsive_layout() -> void:
 		best_badge.position.x = vp.x - 140.0 - insets["right"]
 		best_badge.position.y = 17.0 + insets["top"]
 		
+	var cliff_x: float = 78.0 * s + ox + insets["left"]
+	var cliff_y: float = 265.0 * s + oy
+	var title_x: float = 72.0 * s + ox + insets["left"]
+	var title_y: float = 100.0 * s + oy
+
 	var header = get_node_or_null("Header")
 	if header:
-		header.position.x = 72.0 + insets["left"]
+		header.position = Vector2(title_x, title_y)
+		header.scale = Vector2(s, s)
 	if menu_character:
-		menu_character.position.x = 78.0 + insets["left"]
+		menu_character.position = Vector2(cliff_x, cliff_y)
+		menu_character.scale = Vector2(s, s)
 		
 	var menu_stack = get_node_or_null("MenuStack")
 	if menu_stack:
-		# Kichik ekranlar (4:3 tabletlar) uchun tugmalarning chapdagi cliff bilan to'qnashmasligi
-		var target_x: float = vp.x - 380.0 - float(insets["right"])
-		if target_x < 390.0:
-			target_x = maxf(280.0, vp.x - 320.0 - float(insets["right"]))
+		menu_stack.scale = Vector2(s, s)
+		var target_x: float = vp.x - (380.0 * s) - float(insets["right"])
+		if target_x < title_x + (240.0 * s):
+			target_x = maxf(280.0, vp.x - (320.0 * s) - float(insets["right"]))
 		menu_stack.position.x = target_x
+		menu_stack.position.y = maxf(80.0, (vp.y - (menu_stack.size.y * s)) * 0.5)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:

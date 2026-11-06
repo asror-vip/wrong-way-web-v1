@@ -113,11 +113,15 @@ func _ready() -> void:
 func _get_step_width() -> float:
 	return get_viewport_rect().size.x
 
-func _get_map_offset() -> Vector2:
+func _get_map_transform() -> Dictionary:
 	var vp := get_viewport_rect().size
-	var ox := (vp.x - 960.0) * 0.5
-	var oy := (vp.y - 540.0) * 0.5
-	return Vector2(ox, oy)
+	var s: float = maxf(vp.x / 960.0, vp.y / 540.0)
+	var ox: float = (vp.x - 960.0 * s) * 0.5
+	var oy: float = (vp.y - 540.0 * s) * 0.5
+	return {"scale": s, "offset": Vector2(ox, oy)}
+
+func _get_map_offset() -> Vector2:
+	return _get_map_transform()["offset"]
 
 func _setup_widescreen_layout() -> void:
 	var step_w := _get_step_width()
@@ -159,12 +163,15 @@ func _position_nodes(chapter: int, container: Control) -> void:
 		positions = CHAPTER_2_POS
 	elif chapter == 3:
 		positions = CHAPTER_3_POS
-	var offset := _get_map_offset()
+	var t := _get_map_transform()
+	var s: float = t["scale"]
+	var offset: Vector2 = t["offset"]
 	var children := container.get_children()
 	for i in range(mini(children.size(), positions.size())):
 		var btn = children[i] as Control
 		if btn:
-			btn.position = positions[i] + offset - Vector2(18, 18)
+			btn.position = positions[i] * s + offset - Vector2(19.0 * s, 19.0 * s)
+			btn.scale = Vector2(s, s)
 
 func _setup_seamless_backdrop_materials() -> void:
 	var blur_shader = preload("res://shaders/bokeh_blur.gdshader")
@@ -176,7 +183,7 @@ func _setup_seamless_backdrop_materials() -> void:
 		m1.set_shader_parameter("fade_left", 0.0)
 		m1.set_shader_parameter("fade_right", 0.0)
 		backdrop_ch1.material = m1
-		backdrop_ch1.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		backdrop_ch1.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		
 	if backdrop_ch2:
 		var m2 := ShaderMaterial.new()
@@ -185,7 +192,7 @@ func _setup_seamless_backdrop_materials() -> void:
 		m2.set_shader_parameter("fade_left", 0.0)
 		m2.set_shader_parameter("fade_right", 0.0)
 		backdrop_ch2.material = m2
-		backdrop_ch2.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		backdrop_ch2.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		
 	if backdrop_ch3:
 		var m3 := ShaderMaterial.new()
@@ -194,7 +201,7 @@ func _setup_seamless_backdrop_materials() -> void:
 		m3.set_shader_parameter("fade_left", 0.0)
 		m3.set_shader_parameter("fade_right", 0.0)
 		backdrop_ch3.material = m3
-		backdrop_ch3.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		backdrop_ch3.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
 func _setup_top_bar() -> void:
 	if back_btn:
@@ -571,11 +578,16 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 		var stars: int = SaveManager.level_stars.get(str(lvl), 0)
 		var is_active_target := (lvl == max_unlocked)
 		
+		var map_tf := _get_map_transform()
+		var map_scale: float = map_tf["scale"]
+		var offset: Vector2 = map_tf["offset"]
+		
 		# Dumaloq tugma (36x36 diametrli doira, radius 18)
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(36, 36)
 		btn.size = Vector2(36, 36)
-		btn.position = pos + _get_map_offset() - Vector2(18, 18)
+		btn.position = pos * map_scale + offset - Vector2(18.0 * map_scale, 18.0 * map_scale)
+		btn.scale = Vector2(map_scale, map_scale)
 		btn.focus_mode = Control.FOCUS_NONE
 		
 		var style := StyleBoxFlat.new()
@@ -667,7 +679,8 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 				btn.add_theme_color_override("font_color", Color(0.45, 0.50, 0.60))
 				
 				var lock_badge := IconFactory.create_texture_rect("lock", Vector2(12, 12), 0.50)
-				lock_badge.position = pos + Vector2(9, -17)
+				lock_badge.position = (pos + Vector2(9, -17)) * map_scale + offset
+				lock_badge.scale = Vector2(map_scale, map_scale)
 				lock_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				container.add_child(lock_badge)
 				
