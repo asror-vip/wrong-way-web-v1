@@ -12,3 +12,4 @@ static func get_supabase_url() -> String:
 
 static func get_supabase_anon_key() -> String:
 	return ""
+

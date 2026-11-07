@@ -49,8 +49,9 @@ func _ready() -> void:
 		level_select_btn.pressed.connect(_on_level_select_pressed)
 	if settings_btn and not settings_btn.pressed.is_connected(_on_settings_pressed):
 		settings_btn.pressed.connect(_on_settings_pressed)
-	if quit_btn and not quit_btn.pressed.is_connected(_on_quit_pressed):
-		quit_btn.pressed.connect(_on_quit_pressed)
+	if quit_btn:
+		if not quit_btn.pressed.is_connected(_on_quit_pressed):
+			quit_btn.pressed.connect(_on_quit_pressed)
 		if menu_character:
 			quit_btn.mouse_entered.connect(func():
 				if menu_character.has_method("set_sad_emotion"):

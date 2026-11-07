@@ -66,6 +66,9 @@ func set_happy_emotion(happy: bool) -> void:
 
 func set_sad_emotion(sad: bool) -> void:
 	is_sad = sad
+	if sad:
+		is_happy = false
+		happy_timer = 0.0
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -73,9 +76,9 @@ func _process(delta: float) -> void:
 	
 	# Smooth emotional transition for sad/pleading state
 	if is_sad:
-		sad_factor = move_toward(sad_factor, 1.0, delta * 6.5)
+		sad_factor = move_toward(sad_factor, 1.0, delta * 9.0)
 	else:
-		sad_factor = move_toward(sad_factor, 0.0, delta * 5.0)
+		sad_factor = move_toward(sad_factor, 0.0, delta * 6.0)
 	
 	# Blinking (disabled during sad or happy states)
 	if not is_happy and sad_factor < 0.1:
@@ -108,10 +111,10 @@ func _process(delta: float) -> void:
 	else:
 		target_pupil_offset = Vector2.ZERO
 		
-	# When sad, gaze looks pleadingly up-left towards Quit button
+	# When sad, gaze looks pleadingly towards cursor / Quit button with watery puppy eyes
 	if sad_factor > 0.001:
-		var sad_look := Vector2(-2.5, -2.4)
-		target_pupil_offset = target_pupil_offset.lerp(sad_look, sad_factor * 0.85)
+		var sad_look := Vector2(2.2, 1.2)
+		target_pupil_offset = target_pupil_offset.lerp(sad_look, sad_factor * 0.7)
 		
 	current_pupil_offset = current_pupil_offset.lerp(target_pupil_offset, delta * 12.0)
 	
