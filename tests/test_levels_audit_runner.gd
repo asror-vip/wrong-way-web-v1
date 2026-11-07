@@ -117,12 +117,15 @@ func _run_next_level_test() -> void:
 		# E. Rolling boulder void-fall recovery test (if present)
 		await _test_boulder_void_recovery(traps, gameplay_issues)
 		
+		# F. Multi-trap concurrent interaction test (levels 13, 16, 19, 20)
+		await _test_concurrent_traps(player, traps, lvl, gameplay_issues)
+		
 	var is_passed := static_issues.is_empty() and gameplay_issues.is_empty()
 	if is_passed:
 		print("  -> Level %02d AUDIT: [PASS] (Traps: %s)" % [lvl, ", ".join(trap_names)])
 		total_passed += 1
 	else:
-		print("  -> Level %02d AUDIT: [FAIL]")
+		print("  -> Level %02d AUDIT: [FAIL]" % lvl)
 		for si in static_issues:
 			print("     * STATIC FAIL: %s" % si)
 			failure_logs.append("Lvl %02d [STATIC]: %s" % [lvl, si])
@@ -199,13 +202,37 @@ func _test_traps_gameplay(
 			player.invulnerable_timer = 0.0
 			player.is_dead = false
 			player.is_entering_door = false
-			player.global_position = trig_pos
-			player.velocity = Vector2.ZERO
 			
-			for i in range(8):
+			# Tabiiy yurish va sakrash orqali trigger hududiga yaqinlashish
+			var dx := trig_pos.x - player.global_position.x
+			var dir := signf(dx) if absf(dx) > 1.0 else 1.0
+			var max_walk_steps := 45
+			for step in range(max_walk_steps):
+				if _is_trap_triggered(t) or player.is_dead:
+					break
+				if absf(player.global_position.x - trig_pos.x) < 20.0:
+					break
+				player.velocity.x = dir * player.SPEED
+				var need_jump: bool = (
+					(trig_pos.y < player.global_position.y - 20.0 or player.is_on_wall())
+					and player.is_on_floor()
+				)
+				if need_jump:
+					player.velocity.y = player.JUMP_VELOCITY
+				player.velocity.y += player.GRAVITY * (1.0 / 60.0)
+				player.move_and_slide()
 				await get_tree().physics_frame
 				
-			var triggered := _is_trap_triggered(t)
+			# Agar hali yetib kelmagan bo'lsa, trigger zonasiga joylashtirish
+			if not _is_trap_triggered(t) and not player.is_dead:
+				player.global_position = trig_pos
+				player.velocity = Vector2.ZERO
+				for i in range(8):
+					await get_tree().physics_frame
+					if _is_trap_triggered(t) or player.is_dead:
+						break
+				
+			var triggered := _is_trap_triggered(t) or player.is_dead
 			if not triggered:
 				issues.append(
 					"Trap %s did not trigger when player entered zone" %
@@ -351,6 +378,56 @@ func _test_boulder_void_recovery(
 					t.name
 				)
 
+func _test_concurrent_traps(
+	player: PlayerController,
+	traps: Node2D,
+	lvl: int,
+	issues: Array[String]
+) -> void:
+	if traps.get_child_count() < 3:
+		return
+		
+	# Trigger all triggerable traps simultaneously
+	for t in traps.get_children():
+		var trig_pos := _get_trap_trigger_pos(t)
+		if trig_pos != Vector2.ZERO:
+			if "is_triggered" in t:
+				t.is_triggered = true
+			if "state" in t and t is Crusher:
+				t.state = Crusher.State.FALLING
+			if "is_falling" in t and t is FallingSpikeTrap:
+				t.is_falling = true
+				t.visible = true
+				
+	# Step 15 physics frames while multiple traps run concurrently
+	for i in range(15):
+		await get_tree().physics_frame
+		
+	# Now perform full reset via base_level
+	var parent_lvl = traps.get_parent()
+	if parent_lvl and parent_lvl.has_method("reset_level_traps"):
+		parent_lvl.reset_level_traps()
+	else:
+		for t in traps.get_children():
+			if t.has_method("reset_trap"):
+				t.reset_trap()
+				
+	# Verify immediately upon reset that all traps restored start position
+	for t in traps.get_children():
+		var exp_pos := _get_trap_start_pos(t)
+		if not t is StaticBody2D and t.global_position.distance_to(exp_pos) > 1.0:
+			issues.append(
+				"Concurrent test: Trap %s pos mismatch on reset: %s vs %s" %
+				[t.name, str(t.global_position), str(exp_pos)]
+			)
+		if "is_triggered" in t and t.is_triggered:
+			issues.append(
+				"Concurrent test: Trap %s remained triggered on reset" %
+				t.name
+			)
+			
+	await get_tree().physics_frame
+
 func _get_trap_trigger_pos(t: Node2D) -> Vector2:
 	var gx: float = t.global_position.x
 	var gy: float = t.global_position.y
@@ -363,7 +440,12 @@ func _get_trap_trigger_pos(t: Node2D) -> Vector2:
 	if "platform_size" in t and gy >= 300.0:
 		return Vector2(gx + t.platform_size.x / 2.0, gy - 12.0)
 	if "boulder_radius" in t:
-		return Vector2(gx + 80.0, gy)
+		var rdir: float = t.roll_direction if "roll_direction" in t else -1.0
+		var tdist: float = t.trigger_distance if "trigger_distance" in t else 150.0
+		if rdir > 0.0:
+			return Vector2(gx + tdist + 15.0, gy)
+		else:
+			return Vector2(gx - minf(tdist * 0.6, 80.0), gy)
 	if "run_away_distance" in t:
 		return Vector2(gx + 40.0, gy)
 	if t is FallingSpikeTrap or t.get_script().get_global_name() == &"FallingSpikeTrap":

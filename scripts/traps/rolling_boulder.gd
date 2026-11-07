@@ -80,13 +80,27 @@ func _physics_process(delta: float) -> void:
 		return
 
 func _check_player_trigger() -> void:
-	var player = get_tree().get_first_node_in_group("player")
-	if not player:
+	var player = get_tree().get_first_node_in_group("player") as Node2D
+	if not player or not is_instance_valid(player):
+		return
+	if "is_dead" in player and player.is_dead:
 		return
 		
-	var dist: float = global_position.distance_to(player.global_position)
-	if dist <= trigger_distance:
-		trigger_boulder()
+	var dx: float = player.global_position.x - global_position.x
+	var dy: float = absf(player.global_position.y - global_position.y)
+	if dy > 120.0:
+		return
+		
+	if roll_direction > 0:
+		# Orqadan quvuvchi tosh: o'yinchi yetarlicha oldinga o'tganda
+		if dx >= trigger_distance:
+			trigger_boulder()
+	else:
+		# Oldindan keluvchi tosh: o'yinchi yaqinlashganda
+		if dx <= 0.0 and absf(dx) <= trigger_distance:
+			trigger_boulder()
+		elif absf(dx) <= 60.0:
+			trigger_boulder()
 
 func trigger_boulder() -> void:
 	if is_triggered:
@@ -152,5 +166,6 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, 3.0, Color.WHITE)
 	
 	# Nozik tosh yorug'lik aksi
-	draw_arc(Vector2.ZERO, boulder_radius - 4.0, -PI * 0.7, -PI * 0.2, 16, Color(0.40, 0.50, 0.65, 0.40), 1.5)
+	var arc_col := Color(0.40, 0.50, 0.65, 0.40)
+	draw_arc(Vector2.ZERO, boulder_radius - 4.0, -PI * 0.7, -PI * 0.2, 16, arc_col, 1.5)
 

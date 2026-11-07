@@ -49,6 +49,7 @@ func _physics_process(delta: float) -> void:
 				if absf(player_center_x - crusher_center_x) < trigger_distance:
 					state = State.FALLING
 					speed = 0.0
+					queue_redraw()
 					var sm = get_node_or_null("/root/SoundManager")
 					if sm and sm.has_method("play"):
 						sm.play("trap")
@@ -60,7 +61,9 @@ func _physics_process(delta: float) -> void:
 				_on_body_entered(b)
 			var p := get_tree().get_first_node_in_group("player") as Node2D
 			if p != null and is_instance_valid(p):
-				if not ("is_dead" in p and p.is_dead) and not ("is_invulnerable" in p and p.is_invulnerable):
+				var p_dead: bool = "is_dead" in p and p.is_dead
+				var p_invuln: bool = "is_invulnerable" in p and p.is_invulnerable
+				if not p_dead and not p_invuln:
 					var px: float = p.global_position.x
 					var py: float = p.global_position.y
 					if px + 8.0 >= global_position.x and px - 8.0 <= (global_position.x + crusher_size.x):
@@ -79,6 +82,7 @@ func _physics_process(delta: float) -> void:
 				else:
 					has_crushed = true
 					state = State.IDLE
+					queue_redraw()
 		
 		State.WAITING_BOTTOM:
 			timer -= delta
@@ -117,6 +121,7 @@ func reset_trap() -> void:
 	timer = 0.0
 	has_crushed = false
 	global_position = initial_position
+	queue_redraw()
 
 func _draw() -> void:
 	var is_winter := false
@@ -132,13 +137,20 @@ func _draw() -> void:
 	var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
 	draw_rect(Rect2(0, -300.0, w, h + 300.0), body_col, true)
 	
-	if is_winter:
-		draw_line(Vector2(1, -300), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
-		draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
-	else:
-		draw_line(Vector2(1, -300), Vector2(1, h), Color("#334155"), 1.5)
-		draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color("#334155"), 1.5)
-		draw_rect(Rect2(4.0, h - 8.0, w - 8.0, 3.0), Color("#2a2536"), true)
+	# Faqat blok harakatlanganda yon qirralar chiziladi; IDLE holatda shift bilan bir butun
+	if state != State.IDLE:
+		if is_winter:
+			draw_line(Vector2(1, -300), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
+			draw_line(
+				Vector2(w - 1, -300),
+				Vector2(w - 1, h),
+				Color(0.40, 0.70, 0.95, 0.4),
+				1.0
+			)
+		else:
+			draw_line(Vector2(1, -300), Vector2(1, h), Color("#334155"), 1.5)
+			draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color("#334155"), 1.5)
+			draw_rect(Rect2(4.0, h - 8.0, w - 8.0, 3.0), Color("#2a2536"), true)
 	
 	# Tishlar: barcha tikanlar bilan 100% BIR XIL po'lat tishlar
 	# (shiftning pastki chekkasidan chiqib turadi)
