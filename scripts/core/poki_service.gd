@@ -81,6 +81,18 @@ func set_mock_provider(provider: Object) -> void:
 func get_mock_provider() -> Object:
 	return _sdk_mock_provider
 
+func is_ad_playing() -> bool:
+	return _is_ad_playing
+
+func get_current_ad_type() -> AdType:
+	return _current_ad_type
+
+func try_init_sdk() -> bool:
+	return _try_init_sdk()
+
+func simulate_commercial_break_finished_for_test() -> void:
+	_on_commercial_break_finished([])
+
 func reset_state_for_testing() -> void:
 	_init_token += 1
 	_lifecycle_seq += 1

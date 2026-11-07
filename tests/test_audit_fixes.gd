@@ -12,7 +12,7 @@ extends Node
 # 8. Gameplay Lifecycle Start/Stop Race Condition (start -> stop while init is awaiting)
 # 9. Commercial -> Commercial Ad Queue (no premature callbacks, single execution)
 # 10. Commercial -> Rewarded Ad Queue (safe rejection of rewarded without breaking commercial)
-# 11. Rewarded -> Commercial Ad Queue (rewarded finishes, REAL commercialBreak starts, callback waits)
+# 11. Rewarded -> Commercial Ad Queue (real commercialBreak starts)
 # 12. Chained Multiple Ad Requests (Rewarded + Comm 1 + Comm 2)
 # 13. Commercial Ad Rejection / Failure (Catch Recovery)
 # 14. Rewarded Ad Rejection / Failure (success=false Recovery)
@@ -94,7 +94,7 @@ func _ready() -> void:
 	print("STARTING ADVANCED AUDIT TEST SUITE (MOCK-BASED UNIT TESTS - 15 TESTS)")
 	print("======================================================================")
 	
-	await _test_control_inverter_isolation()
+	_test_control_inverter_isolation()
 	await _test_late_sdk_300ms()
 	await _test_late_sdk_1s()
 	await _test_late_sdk_2s()
@@ -139,7 +139,7 @@ func _test_control_inverter_isolation() -> void:
 	
 	# Reset Zone A ONLY
 	inv_a.reset_trap()
-	assert(player.controls_inverted == true, "CRITICAL: Resetting Zone A must NOT cancel active Zone B!")
+	assert(player.controls_inverted == true, "Zone A reset must not cancel active Zone B")
 	assert(player.active_inverters.has(inv_b) == true, "Zone B must remain")
 	assert(player.active_inverters.has(inv_a) == false, "Zone A removed")
 	
@@ -176,7 +176,7 @@ func _test_late_sdk_300ms() -> void:
 	)
 	
 	var final_state: int = await poki.ensure_sdk_initialized(1.5)
-	assert(final_state == poki.SdkState.READY, "SDK must transition to READY after 300ms late load")
+	assert(final_state == poki.SdkState.READY, "Must transition to READY after 300ms late load")
 	assert(poki.is_poki_available == true, "is_poki_available must be true when READY")
 	print("  -> PASS: 300ms late SDK resolved to SdkState.READY.")
 
@@ -199,7 +199,7 @@ func _test_late_sdk_1s() -> void:
 	)
 	
 	var final_state: int = await poki.ensure_sdk_initialized(2.5)
-	assert(final_state == poki.SdkState.READY, "SDK must transition to READY after 1.0s late load")
+	assert(final_state == poki.SdkState.READY, "Must transition to READY after 1.0s late load")
 	assert(poki.is_poki_available == true, "is_poki_available must be true when READY")
 	print("  -> PASS: 1.0s late SDK resolved to SdkState.READY.")
 
@@ -222,7 +222,7 @@ func _test_late_sdk_2s() -> void:
 	)
 	
 	var final_state: int = await poki.ensure_sdk_initialized(3.0)
-	assert(final_state == poki.SdkState.READY, "SDK must transition to READY after 2.0s late load")
+	assert(final_state == poki.SdkState.READY, "Must transition to READY after 2.0s late load")
 	assert(poki.is_poki_available == true, "is_poki_available must be true when READY")
 	print("  -> PASS: 2.0s late SDK resolved to SdkState.READY.")
 
@@ -240,9 +240,9 @@ func _test_sdk_init_rejection() -> void:
 	poki.set_mock_provider(mock)
 	
 	var final_state: int = await poki.ensure_sdk_initialized(1.0)
-	assert(final_state == poki.SdkState.FAILED, "Rejected init must transition to SdkState.FAILED")
+	assert(final_state == poki.SdkState.FAILED, "Rejected init must transition to FAILED")
 	assert(poki.is_poki_available == false, "is_poki_available must be false on failure")
-	print("  -> PASS: Rejected SDK init recorded as SdkState.FAILED with is_poki_available=false.")
+	print("  -> PASS: Rejected SDK init recorded as SdkState.FAILED.")
 
 # ------------------------------------------------------------------------------
 # Test 6: SDK Never Arrives (Offline / Timed Out)
@@ -284,7 +284,7 @@ func _test_stale_init_callback_after_timeout() -> void:
 	await get_tree().create_timer(0.6).timeout
 	
 	# CRITICAL CHECK: The late callback must have been ignored because the token was invalidated!
-	assert(poki.sdk_state == poki.SdkState.FAILED, "State must REMAIN FAILED; late callback must not resurrect state!")
+	assert(poki.sdk_state == poki.SdkState.FAILED, "Late callback must not resurrect state!")
 	assert(poki.is_poki_available == false, "is_poki_available must remain false")
 	print("  -> PASS: Stale callback after timeout safely ignored by generation token check.")
 
@@ -302,10 +302,10 @@ func _test_duplicate_init_prevention() -> void:
 	mock.init_should_succeed = true
 	poki.set_mock_provider(mock)
 	
-	poki._try_init_sdk()
+	poki.try_init_sdk()
 	assert(poki.sdk_state == poki.SdkState.INITIALIZING, "State is INITIALIZING")
 	
-	var second_result: bool = poki._try_init_sdk()
+	var second_result: bool = poki.try_init_sdk()
 	assert(second_result == false, "Second concurrent init call must be rejected")
 	assert(mock.init_call_count == 1, "Only 1 init call made to provider")
 	
@@ -362,9 +362,9 @@ func _test_gameplay_start_stop_race() -> void:
 	
 	# CRITICAL CHECK: gameplay_start was cancelled by gameplay_stop during init await!
 	# PokiSDK.gameplayStart() must NOT have been called!
-	assert(mock.gameplay_start_count == 0, "CRITICAL: Stale gameplayStart() must NOT be sent to PokiSDK!")
+	assert(mock.gameplay_start_count == 0, "Stale gameplayStart() must not be sent to SDK!")
 	assert(mock.gameplay_stop_count == 0, "No spurious stop sent either")
-	print("  -> PASS: Stale gameplay_start safely cancelled when gameplay_stop was called during init.")
+	print("  -> PASS: Stale gameplay_start safely cancelled by stop during init.")
 
 # ------------------------------------------------------------------------------
 # Test 11: Commercial -> Commercial Queue (Single Break, Single Callbacks)
@@ -383,18 +383,18 @@ func _test_ad_queue_commercial_to_commercial() -> void:
 	var counts := {"cb1": 0, "cb2": 0}
 	
 	poki.commercial_break(func(): counts["cb1"] += 1)
-	assert(poki._is_ad_playing == true, "Commercial 1 is playing")
+	assert(poki.is_ad_playing() == true, "Commercial 1 is playing")
 	assert(counts["cb1"] == 0, "Callback 1 must NOT be called early")
 	
 	poki.commercial_break(func(): counts["cb2"] += 1)
 	assert(counts["cb2"] == 0, "Callback 2 must NOT be called early")
-	assert(mock.commercial_call_count == 1, "Should not trigger two simultaneous commercialBreaks")
+	assert(mock.commercial_call_count == 1, "No simultaneous commercialBreaks allowed")
 	
 	await get_tree().create_timer(0.25).timeout
-	assert(poki._is_ad_playing == false, "Ad finished")
+	assert(poki.is_ad_playing() == false, "Ad finished")
 	assert(counts["cb1"] == 1, "Callback 1 called exactly once")
 	assert(counts["cb2"] == 1, "Callback 2 called exactly once")
-	print("  -> PASS: Concurrent commercial requests share the break and fire callbacks once at end.")
+	print("  -> PASS: Concurrent commercials share the break and fire once.")
 
 # ------------------------------------------------------------------------------
 # Test 12: Commercial -> Rewarded Queue (Safe Rejection)
@@ -415,12 +415,12 @@ func _test_ad_queue_commercial_to_rewarded() -> void:
 	poki.commercial_break(func(): state["comm_done"] = true)
 	
 	poki.rewarded_break(func(success: bool): state["rew_result"] = success)
-	assert(state["rew_result"] == false, "Rewarded during commercial must be rejected immediately with false")
+	assert(state["rew_result"] == false, "Rewarded during commercial must be rejected with false")
 	assert(state["comm_done"] == false, "Commercial must not be disrupted")
 	
 	await get_tree().create_timer(0.25).timeout
 	assert(state["comm_done"] == true, "Commercial completed successfully")
-	print("  -> PASS: Rewarded during commercial safely rejected without corrupting commercial ad.")
+	print("  -> PASS: Rewarded during commercial safely rejected.")
 
 # ------------------------------------------------------------------------------
 # Test 13: Rewarded -> Commercial Queue (REAL commercialBreak execution!)
@@ -449,7 +449,7 @@ func _test_ad_queue_rewarded_to_commercial() -> void:
 		state["rew_result"] = success
 		state["rew_finish_time"] = float(Time.get_ticks_msec() - start_time)
 	)
-	assert(poki._current_ad_type == poki.AdType.REWARDED, "Current ad is REWARDED")
+	assert(poki.get_current_ad_type() == poki.AdType.REWARDED, "Current ad is REWARDED")
 	
 	poki.commercial_break(func():
 		state["comm_done"] = true
@@ -458,14 +458,15 @@ func _test_ad_queue_rewarded_to_commercial() -> void:
 	
 	await get_tree().create_timer(0.2).timeout
 	assert(state["rew_result"] == true, "Rewarded ad finished with true")
-	assert(state["comm_done"] == false, "CRITICAL AUDIT CHECK: Commercial callback must NOT be called when rewarded ad finishes!")
-	assert(poki._is_ad_playing == true, "Commercial break must now be playing as a REAL ad!")
+	assert(state["comm_done"] == false, "Commercial callback not called on rewarded finish")
+	assert(poki.is_ad_playing() == true, "Commercial break must now be playing as a REAL ad!")
 	assert(mock.commercial_call_count == 1, "Real PokiSDK.commercialBreak() was invoked!")
 	
 	await get_tree().create_timer(0.25).timeout
-	assert(state["comm_done"] == true, "Commercial callback called ONLY after real commercialBreak finishes!")
-	assert(state["comm_finish_time"] > state["rew_finish_time"], "Commercial finished AFTER rewarded ad finished!")
-	assert(poki._is_ad_playing == false, "All ads finished cleanly")
+	assert(state["comm_done"] == true, "Commercial called only after real break finishes")
+	var finished_after: bool = state["comm_finish_time"] > state["rew_finish_time"]
+	assert(finished_after, "Commercial finished AFTER rewarded finished!")
+	assert(poki.is_ad_playing() == false, "All ads finished cleanly")
 	print("  -> PASS: Queued commercial request ran a real commercialBreak after rewarded ad!")
 
 # ------------------------------------------------------------------------------
@@ -496,14 +497,14 @@ func _test_ad_queue_chained_requests() -> void:
 	await get_tree().create_timer(0.2).timeout
 	assert(counts["comm1"] == 1, "Comm 1 completed once")
 	assert(counts["comm2"] == 1, "Comm 2 completed once")
-	assert(mock.commercial_call_count == 1, "Single consolidated commercial break for both callbacks")
-	print("  -> PASS: Chained multiple requests resolved without callback duplication or omission.")
+	assert(mock.commercial_call_count == 1, "Single break for both callbacks")
+	print("  -> PASS: Chained multiple requests resolved without duplicates.")
 
 # ------------------------------------------------------------------------------
 # Test 15: Commercial Rejection (commercial_should_succeed = false)
 # ------------------------------------------------------------------------------
 func _test_commercial_rejection() -> void:
-	print("\n[TEST 15] Commercial Rejection / Catch Handling (commercial_should_succeed = false)...")
+	print("\n[TEST 15] Commercial Rejection / Catch Handling...")
 	var poki = get_node_or_null("/root/PokiService")
 	poki.reset_state_for_testing()
 	
@@ -517,8 +518,8 @@ func _test_commercial_rejection() -> void:
 	var state := {"comm_called": false}
 	poki.commercial_break(func(): state["comm_called"] = true)
 	await get_tree().create_timer(0.15).timeout
-	assert(state["comm_called"] == true, "Commercial callback must still be called gracefully on catch/rejection")
-	assert(poki._is_ad_playing == false, "Ad state must be reset to false")
+	assert(state["comm_called"] == true, "Commercial callback called gracefully on rejection")
+	assert(poki.is_ad_playing() == false, "Ad state must be reset to false")
 	print("  -> PASS: Commercial rejection gracefully caught without hanging.")
 
 # ------------------------------------------------------------------------------
@@ -540,14 +541,14 @@ func _test_rewarded_rejection() -> void:
 	poki.rewarded_break(func(success: bool): state["rew_success"] = success)
 	await get_tree().create_timer(0.15).timeout
 	assert(state["rew_success"] == false, "Failed rewarded ad gracefully returns success=false")
-	assert(poki._is_ad_playing == false, "Ad state cleanly reset to false")
+	assert(poki.is_ad_playing() == false, "Ad state cleanly reset to false")
 	print("  -> PASS: Rewarded rejection caught cleanly with success=false.")
 
 # ------------------------------------------------------------------------------
 # Test 17: Duplicate Ad Finished Callback Ignored
 # ------------------------------------------------------------------------------
 func _test_duplicate_ad_finished_callback() -> void:
-	print("\n[TEST 17] Duplicate Ad Finished Callback Ignored (At Most Once Callback Guarantee)...")
+	print("\n[TEST 17] Duplicate Ad Finished Callback Ignored...")
 	var poki = get_node_or_null("/root/PokiService")
 	poki.reset_state_for_testing()
 	
@@ -563,6 +564,6 @@ func _test_duplicate_ad_finished_callback() -> void:
 	assert(counts["comm"] == 1, "Called once on finish")
 	
 	# Simulate spurious second callback coming from browser/JS:
-	poki._on_commercial_break_finished([])
-	assert(counts["comm"] == 1, "CRITICAL: Duplicate callback must NOT fire user callback a second time!")
+	poki.simulate_commercial_break_finished_for_test()
+	assert(counts["comm"] == 1, "Duplicate callback must not fire user callback again")
 	print("  -> PASS: Spurious duplicate callback rejected by state guard.")
