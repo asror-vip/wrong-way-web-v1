@@ -406,23 +406,26 @@ func _start_commercial_break(on_completed: Callable = Callable()) -> void:
 			_on_commercial_break_finished(current_token, args)
 		)
 		var window = JavaScriptBridge.get_interface("window")
-		window.poki_commercial_callback = _js_commercial_callback
+		window.poki_temp_commercial_cb = _js_commercial_callback
 		JavaScriptBridge.eval("""
-			if (window.PokiSDK) {
-				PokiSDK.commercialBreak().then(function() {
-					if (window.poki_commercial_callback) {
-						window.poki_commercial_callback(true);
-					}
-				}).catch(function(err) {
-					console.warn('PokiSDK commercialBreak rejected:', err);
-					if (window.poki_commercial_callback) {
-						window.poki_commercial_callback(false);
-					}
-				});
-			} else if (window.poki_commercial_callback) {
-				window.poki_commercial_callback(false);
-			}
-		""")
+			(function(localCb, localToken) {
+				window.poki_temp_commercial_cb = null;
+				if (window.PokiSDK) {
+					PokiSDK.commercialBreak().then(function() {
+						if (localCb) {
+							localCb(true);
+						}
+					}).catch(function(err) {
+						console.warn('Poki commercial rejected (' + localToken + '):', err);
+						if (localCb) {
+							localCb(false);
+						}
+					});
+				} else if (localCb) {
+					localCb(false);
+				}
+			})(window.poki_temp_commercial_cb, %d);
+		""" % current_token)
 	else:
 		# Desktop yoki offline muhitda 0.05s simulyatsiya
 		await get_tree().create_timer(0.05).timeout
@@ -506,23 +509,26 @@ func _start_rewarded_break(on_reward_result: Callable = Callable()) -> void:
 			_on_rewarded_break_finished(current_token, args)
 		)
 		var window = JavaScriptBridge.get_interface("window")
-		window.poki_rewarded_callback = _js_rewarded_callback
+		window.poki_temp_rewarded_cb = _js_rewarded_callback
 		JavaScriptBridge.eval("""
-			if (window.PokiSDK) {
-				PokiSDK.rewardedBreak().then(function(success) {
-					if (window.poki_rewarded_callback) {
-						window.poki_rewarded_callback(Boolean(success));
-					}
-				}).catch(function(err) {
-					console.warn('PokiSDK rewardedBreak rejected:', err);
-					if (window.poki_rewarded_callback) {
-						window.poki_rewarded_callback(false);
-					}
-				});
-			} else if (window.poki_rewarded_callback) {
-				window.poki_rewarded_callback(false);
-			}
-		""")
+			(function(localCb, localToken) {
+				window.poki_temp_rewarded_cb = null;
+				if (window.PokiSDK) {
+					PokiSDK.rewardedBreak().then(function(success) {
+						if (localCb) {
+							localCb(Boolean(success));
+						}
+					}).catch(function(err) {
+						console.warn('Poki rewarded rejected (' + localToken + '):', err);
+						if (localCb) {
+							localCb(false);
+						}
+					});
+				} else if (localCb) {
+					localCb(false);
+				}
+			})(window.poki_temp_rewarded_cb, %d);
+		""" % current_token)
 	else:
 		await get_tree().create_timer(0.05).timeout
 		_on_rewarded_break_finished(current_token, [false])

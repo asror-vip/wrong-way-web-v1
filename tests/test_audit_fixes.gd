@@ -31,6 +31,8 @@ class MockPokiSdk extends RefCounted:
 	var rewarded_result: bool = true
 	var ignore_commercial_callback: bool = false
 	var ignore_rewarded_callback: bool = false
+	var custom_commercial_delays: Array = []
+	var custom_rewarded_delays: Array = []
 
 	var commercial_call_count: int = 0
 	var rewarded_call_count: int = 0
@@ -56,18 +58,24 @@ class MockPokiSdk extends RefCounted:
 		commercial_call_count += 1
 		if ignore_commercial_callback:
 			return
+		var delay := ad_delay
+		if not custom_commercial_delays.is_empty():
+			delay = float(custom_commercial_delays.pop_front())
 		var tree := Engine.get_main_loop() as SceneTree
-		if ad_delay > 0.0 and tree:
-			await tree.create_timer(ad_delay).timeout
+		if delay > 0.0 and tree:
+			await tree.create_timer(delay).timeout
 		on_done.call([commercial_should_succeed])
 
 	func request_rewarded_break(on_result: Callable) -> void:
 		rewarded_call_count += 1
 		if ignore_rewarded_callback:
 			return
+		var delay := ad_delay
+		if not custom_rewarded_delays.is_empty():
+			delay = float(custom_rewarded_delays.pop_front())
 		var tree := Engine.get_main_loop() as SceneTree
-		if ad_delay > 0.0 and tree:
-			await tree.create_timer(ad_delay).timeout
+		if delay > 0.0 and tree:
+			await tree.create_timer(delay).timeout
 		on_result.call(rewarded_result)
 
 	func gameplay_start() -> void:
@@ -84,7 +92,7 @@ func _ready() -> void:
 	print("STARTING ADVANCED AUDIT TEST SUITE (22 COMPREHENSIVE TESTS)")
 	print("======================================================================")
 
-	_test_control_inverter_real_player()
+	await _test_control_inverter_real_player()
 	await _test_late_sdk_300ms()
 	await _test_late_sdk_1s()
 	await _test_late_sdk_2s()
@@ -116,9 +124,10 @@ func _ready() -> void:
 # Test 1: Real PlayerController & ControlInverter Multi-Zone Isolation & Respawn
 # ------------------------------------------------------------------------------
 func _test_control_inverter_real_player() -> void:
-	print("\n[TEST 1] Real PlayerController & ControlInverter Scenes...")
+	print("\n[TEST 1] Real PlayerController & ControlInverter Physical Overlap...")
 	var player_scene: PackedScene = load("res://scenes/player/player.tscn")
 	var player = player_scene.instantiate()
+	player.set_physics_process(false)
 	add_child(player)
 
 	var inv_scene: PackedScene = load("res://scenes/traps/control_inverter.tscn")
@@ -133,14 +142,19 @@ func _test_control_inverter_real_player() -> void:
 	assert(player.collision_layer == 2, "Player collision layer must be 2")
 	assert(player.collision_mask & 4 != 0, "Player must detect trap layer 4")
 
-	# 2. Area2D body_entered signal dispatch
-	inv_a.body_entered.emit(player)
-	assert(player.controls_inverted == true, "Zone A entered -> controls inverted")
-	assert(player.active_inverters.size() == 1, "Zone A registered in player")
+	# 2. Position player inside both physical zones (Overlap region)
+	inv_a.global_position = Vector2(100, 100)
+	inv_b.global_position = Vector2(120, 100)
+	player.global_position = Vector2(134, 140)
 
-	inv_b.body_entered.emit(player)
-	assert(player.controls_inverted == true, "Zone B entered -> controls stay inverted")
-	assert(player.active_inverters.size() == 2, "Both zones registered in player")
+	# Allow Godot 2D Physics Server to detect physical overlap
+	for _f in range(5):
+		await get_tree().physics_frame
+
+	assert(player.controls_inverted == true, "Physics overlap -> controls inverted")
+	assert(player.active_inverters.size() == 2, "Both zones detected by physics server")
+	assert(player.active_inverters.has(inv_a) == true, "Zone A physically active")
+	assert(player.active_inverters.has(inv_b) == true, "Zone B physically active")
 
 	# 3. Reset Zone A ONLY - does not cancel active Zone B
 	inv_a.reset_trap()
@@ -148,22 +162,28 @@ func _test_control_inverter_real_player() -> void:
 	assert(player.active_inverters.has(inv_b) == true, "Zone B must remain active")
 	assert(player.active_inverters.has(inv_a) == false, "Zone A removed from player")
 
-	# 4. Exit Zone B via Area2D body_exited signal
-	inv_b.body_exited.emit(player)
-	assert(player.controls_inverted == false, "Zone B exited -> controls restored")
-	assert(player.active_inverters.is_empty() == true, "Inverter map is empty")
+	# 4. Exit Zone B by physically moving player away
+	player.global_position = Vector2(500, 500)
+	for _f in range(5):
+		await get_tree().physics_frame
 
-	# 5. Respawn clears all active inverters
-	inv_a.body_entered.emit(player)
-	assert(player.controls_inverted == true, "Zone A re-entered")
+	assert(player.controls_inverted == false, "Physics exit -> controls restored")
+	assert(player.active_inverters.is_empty() == true, "Inverter map is empty after exit")
+
+	# 5. Move player back into Zone A, then test respawn()
+	player.global_position = Vector2(124, 140)
+	for _f in range(5):
+		await get_tree().physics_frame
+
+	assert(player.controls_inverted == true, "Physically re-entered Zone A")
 	player.respawn()
 	assert(player.controls_inverted == false, "Respawn must clear all zones")
-	assert(player.active_inverters.is_empty() == true, "Inverter map is empty")
+	assert(player.active_inverters.is_empty() == true, "Inverter map is empty after respawn")
 
 	inv_a.queue_free()
 	inv_b.queue_free()
 	player.queue_free()
-	print("  -> PASS: Real PlayerController & ControlInverter signals & layers verified.")
+	print("  -> PASS: Real 2D physics overlap, exit, reset & respawn verified.")
 
 # ------------------------------------------------------------------------------
 # Test 2: Late SDK Loading - 300 ms Delay
@@ -466,70 +486,91 @@ func _test_ad_safety_timeout_commercial() -> void:
 	print("  -> PASS: Commercial ad safely recovered after timeout.")
 
 # ------------------------------------------------------------------------------
-# Test 15: Ad Safety Timeout: Rewarded Break (Callback Never Arrives)
+# Test 15: Rewarded Timeout & Stale Async Promise Guard
 # ------------------------------------------------------------------------------
 func _test_ad_safety_timeout_rewarded() -> void:
-	print("\n[TEST 15] Ad Safety Timeout: Rewarded Break...")
+	print("\n[TEST 15] Rewarded Timeout & Stale Async Promise Guard...")
 	var poki = get_node_or_null("/root/PokiService")
 	poki.reset_state_for_testing()
-	poki.ad_timeout_seconds = 0.2 # Fast timeout for testing
+	poki.ad_timeout_seconds = 0.10
 
 	var mock := MockPokiSdk.new()
 	mock.available = true
-	mock.ignore_rewarded_callback = true # Simulating frozen rewarded callback
+	# Ad A takes 0.24s (longer than timeout 0.10s), Ad B takes 0.18s
+	mock.custom_rewarded_delays = [0.24, 0.18]
+	mock.rewarded_result = true
 	poki.set_mock_provider(mock)
 	await poki.ensure_sdk_initialized(0.5)
 
-	var reward_result := {"result": null}
-	poki.rewarded_break(func(success: bool): reward_result["result"] = success)
-	assert(poki.is_ad_playing() == true, "Rewarded is playing")
+	# 1. Start Rewarded Ad A
+	var reward_a := {"result": null}
+	poki.rewarded_break(func(success: bool): reward_a["result"] = success)
+	assert(poki.is_ad_playing() == true, "Rewarded Ad A is playing")
 
-	await get_tree().create_timer(0.35).timeout
+	# 2. Wait for Ad A timeout (0.13s > 0.10s)
+	await get_tree().create_timer(0.13).timeout
 	assert(poki.is_ad_playing() == false, "Rewarded state reset by timeout")
-	assert(reward_result["result"] == false, "Rewarded returns false on timeout")
-	print("  -> PASS: Rewarded ad safely recovered with success=false.")
+	assert(reward_a["result"] == false, "Rewarded A returns false on timeout")
+
+	# 3. Start Rewarded Ad B (timeout set to 0.6s so B won't timeout)
+	poki.ad_timeout_seconds = 0.60
+	var reward_b := {"result": null}
+	poki.rewarded_break(func(success: bool): reward_b["result"] = success)
+	assert(poki.is_ad_playing() == true, "Rewarded Ad B is actively playing")
+
+	# 4. Wait for Ad A's delayed promise to resolve (t=0.24s from start)
+	await get_tree().create_timer(0.13).timeout
+	assert(poki.is_ad_playing() == true, "Stale Ad A promise must NOT kill active Ad B!")
+	assert(reward_b["result"] == null, "Ad B result must NOT be set prematurely")
+
+	# 5. Wait for Ad B's promise to finish (t=0.33s from start)
+	await get_tree().create_timer(0.12).timeout
+	assert(poki.is_ad_playing() == false, "Rewarded Ad B finished cleanly")
+	assert(reward_b["result"] == true, "Rewarded Ad B completed with true")
+	print("  -> PASS: Stale async rewarded promise safely discarded by token guard.")
 
 # ------------------------------------------------------------------------------
-# Test 16: Late Ad Callback Token Guard: Stale Ad A Cannot Kill Ad B
+# Test 16: Late Async Commercial Promise: Stale Ad A Cannot Kill Ad B
 # ------------------------------------------------------------------------------
 func _test_late_ad_callback_after_timeout_ignored() -> void:
-	print("\n[TEST 16] Late Ad Callback Token Guard: Stale Ad A Cannot Kill Ad B...")
+	print("\n[TEST 16] Late Async Commercial Promise: Stale Ad A Cannot Kill Ad B...")
 	var poki = get_node_or_null("/root/PokiService")
 	poki.reset_state_for_testing()
-	poki.ad_timeout_seconds = 0.15
+	poki.ad_timeout_seconds = 0.10
 
 	var mock := MockPokiSdk.new()
 	mock.available = true
-	mock.ignore_commercial_callback = true
+	# Commercial Ad A takes 0.24s (longer than timeout 0.10s), Ad B takes 0.18s
+	mock.custom_commercial_delays = [0.24, 0.18]
 	poki.set_mock_provider(mock)
 	await poki.ensure_sdk_initialized(0.5)
 
-	# Ad A starts with token_a
-	var token_a: int = poki.get_ad_token() + 1
+	# 1. Start Commercial Ad A
 	var count_a := {"cb": 0}
 	poki.commercial_break(func(): count_a["cb"] += 1)
+	assert(poki.is_ad_playing() == true, "Commercial Ad A is playing")
 
-	await get_tree().create_timer(0.25).timeout
+	# 2. Wait for Ad A timeout (0.13s > 0.10s)
+	await get_tree().create_timer(0.13).timeout
 	assert(count_a["cb"] == 1, "Ad A finished via timeout recovery")
-	assert(poki.is_ad_playing() == false, "Ad A finished playing")
+	assert(poki.is_ad_playing() == false, "Ad A is no longer playing")
 
-	# Now Ad B starts with token_b!
+	# 3. Start Commercial Ad B (timeout set to 0.6s so B won't timeout)
+	poki.ad_timeout_seconds = 0.60
 	var count_b := {"cb": 0}
 	poki.commercial_break(func(): count_b["cb"] += 1)
-	assert(poki.is_ad_playing() == true, "Ad B is now actively playing")
-	var token_b: int = poki.get_ad_token()
-	assert(token_b != token_a, "Ad B must have a new unique token")
+	assert(poki.is_ad_playing() == true, "Commercial Ad B is actively playing")
 
-	# Late callback from Ad A arrives with token_a!
-	poki.simulate_commercial_break_finished_for_test(token_a)
-	assert(poki.is_ad_playing() == true, "Stale callback from Ad A must NOT kill Ad B!")
+	# 4. Wait for Ad A's delayed promise to resolve (t=0.24s from start)
+	await get_tree().create_timer(0.13).timeout
+	assert(poki.is_ad_playing() == true, "Stale Ad A promise must NOT kill active Ad B!")
 	assert(count_b["cb"] == 0, "Ad B callback must NOT be invoked prematurely")
 
-	# Ad B finishes with token_b
-	poki.simulate_commercial_break_finished_for_test(token_b)
-	assert(poki.is_ad_playing() == false, "Ad B finishes cleanly with its own token")
+	# 5. Wait for Ad B's promise to finish (t=0.33s from start)
+	await get_tree().create_timer(0.12).timeout
+	assert(poki.is_ad_playing() == false, "Commercial Ad B finished cleanly")
 	assert(count_b["cb"] == 1, "Ad B callback invoked once when Ad B finished")
-	print("  -> PASS: Stale ad callback safely rejected by token guard.")
+	print("  -> PASS: Stale async commercial promise safely discarded by token guard.")
 
 # ------------------------------------------------------------------------------
 # Test 17: Commercial -> Commercial Queue (Single Break, Single Callbacks)
