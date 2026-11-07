@@ -87,9 +87,12 @@ class MockPokiSdk extends RefCounted:
 	func game_loading_finished() -> void:
 		game_loading_finished_count += 1
 
+var _completed_tests_count: int = 0
+
 func _start_watchdog() -> void:
-	await get_tree().create_timer(30.0).timeout
-	printerr("CRITICAL: Test runner watchdog timeout! Exiting with code 1.")
+	await get_tree().create_timer(20.0).timeout
+	printerr("CRITICAL: Test runner watchdog timeout (%d/22)! Exiting with code 1." \
+			% _completed_tests_count)
 	get_tree().quit(1)
 
 func _ready() -> void:
@@ -99,27 +102,55 @@ func _ready() -> void:
 	print("======================================================================")
 
 	await _test_control_inverter_real_player()
+	_completed_tests_count += 1
 	await _test_late_sdk_300ms()
+	_completed_tests_count += 1
 	await _test_late_sdk_1s()
+	_completed_tests_count += 1
 	await _test_late_sdk_2s()
+	_completed_tests_count += 1
 	await _test_sdk_init_rejection()
+	_completed_tests_count += 1
 	await _test_sdk_never_arrives()
+	_completed_tests_count += 1
 	await _test_stale_init_callback_after_timeout()
+	_completed_tests_count += 1
 	await _test_duplicate_init_prevention()
+	_completed_tests_count += 1
 	await _test_sdk_gate_before_gameplay()
+	_completed_tests_count += 1
 	await _test_gameplay_start_stop_race()
+	_completed_tests_count += 1
 	await _test_lifecycle_rapid_start_stop_start()
+	_completed_tests_count += 1
 	await _test_lifecycle_start_during_ad_resumes_after()
+	_completed_tests_count += 1
 	await _test_lifecycle_stop_during_ad_cancels_start()
+	_completed_tests_count += 1
 	await _test_ad_safety_timeout_commercial()
+	_completed_tests_count += 1
 	await _test_ad_safety_timeout_rewarded()
+	_completed_tests_count += 1
 	await _test_late_ad_callback_after_timeout_ignored()
+	_completed_tests_count += 1
 	await _test_ad_queue_commercial_to_commercial()
+	_completed_tests_count += 1
 	await _test_ad_queue_commercial_to_rewarded()
+	_completed_tests_count += 1
 	await _test_ad_queue_rewarded_to_commercial()
+	_completed_tests_count += 1
 	await _test_ad_queue_chained_requests()
+	_completed_tests_count += 1
 	await _test_commercial_rejection()
+	_completed_tests_count += 1
 	await _test_rewarded_rejection()
+	_completed_tests_count += 1
+
+	if _completed_tests_count != 22:
+		printerr("CRITICAL ERROR: Only %d/22 tests completed! Exiting with code 1." \
+				% _completed_tests_count)
+		get_tree().quit(1)
+		return
 
 	print("\n======================================================================")
 	print("ALL 22 ADVANCED AUDIT TESTS PASSED CLEANLY! (EXIT CODE 0)")

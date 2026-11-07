@@ -367,10 +367,14 @@ async function launchChromeWithCDP(port, debuggingPort, onNewDocumentScript = nu
         });
     }
 
-    // Navigate to target URL
-    await client.send('Page.navigate', { url: `http://127.0.0.1:${port}/` });
-
-    return { proc, client };
+    // Do NOT navigate yet; caller registers all listeners before triggering navigate()
+    return {
+        proc,
+        client,
+        navigate: async () => {
+            await client.send('Page.navigate', { url: `http://127.0.0.1:${port}/` });
+        }
+    };
 }
 
 // -------------------------------------------------------------------
@@ -393,39 +397,66 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         console.error('  [ERROR] Pre-flight failed:', e.message);
     }
 
-    // Instrument spy on new document to detect actual PokiSDK.gameLoadingFinished invocation
+    // Pre-document spy strictly recording actual PokiSDK.gameLoadingFinished invocation
     const spyScript = `
         (function() {
             window.__poki_game_loading_finished_called = false;
             let _poki = window.PokiSDK;
+            let _glf = undefined;
+
+            function hookPoki(sdk) {
+                if (!sdk || sdk.__spy_hooked) return;
+                sdk.__spy_hooked = true;
+                _glf = sdk.gameLoadingFinished;
+                Object.defineProperty(sdk, 'gameLoadingFinished', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() {
+                        return function(...args) {
+                            window.__poki_game_loading_finished_called = true;
+                            if (typeof _glf === 'function') {
+                                return _glf.apply(this, args);
+                            }
+                        };
+                    },
+                    set: function(fn) {
+                        _glf = fn;
+                    }
+                });
+            }
+
             Object.defineProperty(window, 'PokiSDK', {
                 configurable: true,
                 enumerable: true,
                 get: function() { return _poki; },
                 set: function(sdk) {
                     _poki = sdk;
-                    if (sdk && typeof sdk.gameLoadingFinished === 'function') {
-                        const orig = sdk.gameLoadingFinished.bind(sdk);
-                        sdk.gameLoadingFinished = function() {
-                            window.__poki_game_loading_finished_called = true;
-                            return orig.apply(this, arguments);
-                        };
-                    }
+                    hookPoki(sdk);
                 }
             });
+
+            const pollInterval = setInterval(function() {
+                if (window.PokiSDK) {
+                    hookPoki(window.PokiSDK);
+                    if (window.PokiSDK.__spy_hooked) clearInterval(pollInterval);
+                }
+            }, 5);
+            setTimeout(function() { clearInterval(pollInterval); }, 15000);
         })();
     `;
 
-    const { proc, client } = await launchChromeWithCDP(port, debugPort, spyScript);
+    const { proc, client, navigate } = await launchChromeWithCDP(port, debugPort, spyScript);
 
-    // Track network events via CDP
+    // Track network events via CDP - ALL REGISTERED BEFORE Page.navigate
     const networkRequests = new Map();
     const networkResponses = [];
     const networkFailures = [];
+    const canceledRequests = [];
     const http404s = [];
     let pokiCdnReq = null;
     let pokiCdnRes = null;
     let pokiCdnFinished = false;
+    let pokiCdnFailed = false;
 
     client.on('Network.requestWillBeSent', (params) => {
         networkRequests.set(params.requestId, params);
@@ -456,13 +487,41 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     });
 
     client.on('Network.loadingFailed', (params) => {
-        // If request was canceled by navigation away from about:blank, ignore
-        if (params.canceled === true) return;
-        networkFailures.push(params);
-        console.warn(`  [CDP Network Warning] Request failed:`, params.errorText);
+        const req = networkRequests.get(params.requestId);
+        const url = req ? req.request.url : 'unknown';
+        const isPoki = url.includes('game-cdn.poki.com') || url.includes('poki-sdk');
+        const isGameResource = url.startsWith(`http://127.0.0.1:${port}`)
+            || url.includes('.wasm') || url.includes('.pck')
+            || url.includes('.js') || url.includes('.html');
+
+        if (isPoki) {
+            pokiCdnFailed = true;
+            console.error(`  [CDP Poki CDN Failure] Poki CDN request failed: ${params.errorText}`);
+        }
+
+        if (params.canceled) {
+            canceledRequests.push({ url, errorText: params.errorText, type: params.type });
+            console.log(`  [CDP Canceled Request] ${url} (${params.errorText})`);
+            // Required resource or Poki CDN cancellation is a fatal failure!
+            if (isPoki || (isGameResource && !url.includes('about:blank') && url !== 'unknown')) {
+                networkFailures.push({
+                    url,
+                    errorText: `${params.errorText} (canceled)`,
+                    type: params.type
+                });
+            }
+        } else {
+            // Resource-aware: only fail on Poki CDN or local game resource failures
+            if (isPoki || isGameResource) {
+                networkFailures.push({ url, errorText: params.errorText, type: params.type });
+                console.warn(`  [CDP Network Failed] ${url}: ${params.errorText}`);
+            } else {
+                console.log(`  [CDP External Block Ignored] ${url}: ${params.errorText}`);
+            }
+        }
     });
 
-    // Track console & runtime errors
+    // Track console & runtime errors - ALL REGISTERED BEFORE Page.navigate
     const consoleErrors = [];
     const runtimeExceptions = [];
     client.on('Runtime.consoleAPICalled', (params) => {
@@ -476,6 +535,9 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         runtimeExceptions.push(params.exceptionDetails);
         console.warn(`  [CDP Runtime Exception]:`, params.exceptionDetails.text);
     });
+
+    // All listeners active -> begin navigation!
+    await navigate();
 
     // Synchronize by waiting until Godot reaches SdkState.READY in runtime
     console.log('  [CDP Sync] Awaiting Godot SdkState.READY in browser runtime...');
@@ -493,10 +555,11 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         'typeof window.PokiSDK.gameLoadingFinished === "function"'
     );
 
-    const gameLoadingFinishedInvoked = await client.evaluate(`
-        window.__poki_game_loading_finished_called === true ||
-        (window.godot_poki_state && window.godot_poki_state.game_loading_completed === true)
-    `);
+    // Strictly require pre-document spy to record SDK method invocation
+    console.log('  [CDP Sync] Awaiting PokiSDK.gameLoadingFinished() invocation...');
+    const gameLoadingFinishedInvoked = await waitForCondition(async () => {
+        return await client.evaluate('window.__poki_game_loading_finished_called === true');
+    }, 8000);
 
     const webglContextValid = await client.evaluate(`
         (function() {
@@ -523,7 +586,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         { name: '2. Chrome requested official Poki CDN script via CDP (Network.requestWillBeSent)', pass: pokiCdnReq !== null },
         { name: '3. Official Poki CDN returned HTTP status 200 (Network.responseReceived)', pass: pokiCdnRes !== null && pokiCdnRes.status === 200 },
         { name: '4. Official Poki CDN returned JavaScript MIME type (text/javascript)', pass: pokiCdnRes !== null && (pokiCdnRes.mimeType.includes('javascript') || pokiCdnRes.mimeType.includes('ecmascript')) },
-        { name: '5. Official Poki CDN script loading completed cleanly (Network.loadingFinished)', pass: pokiCdnFinished === true },
+        { name: '5. Official Poki CDN script loading completed cleanly (Network.loadingFinished)', pass: pokiCdnFinished === true && pokiCdnFailed === false },
         { name: '6. window.PokiSDK object & required methods exist in browser runtime', pass: sdkObjectValid === true },
         { name: '7. PokiSDK.gameLoadingFinished() was actually called by Godot runtime', pass: gameLoadingFinishedInvoked === true },
         { name: '8. WebGL context created and active on #canvas (not lost, functions valid)', pass: webglContextValid === true },
@@ -532,7 +595,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         { name: '11. Godot PokiService reports is_poki_available is true', pass: pokiState && pokiState.is_poki_available === true },
         { name: '12. Zero fatal JS / WASM runtime exceptions via CDP (Runtime.exceptionThrown)', pass: runtimeExceptions.length === 0 },
         { name: '13. Zero console error events via CDP (Runtime.consoleAPICalled type===error)', pass: consoleErrors.length === 0 },
-        { name: '14. Zero relevant network loading failures via CDP (Network.loadingFailed)', pass: networkFailures.length === 0 },
+        { name: '14. Zero relevant network loading failures via CDP (Network.loadingFailed)', pass: networkFailures.length === 0 && pokiCdnFailed === false },
         { name: '15. Zero HTTP 404 network responses collected via CDP', pass: http404s.length === 0 }
     ];
 
@@ -550,6 +613,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         runtimeExceptions: runtimeExceptions.length,
         consoleErrors: consoleErrors.length,
         networkFailures: networkFailures.length,
+        canceledRequests: canceledRequests.length,
         http404s: http404s.length
     };
 }
@@ -568,7 +632,8 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const server = createServer(port, 'REAL_JSBRIDGE_E2E', serverRequests);
     await new Promise(r => server.listen(port, r));
 
-    const { proc, client } = await launchChromeWithCDP(port, debugPort);
+    const { proc, client, navigate } = await launchChromeWithCDP(port, debugPort);
+    await navigate();
 
     // Wait until Godot finishes loading and Web Bridge is ready
     console.log('  [CDP Sync] Awaiting Godot Web Bridge initialization...');
@@ -829,7 +894,8 @@ async function runSuite3MockFaultInjection(basePort = 8103, baseDebugPort = 9233
         const server = createServer(port, sc.name, serverRequests);
         await new Promise(r => server.listen(port, r));
 
-        const { proc, client } = await launchChromeWithCDP(port, debugPort);
+        const { proc, client, navigate } = await launchChromeWithCDP(port, debugPort);
+        await navigate();
 
         // 1. Wait for target SdkState
         const stateReached = await waitForCondition(async () => {
