@@ -26,6 +26,13 @@ func load_local_levels() -> void:
 	is_loaded = true
 	print("LevelDatabase: %d ta daraja muvaffaqiyatli yuklandi!" % _levels_cache.size())
 	levels_loaded.emit(_levels_cache.size())
+	if OS.has_feature("web"):
+		_register_web_interface()
+
+func _register_web_interface() -> void:
+	var win = JavaScriptBridge.get_interface("window")
+	if win:
+		win.godot_level_count = _levels_cache.size()
 
 func _populate_cache(items: Array) -> void:
 	for item in items:
