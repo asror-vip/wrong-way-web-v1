@@ -32,10 +32,12 @@ var _init_token: int = 0
 var _ad_token: int = 0
 var ad_timeout_seconds: float = 12.0
 var last_commercial_succeeded: bool = true
+var last_rewarded_succeeded: bool = false
 
 # Lifecycle race condition himoyasi
 var _gameplay_desired: bool = false
 var _gameplay_notified_to_poki: bool = false
+var _game_loading_completed: bool = false
 var _lifecycle_seq: int = 0
 
 var _active_js_callbacks: Dictionary = {}
@@ -100,6 +102,12 @@ func _setup_web_test_bridge() -> void:
 	win.godot_poki_reset_ad_state = cb_reset_ad
 	_sync_web_state()
 
+func _process(_delta: float) -> void:
+	if OS.has_feature("web"):
+		var win = JavaScriptBridge.get_interface("window")
+		if win:
+			win.godot_process_frames = Engine.get_process_frames()
+
 func _sync_web_state() -> void:
 	if not OS.has_feature("web"):
 		return
@@ -111,8 +119,12 @@ func _sync_web_state() -> void:
 		"ad_token": _ad_token,
 		"init_token": _init_token,
 		"last_commercial_succeeded": last_commercial_succeeded,
+		"last_rewarded_succeeded": last_rewarded_succeeded,
 		"gameplay_desired": _gameplay_desired,
-		"gameplay_notified": _gameplay_notified_to_poki
+		"gameplay_notified": _gameplay_notified_to_poki,
+		"game_loading_completed": _game_loading_completed,
+		"active_callbacks_count": _active_js_callbacks.size(),
+		"active_callbacks_tokens": _active_js_callbacks.keys()
 	}
 	JavaScriptBridge.eval("window.godot_poki_state = %s;" % JSON.stringify(state_dict))
 
@@ -165,6 +177,9 @@ func is_gameplay_notified_to_poki() -> bool:
 func is_last_commercial_succeeded() -> bool:
 	return last_commercial_succeeded
 
+func is_last_rewarded_succeeded() -> bool:
+	return last_rewarded_succeeded
+
 func simulate_commercial_break_finished_for_test(
 	token: int = -1, success: bool = true
 ) -> void:
@@ -179,6 +194,7 @@ func reset_ad_state_for_testing() -> void:
 	_ad_token += 1
 	ad_timeout_seconds = 12.0
 	last_commercial_succeeded = true
+	last_rewarded_succeeded = false
 	_is_ad_playing = false
 	_current_ad_type = AdType.NONE
 	_active_commercial_callbacks.clear()
@@ -194,6 +210,8 @@ func reset_state_for_testing() -> void:
 	_ad_token += 1
 	ad_timeout_seconds = 12.0
 	last_commercial_succeeded = true
+	last_rewarded_succeeded = false
+	_game_loading_completed = false
 	sdk_state = SdkState.UNINITIALIZED
 	is_poki_available = false
 	is_gameplay_running = false
@@ -375,6 +393,8 @@ func ensure_sdk_initialized(max_wait: float = 4.0) -> int:
 # ------------------------------------------------------------------------------
 func game_loading_finished() -> void:
 	print("PokiService: gameLoadingFinished()")
+	_game_loading_completed = true
+	_sync_web_state()
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
 		await ensure_sdk_initialized(4.0)
 	if _sdk_mock_provider != null:
@@ -486,6 +506,7 @@ func _start_commercial_break(on_completed: Callable = Callable()) -> void:
 			_on_commercial_break_finished(current_token, args)
 		)
 		_active_js_callbacks[current_token] = cb
+		_sync_web_state()
 		var window = JavaScriptBridge.get_interface("window")
 		window.poki_temp_commercial_cb = cb
 		JavaScriptBridge.eval("""
@@ -516,11 +537,13 @@ func _on_commercial_break_finished(token: int, args: Array = []) -> void:
 	# Duplicate callback guard: reklama tugagan bo'lsa, takroriy callback o'tkazilmaydi
 	if token != _ad_token:
 		_active_js_callbacks.erase(token)
+		_sync_web_state()
 		print("PokiService: Eskirgan commercialBreak callback (token: %d, joriy: %d) e'tiborsiz." \
 				% [token, _ad_token])
 		return
 	if not _is_ad_playing or _current_ad_type != AdType.COMMERCIAL:
 		_active_js_callbacks.erase(token)
+		_sync_web_state()
 		print("PokiService: Takroriy yoki eskirgan commercialBreak callback e'tiborsiz.")
 		return
 
@@ -595,6 +618,7 @@ func _start_rewarded_break(on_reward_result: Callable = Callable()) -> void:
 			_on_rewarded_break_finished(current_token, args)
 		)
 		_active_js_callbacks[current_token] = cb
+		_sync_web_state()
 		var window = JavaScriptBridge.get_interface("window")
 		window.poki_temp_rewarded_cb = cb
 		JavaScriptBridge.eval("""
@@ -624,11 +648,13 @@ func _on_rewarded_break_finished(token: int, args: Array = []) -> void:
 	# Duplicate callback guard: reklama tugagan bo'lsa, takroriy callback o'tkazilmaydi
 	if token != _ad_token:
 		_active_js_callbacks.erase(token)
+		_sync_web_state()
 		print("PokiService: Eskirgan rewardedBreak callback (token: %d, joriy: %d) e'tiborsiz." \
 				% [token, _ad_token])
 		return
 	if not _is_ad_playing or _current_ad_type != AdType.REWARDED:
 		_active_js_callbacks.erase(token)
+		_sync_web_state()
 		print("PokiService: Takroriy yoki eskirgan rewardedBreak callback e'tiborsiz.")
 		return
 
@@ -636,6 +662,7 @@ func _on_rewarded_break_finished(token: int, args: Array = []) -> void:
 	var success: bool = false
 	if args.size() > 0:
 		success = bool(args[0])
+	last_rewarded_succeeded = success
 	print("PokiService: rewardedBreak yakunlandi (token: %d). Natija: %s" \
 			% [token, str(success)])
 	_is_ad_playing = false

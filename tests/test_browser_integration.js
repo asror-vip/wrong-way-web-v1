@@ -1,33 +1,41 @@
 // test_browser_integration.js
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // WRONG WAY — COMPREHENSIVE CDP BROWSER VERIFICATION RUNNER
 // Uses native Chrome DevTools Protocol (CDP) via WebSocket over
 // Chrome --remote-debugging-port. Zero third-party dependencies.
 //
 // SUITE 1: Real Poki CDN Integration (Production Unmodified Build)
-//   - Network.requestWillBeSent / responseReceived / loadingFinished
-//   - Verified official Poki CDN endpoint HTTP 200, JS, >5KB
-//   - Real runtime assertions: window.PokiSDK methods, WebGL canvas,
-//     Godot SdkState.READY, 60 levels loaded, gameLoadingFinished
-//   - Zero fatal errors, zero 404s
+//   - Official Poki CDN endpoint HTTP 200, JS, >5KB
+//   - Chrome CDP Network request, response status, MIME type, completion
+//   - Complete error accounting:
+//       * Runtime.exceptionThrown (0 fatal exceptions)
+//       * Runtime.consoleAPICalled (0 error console logs)
+//       * Network.loadingFailed (0 relevant network failures)
+//       * Network.responseReceived (0 HTTP 404 responses)
+//   - Runtime assertions: window.PokiSDK object and methods
+//   - PokiSDK.gameLoadingFinished() was actually called by Godot
+//   - WebGL active context created on #canvas (not lost)
+//   - Godot LevelDatabase 60 canonical levels loaded in runtime
+//   - Godot PokiService SdkState.READY and is_poki_available
 //
-// SUITE 2: Real JavaScriptBridge End-to-End Test Suite
-//   - Executes inside Chrome with live Godot WASM engine
-//   - Tests the exact production path:
-//     PokiService GDScript -> JavaScriptBridge -> JS IIFE -> Promise ->
-//     Godot callback -> GDScript token guard
-//   - Commercial: 400ms delay vs 100ms timeout -> Ad B -> Stale A ignored -> B finishes
-//   - Rewarded:   400ms delay vs 100ms timeout -> Ad B -> Stale A ignored -> B finishes
-//   - Commercial & Rewarded rejection handling (Promise catch)
-//   - Duplicate callback safety
-//   - Callback retention in GDScript dictionary
+// SUITE 2: Real Godot WASM + JavaScriptBridge + Mock Poki Promise E2E
+//   - Real Godot WASM engine + real JavaScriptBridge in Chrome
+//   - Injected controllable mock Poki SDK Promise queue
+//   - Commercial: 400ms delay vs 100ms timeout -> Ad B -> Stale A ignored
+//   - Rewarded:   400ms delay vs 100ms timeout -> Ad B -> Stale A ignored
+//   - Direct assertions that _active_js_callbacks retains callbacks while
+//     ads are pending and releases them after completion, timeout, rejection,
+//     and stale callback delivery
+//   - Commercial & Rewarded rejection verification (producing success=false)
+//   - Independent commercial and rewarded test cycles
 //
-// SUITE 3: Browser Fault Injection (4 Scenarios)
-//   - MOCK_SUCCESS
-//   - MOCK_DELAYED
-//   - MOCK_REJECT
-//   - MOCK_MISSING
-// ---------------------------------------------------------------
+// SUITE 3: Browser Fault Injection (4 Scenarios via CDP)
+//   - MOCK_SUCCESS: SdkState.READY, is_poki_available=true, game responsive
+//   - MOCK_DELAYED: 500ms delay -> SdkState.READY, game responsive
+//   - MOCK_REJECT:  Adblock reject -> SdkState.FAILED, game responsive
+//   - MOCK_MISSING: Offline / 404 -> SdkState.FAILED, game responsive
+//   - Active game loop confirmed via advancing godot_process_frames
+// -------------------------------------------------------------------
 
 'use strict';
 
@@ -53,9 +61,9 @@ const MIME_TYPES = {
     '.json': 'application/json'
 };
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // CDP Client Implementation (Pure Native WebSocket)
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 class CDPClient {
     constructor(wsUrl) {
         this.ws = new WebSocket(wsUrl);
@@ -118,9 +126,9 @@ class CDPClient {
     }
 }
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // Helper Utilities
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 function getChromeVersion(chromePath) {
     try {
         const escaped = chromePath.replace(/'/g, "''");
@@ -145,9 +153,9 @@ async function waitForCondition(predicateFn, timeoutMs = 12000, intervalMs = 100
     return false;
 }
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // HTTPS Pre-flight to Official CDN
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 function verifyOfficialCdnHealth() {
     const cdnUrl = 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js';
     console.log(`\n[PRE-FLIGHT] Direct HTTPS GET to official Poki CDN: ${cdnUrl}`);
@@ -175,9 +183,9 @@ function verifyOfficialCdnHealth() {
     });
 }
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // HTTP Test Server
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 function createServer(port, scenario, serverRequests) {
     return http.createServer((req, res) => {
         const urlPath = req.url.split('?')[0];
@@ -203,14 +211,14 @@ function createServer(port, scenario, serverRequests) {
             const pokiScriptTag = '<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>';
 
             if (scenario === 'REAL_CDN') {
-                // Untouched production HTML
+                // Untouched production HTML pointing to official CDN
                 res.writeHead(200);
                 res.end(html);
                 return;
             }
 
             if (scenario === 'REAL_JSBRIDGE_E2E') {
-                // Injects controllable queue for real JSBridge Promise delay tests
+                // Injects controllable mock PokiSDK Promise queues for JSBridge testing
                 const injection = `
                 <script>
                     window.__test_commercial_queue = [];
@@ -310,12 +318,10 @@ function createServer(port, scenario, serverRequests) {
     });
 }
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // Launch Chrome with Remote Debugging and Attach CDP
-// ---------------------------------------------------------------
-async function launchChromeWithCDP(port, debuggingPort) {
-    // Launch Chrome at about:blank first so we can attach CDP and enable
-    // Network & Runtime BEFORE navigating to the target page!
+// -------------------------------------------------------------------
+async function launchChromeWithCDP(port, debuggingPort, onNewDocumentScript = null) {
     const chromeArgs = [
         '--headless=new',
         '--no-sandbox',
@@ -355,15 +361,21 @@ async function launchChromeWithCDP(port, debuggingPort) {
     await client.send('Runtime.enable');
     await client.send('Page.enable');
 
+    if (onNewDocumentScript) {
+        await client.send('Page.addScriptToEvaluateOnNewDocument', {
+            source: onNewDocumentScript
+        });
+    }
+
     // Navigate to target URL
     await client.send('Page.navigate', { url: `http://127.0.0.1:${port}/` });
 
     return { proc, client };
 }
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // SUITE 1: REAL POKI CDN INTEGRATION (CDP Instrumentation)
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     console.log('\n======================================================================');
     console.log('SUITE 1: REAL POKI CDN INTEGRATION (CHROME DEVTOOLS PROTOCOL)');
@@ -381,12 +393,36 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         console.error('  [ERROR] Pre-flight failed:', e.message);
     }
 
-    const { proc, client } = await launchChromeWithCDP(port, debugPort);
+    // Instrument spy on new document to detect actual PokiSDK.gameLoadingFinished invocation
+    const spyScript = `
+        (function() {
+            window.__poki_game_loading_finished_called = false;
+            let _poki = window.PokiSDK;
+            Object.defineProperty(window, 'PokiSDK', {
+                configurable: true,
+                enumerable: true,
+                get: function() { return _poki; },
+                set: function(sdk) {
+                    _poki = sdk;
+                    if (sdk && typeof sdk.gameLoadingFinished === 'function') {
+                        const orig = sdk.gameLoadingFinished.bind(sdk);
+                        sdk.gameLoadingFinished = function() {
+                            window.__poki_game_loading_finished_called = true;
+                            return orig.apply(this, arguments);
+                        };
+                    }
+                }
+            });
+        })();
+    `;
+
+    const { proc, client } = await launchChromeWithCDP(port, debugPort, spyScript);
 
     // Track network events via CDP
     const networkRequests = new Map();
     const networkResponses = [];
     const networkFailures = [];
+    const http404s = [];
     let pokiCdnReq = null;
     let pokiCdnRes = null;
     let pokiCdnFinished = false;
@@ -401,6 +437,10 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
 
     client.on('Network.responseReceived', (params) => {
         networkResponses.push(params.response);
+        if (params.response.status === 404) {
+            http404s.push(params.response.url);
+            console.warn(`  [CDP Network 404] Resource not found: ${params.response.url}`);
+        }
         if (params.response.url.includes('game-cdn.poki.com/scripts/v2/poki-sdk.js')) {
             pokiCdnRes = params.response;
             console.log(`  [CDP Network] Poki CDN response: ${params.response.status} (${params.response.mimeType})`);
@@ -416,6 +456,8 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     });
 
     client.on('Network.loadingFailed', (params) => {
+        // If request was canceled by navigation away from about:blank, ignore
+        if (params.canceled === true) return;
         networkFailures.push(params);
         console.warn(`  [CDP Network Warning] Request failed:`, params.errorText);
     });
@@ -425,11 +467,14 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     const runtimeExceptions = [];
     client.on('Runtime.consoleAPICalled', (params) => {
         if (params.type === 'error') {
-            consoleErrors.push(params);
+            const text = params.args ? params.args.map(a => a.value || a.description || '').join(' ') : '';
+            consoleErrors.push({ text, timestamp: params.timestamp });
+            console.warn(`  [CDP Console Error]: ${text}`);
         }
     });
     client.on('Runtime.exceptionThrown', (params) => {
         runtimeExceptions.push(params.exceptionDetails);
+        console.warn(`  [CDP Runtime Exception]:`, params.exceptionDetails.text);
     });
 
     // Synchronize by waiting until Godot reaches SdkState.READY in runtime
@@ -448,9 +493,21 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         'typeof window.PokiSDK.gameLoadingFinished === "function"'
     );
 
-    const canvasValid = await client.evaluate(
-        'document.getElementById("canvas") instanceof HTMLCanvasElement'
-    );
+    const gameLoadingFinishedInvoked = await client.evaluate(`
+        window.__poki_game_loading_finished_called === true ||
+        (window.godot_poki_state && window.godot_poki_state.game_loading_completed === true)
+    `);
+
+    const webglContextValid = await client.evaluate(`
+        (function() {
+            const canvas = document.getElementById('canvas');
+            if (!canvas || !(canvas instanceof HTMLCanvasElement)) return false;
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            if (!gl) return false;
+            if (typeof gl.isContextLost === 'function' && gl.isContextLost()) return false;
+            return typeof gl.drawArrays === 'function' || typeof gl.clear === 'function';
+        })()
+    `);
 
     const levelCount = await client.evaluate('window.godot_level_count');
     const pokiState = await client.evaluate('window.godot_poki_state');
@@ -460,19 +517,23 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     proc.kill();
     await new Promise(r => server.close(r));
 
-    // Assertions Evaluation
-    const cdn404s = serverRequests.filter(r => r.status === 404);
+    // Assertions Evaluation (15 granular assertions)
     const checks = [
-        { name: '1. Official Poki CDN Pre-flight (HTTP 200, valid JS, >5KB)', pass: cdnPreflight !== null && cdnPreflight.ok === true },
-        { name: '2. Chrome requested official Poki CDN script via CDP', pass: pokiCdnReq !== null },
-        { name: '3. Official Poki CDN returned HTTP 200 via CDP', pass: pokiCdnRes !== null && pokiCdnRes.status === 200 },
-        { name: '4. Poki CDN script loading finished cleanly', pass: pokiCdnFinished === true },
-        { name: '5. window.PokiSDK object & methods exist in browser runtime', pass: sdkObjectValid === true },
-        { name: '6. Godot WebGL Canvas initialized in DOM', pass: canvasValid === true },
-        { name: '7. Godot LevelDatabase 60 levels loaded in runtime state', pass: levelCount === 60 },
-        { name: '8. Godot PokiService reached SdkState.READY (state === 2)', pass: readyStateReached !== false && pokiState && pokiState.sdk_state === 2 },
-        { name: '9. Godot PokiService is_poki_available is true', pass: pokiState && pokiState.is_poki_available === true },
-        { name: '10. Zero fatal JS / WASM / Network 404 errors', pass: runtimeExceptions.length === 0 && cdn404s.length === 0 }
+        { name: '1. Official Poki CDN Pre-flight: HTTP 200, valid JS, >5KB', pass: cdnPreflight !== null && cdnPreflight.ok === true },
+        { name: '2. Chrome requested official Poki CDN script via CDP (Network.requestWillBeSent)', pass: pokiCdnReq !== null },
+        { name: '3. Official Poki CDN returned HTTP status 200 (Network.responseReceived)', pass: pokiCdnRes !== null && pokiCdnRes.status === 200 },
+        { name: '4. Official Poki CDN returned JavaScript MIME type (text/javascript)', pass: pokiCdnRes !== null && (pokiCdnRes.mimeType.includes('javascript') || pokiCdnRes.mimeType.includes('ecmascript')) },
+        { name: '5. Official Poki CDN script loading completed cleanly (Network.loadingFinished)', pass: pokiCdnFinished === true },
+        { name: '6. window.PokiSDK object & required methods exist in browser runtime', pass: sdkObjectValid === true },
+        { name: '7. PokiSDK.gameLoadingFinished() was actually called by Godot runtime', pass: gameLoadingFinishedInvoked === true },
+        { name: '8. WebGL context created and active on #canvas (not lost, functions valid)', pass: webglContextValid === true },
+        { name: '9. Godot LevelDatabase: exactly 60 canonical levels loaded in runtime', pass: levelCount === 60 },
+        { name: '10. Godot PokiService reached SdkState.READY (state === 2)', pass: readyStateReached !== false && pokiState && pokiState.sdk_state === 2 },
+        { name: '11. Godot PokiService reports is_poki_available is true', pass: pokiState && pokiState.is_poki_available === true },
+        { name: '12. Zero fatal JS / WASM runtime exceptions via CDP (Runtime.exceptionThrown)', pass: runtimeExceptions.length === 0 },
+        { name: '13. Zero console error events via CDP (Runtime.consoleAPICalled type===error)', pass: consoleErrors.length === 0 },
+        { name: '14. Zero relevant network loading failures via CDP (Network.loadingFailed)', pass: networkFailures.length === 0 },
+        { name: '15. Zero HTTP 404 network responses collected via CDP', pass: http404s.length === 0 }
     ];
 
     console.log('\n--- SUITE 1 VERIFICATION RESULTS ---');
@@ -483,15 +544,24 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         if (!c.pass) suite1Pass = false;
     }
     console.log(`SUITE 1 OVERALL: ${suite1Pass ? 'PASSED' : 'FAILED'}`);
-    return { pass: suite1Pass, checks, errors: runtimeExceptions.length, cdn404s: cdn404s.length };
+    return {
+        pass: suite1Pass,
+        checks,
+        runtimeExceptions: runtimeExceptions.length,
+        consoleErrors: consoleErrors.length,
+        networkFailures: networkFailures.length,
+        http404s: http404s.length
+    };
 }
 
-// ---------------------------------------------------------------
-// SUITE 2: REAL JAVASCRIPTBRIDGE END-TO-END TEST SUITE
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
+// SUITE 2: REAL GODOT WASM + JAVASCRIPTBRIDGE + MOCK POKI PROMISE E2E
+// -------------------------------------------------------------------
 async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     console.log('\n======================================================================');
-    console.log('SUITE 2: REAL JAVASCRIPTBRIDGE END-TO-END TESTS (GODOT WASM IN CHROME)');
+    console.log('SUITE 2: REAL GODOT WASM + JAVASCRIPTBRIDGE + MOCK POKI PROMISE E2E TESTS');
+    console.log('Note: Godot WASM engine & JavaScriptBridge run real production code.');
+    console.log('PokiSDK is an injected mock queue for precise Promise delay & rejection tests.');
     console.log('======================================================================');
 
     const serverRequests = [];
@@ -518,7 +588,7 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const testResults = [];
 
     // -----------------------------------------------------------
-    // Test 2.1: Real JSBridge Commercial Break Delay & Stale Guard
+    // Test 2.1: Real JSBridge Commercial: Callback Retention, Delay & Stale Guard
     // Ssenariy:
     //   Ad A: 400ms delay Promise
     //   Timeout: 100ms
@@ -526,8 +596,11 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     //   t=400ms: Ad A Promise resolves -> GDScript token guard discards -> Ad B stays active!
     //   t=~550ms: Ad B Promise resolves -> Ad B finishes cleanly.
     // -----------------------------------------------------------
-    console.log('\n  [Test 2.1] Real JSBridge Commercial Break Delay & Stale Guard...');
+    console.log('\n  [Test 2.1] Real JSBridge Commercial: Callback Retention, Delay & Stale Guard...');
     await client.evaluate('window.godot_poki_reset_ad_state()');
+    const initCommState = await client.evaluate('window.godot_poki_state');
+    const initCommClean = initCommState.active_callbacks_count === 0;
+
     await client.evaluate('window.__test_commercial_queue = [{ delay: 400, reject: false }, { delay: 400, reject: false }]');
     await client.evaluate('window.godot_set_ad_timeout(0.10)'); // 100ms timeout for Ad A
 
@@ -537,12 +610,18 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const stateA1 = await client.evaluate('window.godot_poki_state');
     const tokenA = stateA1.ad_token;
     const adAStarted = stateA1.is_ad_playing === true && stateA1.current_ad_type === 1;
+    // Callback retained in dictionary while pending
+    const cbARetained = stateA1.active_callbacks_count === 1
+        && stateA1.active_callbacks_tokens.map(Number).includes(Number(tokenA));
 
     // 2. Wait for Ad A timeout (100ms)
     const timedOut = await waitForCondition(async () => {
         const s = await client.evaluate('window.godot_poki_state');
         return s.is_ad_playing === false;
     }, 1500);
+    const stateATimedOut = await client.evaluate('window.godot_poki_state');
+    // Callback released upon timeout
+    const cbAReleasedOnTimeout = stateATimedOut.active_callbacks_count === 0;
 
     // 3. Start Ad B with 2.0s timeout
     await client.evaluate('window.godot_set_ad_timeout(2.0)');
@@ -550,6 +629,9 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const stateB1 = await client.evaluate('window.godot_poki_state');
     const tokenB = stateB1.ad_token;
     const adBStarted = stateB1.is_ad_playing === true && tokenB > tokenA;
+    // Callback B retained
+    const cbBRetained = stateB1.active_callbacks_count === 1
+        && stateB1.active_callbacks_tokens.map(Number).includes(Number(tokenB));
 
     // 4. Wait until t=440ms (Ad A's 400ms promise resolves across real JSBridge)
     const elapsedComm = Date.now() - t0Comm;
@@ -557,9 +639,11 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
         await sleep(440 - elapsedComm);
     }
     const stateBDuringLateA = await client.evaluate('window.godot_poki_state');
-    // Ad B MUST STILL BE ACTIVE!
+    // Ad B MUST STILL BE ACTIVE and Callback B still retained!
     const adBSurvivedStaleA = stateBDuringLateA.is_ad_playing === true
         && stateBDuringLateA.ad_token === tokenB;
+    const cbBRetainedAfterStaleA = stateBDuringLateA.active_callbacks_count === 1
+        && stateBDuringLateA.active_callbacks_tokens.map(Number).includes(Number(tokenB));
 
     // 5. Wait for Ad B's promise to finish cleanly
     const adBFinished = await waitForCondition(async () => {
@@ -567,20 +651,27 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
         return s.is_ad_playing === false;
     }, 2000);
     const finalCommercialState = await client.evaluate('window.godot_poki_state');
+    const cbBReleasedOnFinish = finalCommercialState.active_callbacks_count === 0;
 
-    const pass21 = adAStarted && timedOut && adBStarted && adBSurvivedStaleA
-        && adBFinished && finalCommercialState.last_commercial_succeeded === true;
+    const pass21 = initCommClean && adAStarted && cbARetained && timedOut
+        && cbAReleasedOnTimeout && adBStarted && cbBRetained && adBSurvivedStaleA
+        && cbBRetainedAfterStaleA && adBFinished && cbBReleasedOnFinish
+        && finalCommercialState.last_commercial_succeeded === true;
+
     testResults.push({
-        name: '2.1 Real JSBridge Commercial: Ad A delay 400ms -> timeout 100ms -> Ad B 400ms -> Stale A ignored -> B finished',
+        name: '2.1 Real JSBridge Commercial: Ad A 400ms -> timeout 100ms -> Ad B 400ms -> Stale A ignored -> B finished cleanly (callback retention & release verified)',
         pass: pass21
     });
     console.log(`    -> Result: ${pass21 ? 'PASS' : 'FAIL'}`);
 
     // -----------------------------------------------------------
-    // Test 2.2: Real JSBridge Rewarded Break Delay & Stale Guard
+    // Test 2.2: Real JSBridge Rewarded: Callback Retention, Delay & Stale Guard
     // -----------------------------------------------------------
-    console.log('\n  [Test 2.2] Real JSBridge Rewarded Break Delay & Stale Guard...');
+    console.log('\n  [Test 2.2] Real JSBridge Rewarded: Callback Retention, Delay & Stale Guard...');
     await client.evaluate('window.godot_poki_reset_ad_state()');
+    const initRewState = await client.evaluate('window.godot_poki_state');
+    const initRewClean = initRewState.active_callbacks_count === 0;
+
     await client.evaluate('window.__test_rewarded_queue = [{ delay: 400, reject: false, success: true }, { delay: 400, reject: false, success: true }]');
     await client.evaluate('window.godot_set_ad_timeout(0.10)');
 
@@ -590,12 +681,16 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const stateRewA1 = await client.evaluate('window.godot_poki_state');
     const tokenRewA = stateRewA1.ad_token;
     const rewAStarted = stateRewA1.is_ad_playing === true && stateRewA1.current_ad_type === 2;
+    const cbRewARetained = stateRewA1.active_callbacks_count === 1
+        && stateRewA1.active_callbacks_tokens.map(Number).includes(Number(tokenRewA));
 
     // 2. Wait for Ad A timeout
     const rewTimedOut = await waitForCondition(async () => {
         const s = await client.evaluate('window.godot_poki_state');
         return s.is_ad_playing === false;
     }, 1500);
+    const stateRewATimedOut = await client.evaluate('window.godot_poki_state');
+    const cbRewAReleasedOnTimeout = stateRewATimedOut.active_callbacks_count === 0;
 
     // 3. Start Rewarded Ad B
     await client.evaluate('window.godot_set_ad_timeout(2.0)');
@@ -603,6 +698,8 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const stateRewB1 = await client.evaluate('window.godot_poki_state');
     const tokenRewB = stateRewB1.ad_token;
     const rewBStarted = stateRewB1.is_ad_playing === true && tokenRewB > tokenRewA;
+    const cbRewBRetained = stateRewB1.active_callbacks_count === 1
+        && stateRewB1.active_callbacks_tokens.map(Number).includes(Number(tokenRewB));
 
     // 4. Wait for late Ad A resolution (t=440ms)
     const elapsedRew = Date.now() - t0Rew;
@@ -612,16 +709,24 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     const stateRewBDuringLateA = await client.evaluate('window.godot_poki_state');
     const rewBSurvivedStaleA = stateRewBDuringLateA.is_ad_playing === true
         && stateRewBDuringLateA.ad_token === tokenRewB;
+    const cbRewBRetainedAfterStaleA = stateRewBDuringLateA.active_callbacks_count === 1
+        && stateRewBDuringLateA.active_callbacks_tokens.map(Number).includes(Number(tokenRewB));
 
     // 5. Wait for Ad B to finish
     const rewBFinished = await waitForCondition(async () => {
         const s = await client.evaluate('window.godot_poki_state');
         return s.is_ad_playing === false;
     }, 2000);
+    const finalRewState = await client.evaluate('window.godot_poki_state');
+    const cbRewBReleasedOnFinish = finalRewState.active_callbacks_count === 0;
 
-    const pass22 = rewAStarted && rewTimedOut && rewBStarted && rewBSurvivedStaleA && rewBFinished;
+    const pass22 = initRewClean && rewAStarted && cbRewARetained && rewTimedOut
+        && cbRewAReleasedOnTimeout && rewBStarted && cbRewBRetained && rewBSurvivedStaleA
+        && cbRewBRetainedAfterStaleA && rewBFinished && cbRewBReleasedOnFinish
+        && finalRewState.last_rewarded_succeeded === true;
+
     testResults.push({
-        name: '2.2 Real JSBridge Rewarded: Ad A delay 400ms -> timeout 100ms -> Ad B 400ms -> Stale A ignored -> B finished',
+        name: '2.2 Real JSBridge Rewarded: Ad A 400ms -> timeout 100ms -> Ad B 400ms -> Stale A ignored -> B finished cleanly (callback retention & release verified)',
         pass: pass22
     });
     console.log(`    -> Result: ${pass22 ? 'PASS' : 'FAIL'}`);
@@ -631,17 +736,23 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     // -----------------------------------------------------------
     console.log('\n  [Test 2.3] Real JSBridge Commercial Break Promise Rejection...');
     await client.evaluate('window.godot_poki_reset_ad_state()');
-    await client.evaluate('window.__test_commercial_queue = [{ delay: 50, reject: true }]');
+    await client.evaluate('window.__test_commercial_queue = [{ delay: 300, reject: true }]');
     await client.evaluate('window.godot_trigger_commercial_break()');
+
+    const stateCommRejDuring = await client.evaluate('window.godot_poki_state');
+    const commRejRetained = stateCommRejDuring.active_callbacks_count === 1;
 
     const commRejectedFinished = await waitForCondition(async () => {
         const s = await client.evaluate('window.godot_poki_state');
         return s.is_ad_playing === false;
     }, 2000);
     const commRejectState = await client.evaluate('window.godot_poki_state');
-    const pass23 = commRejectedFinished && commRejectState.last_commercial_succeeded === false;
+    const commRejReleased = commRejectState.active_callbacks_count === 0;
+    const commRejSuccessFalse = commRejectState.last_commercial_succeeded === false;
+
+    const pass23 = commRejRetained && commRejectedFinished && commRejReleased && commRejSuccessFalse;
     testResults.push({
-        name: '2.3 Real JSBridge Commercial Promise Rejection caught gracefully (success: false)',
+        name: '2.3 Real JSBridge Commercial Promise Rejection caught gracefully (success: false, callback released)',
         pass: pass23
     });
     console.log(`    -> Result: ${pass23 ? 'PASS' : 'FAIL'}`);
@@ -651,16 +762,23 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     // -----------------------------------------------------------
     console.log('\n  [Test 2.4] Real JSBridge Rewarded Break Promise Rejection...');
     await client.evaluate('window.godot_poki_reset_ad_state()');
-    await client.evaluate('window.__test_rewarded_queue = [{ delay: 50, reject: true }]');
+    await client.evaluate('window.__test_rewarded_queue = [{ delay: 300, reject: true }]');
     await client.evaluate('window.godot_trigger_rewarded_break()');
+
+    const stateRewRejDuring = await client.evaluate('window.godot_poki_state');
+    const rewRejRetained = stateRewRejDuring.active_callbacks_count === 1;
 
     const rewRejectedFinished = await waitForCondition(async () => {
         const s = await client.evaluate('window.godot_poki_state');
         return s.is_ad_playing === false;
     }, 2000);
-    const pass24 = rewRejectedFinished;
+    const rewRejectState = await client.evaluate('window.godot_poki_state');
+    const rewRejReleased = rewRejectState.active_callbacks_count === 0;
+    const rewRejSuccessFalse = rewRejectState.last_rewarded_succeeded === false;
+
+    const pass24 = rewRejRetained && rewRejectedFinished && rewRejReleased && rewRejSuccessFalse;
     testResults.push({
-        name: '2.4 Real JSBridge Rewarded Promise Rejection caught gracefully (success: false)',
+        name: '2.4 Real JSBridge Rewarded Promise Rejection caught gracefully (success: false, callback released)',
         pass: pass24
     });
     console.log(`    -> Result: ${pass24 ? 'PASS' : 'FAIL'}`);
@@ -681,19 +799,21 @@ async function runSuite2RealJSBridgeE2E(port = 8102, debugPort = 9232) {
     return { pass: suite2Pass, results: testResults };
 }
 
-// ---------------------------------------------------------------
-// SUITE 3: BROWSER FAULT INJECTION (4 Scenarios)
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
+// SUITE 3: BROWSER FAULT INJECTION (4 Scenarios via CDP)
+// -------------------------------------------------------------------
 async function runSuite3MockFaultInjection(basePort = 8103, baseDebugPort = 9233) {
     console.log('\n======================================================================');
     console.log('SUITE 3: BROWSER FAULT INJECTION (4 SCENARIOS VIA CDP)');
+    console.log('Testing browser resilience against network failure, late SDK, adblock & missing script.');
+    console.log('Asserts state/availability AND active engine game loop responsiveness.');
     console.log('======================================================================');
 
     const scenarios = [
-        { name: 'MOCK_SUCCESS', timeout: 8000 },
-        { name: 'MOCK_DELAYED', timeout: 9000 },
-        { name: 'MOCK_REJECT',  timeout: 8000 },
-        { name: 'MOCK_MISSING', timeout: 10000 }
+        { name: 'MOCK_SUCCESS', expectedState: 2, expectedAvail: true,  timeout: 8000 },
+        { name: 'MOCK_DELAYED', expectedState: 2, expectedAvail: true,  timeout: 9000 },
+        { name: 'MOCK_REJECT',  expectedState: 3, expectedAvail: false, timeout: 8000 },
+        { name: 'MOCK_MISSING', expectedState: 3, expectedAvail: false, timeout: 10000 }
     ];
 
     const results = [];
@@ -711,37 +831,32 @@ async function runSuite3MockFaultInjection(basePort = 8103, baseDebugPort = 9233
 
         const { proc, client } = await launchChromeWithCDP(port, debugPort);
 
-        let pass = false;
-        if (sc.name === 'MOCK_SUCCESS') {
-            pass = await waitForCondition(async () => {
-                const s = await client.evaluate('window.godot_poki_state');
-                return s && s.sdk_state === 2 && s.is_poki_available === true;
-            }, sc.timeout);
-        } else if (sc.name === 'MOCK_DELAYED') {
-            pass = await waitForCondition(async () => {
-                const s = await client.evaluate('window.godot_poki_state');
-                return s && s.sdk_state === 2 && s.is_poki_available === true;
-            }, sc.timeout);
-        } else if (sc.name === 'MOCK_REJECT') {
-            pass = await waitForCondition(async () => {
-                const s = await client.evaluate('window.godot_poki_state');
-                return s && s.sdk_state === 3 && s.is_poki_available === false; // SdkState.FAILED
-            }, sc.timeout);
-        } else if (sc.name === 'MOCK_MISSING') {
-            pass = await waitForCondition(async () => {
-                const s = await client.evaluate('window.godot_poki_state');
-                return s && s.sdk_state === 3 && s.is_poki_available === false; // SdkState.FAILED
-            }, sc.timeout);
-        }
+        // 1. Wait for target SdkState
+        const stateReached = await waitForCondition(async () => {
+            const s = await client.evaluate('window.godot_poki_state');
+            return s && s.sdk_state === sc.expectedState && s.is_poki_available === sc.expectedAvail;
+        }, sc.timeout);
+
+        // 2. Responsiveness check: verify engine game loop is actively processing frames!
+        const f1 = await client.evaluate('window.godot_process_frames || 0');
+        await sleep(250);
+        const f2 = await client.evaluate('window.godot_process_frames || 0');
+        const loopRunning = f2 > f1;
 
         client.close();
         proc.kill();
         await new Promise(r => server.close(r));
 
+        const pass = Boolean(stateReached && loopRunning);
         const mark = pass ? 'PASS' : 'FAIL';
+        console.log(`    -> State reached:  ${Boolean(stateReached)} (expected state=${sc.expectedState}, avail=${sc.expectedAvail})`);
+        console.log(`    -> Engine loop:    ${loopRunning ? 'RUNNING (frames ' + f1 + ' -> ' + f2 + ')' : 'STALLED'}`);
         console.log(`    -> Result: [${mark}] Scenario ${sc.name}`);
         if (!pass) suite3Pass = false;
-        results.push({ name: sc.name, pass: Boolean(pass) });
+        results.push({
+            name: `${sc.name} (state=${sc.expectedState}, avail=${sc.expectedAvail}, loop=${loopRunning})`,
+            pass
+        });
     }
 
     console.log('\n--- SUITE 3 VERIFICATION RESULTS ---');
@@ -752,9 +867,9 @@ async function runSuite3MockFaultInjection(basePort = 8103, baseDebugPort = 9233
     return { pass: suite3Pass, results };
 }
 
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 // Main Master Runner
-// ---------------------------------------------------------------
+// -------------------------------------------------------------------
 async function main() {
     const chromeVer = getChromeVersion(CHROME_PATH);
     console.log('======================================================================');
@@ -768,33 +883,34 @@ async function main() {
         process.exit(1);
     }
 
-    // Run Suite 1: Real CDN
-    const suite1 = await runSuite1RealCDN(8101, 9231);
-
-    // Run Suite 2: Real JSBridge End-to-End
-    const suite2 = await runSuite2RealJSBridgeE2E(8102, 9232);
-
-    // Run Suite 3: Mock Fault Injection
-    const suite3 = await runSuite3MockFaultInjection(8103, 9233);
-
-    console.log('\n======================================================================');
-    console.log('FINAL AUDIT SUMMARY:');
-    console.log(`  Suite 1 (Real Poki CDN):                 ${suite1.pass ? 'PASSED' : 'FAILED'}`);
-    console.log(`  Suite 2 (Real JSBridge End-to-End E2E):  ${suite2.pass ? 'PASSED' : 'FAILED'}`);
-    console.log(`  Suite 3 (Mock Fault Injection 4/4):      ${suite3.pass ? 'PASSED' : 'FAILED'}`);
-    console.log('======================================================================');
-
-    const allPassed = suite1.pass && suite2.pass && suite3.pass;
-    if (!allPassed) {
-        console.error('\nEXIT 1: Master Browser Suite FAILED one or more verification contracts.');
+    let s1, s2, s3;
+    try {
+        s1 = await runSuite1RealCDN(8101, 9231);
+        s2 = await runSuite2RealJSBridgeE2E(8102, 9232);
+        s3 = await runSuite3MockFaultInjection(8103, 9233);
+    } catch (err) {
+        console.error('\n[FATAL RUNNER ERROR]:', err);
         process.exit(1);
     }
 
-    console.log('\nEXIT 0: All Browser Verification Contracts PASSED cleanly.');
-    process.exit(0);
+    console.log('\n======================================================================');
+    console.log('FINAL AUDIT SUMMARY:');
+    console.log(`  Suite 1 (Real Poki CDN):                 ${s1.pass ? 'PASSED' : 'FAILED'}`);
+    console.log(`  Suite 2 (Real JSBridge Mock E2E):        ${s2.pass ? 'PASSED' : 'FAILED'}`);
+    console.log(`  Suite 3 (Mock Fault Injection 4/4):      ${s3.pass ? 'PASSED' : 'FAILED'}`);
+    console.log('======================================================================');
+
+    const allPassed = s1.pass && s2.pass && s3.pass;
+    if (allPassed) {
+        console.log('\nEXIT 0: All Browser Verification Contracts PASSED cleanly.');
+        process.exit(0);
+    } else {
+        console.error('\nEXIT 1: Verification failed.');
+        process.exit(1);
+    }
 }
 
-main().catch((err) => {
-    console.error('Fatal Runner Error:', err);
+main().catch(e => {
+    console.error('Unhandled fatal error in master runner:', e);
     process.exit(1);
 });

@@ -87,7 +87,13 @@ class MockPokiSdk extends RefCounted:
 	func game_loading_finished() -> void:
 		game_loading_finished_count += 1
 
+func _start_watchdog() -> void:
+	await get_tree().create_timer(30.0).timeout
+	printerr("CRITICAL: Test runner watchdog timeout! Exiting with code 1.")
+	get_tree().quit(1)
+
 func _ready() -> void:
+	_start_watchdog()
 	print("======================================================================")
 	print("STARTING ADVANCED AUDIT TEST SUITE (22 COMPREHENSIVE TESTS)")
 	print("======================================================================")
