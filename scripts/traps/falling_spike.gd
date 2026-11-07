@@ -34,7 +34,8 @@ func _physics_process(delta: float) -> void:
 				var dx: float = abs(player.global_position.x - global_position.x)
 				var dy: float = player.global_position.y - global_position.y
 				var effective_dx := maxf(trigger_distance_x, 50.0)
-				if dx < effective_dx and dy > 0.0 and dy < trigger_distance:
+				var effective_dy := maxf(trigger_distance, 350.0)
+				if dx < effective_dx and dy > 0.0 and dy < effective_dy:
 					_trigger()
 	elif not is_falling:
 		shake_timer -= delta

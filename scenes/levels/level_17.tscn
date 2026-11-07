@@ -53,7 +53,7 @@ trigger_distance = 70
 warning_time = 0.7
 
 [node name="RollingBoulderBack" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(80, 350)
+position = Vector2(10, 350)
 roll_direction = 1
 roll_speed = 340
 trigger_distance = 220

@@ -14,6 +14,7 @@ class_name RollingBoulder
 
 var is_triggered: bool = false
 var is_rolling: bool = false
+var has_fallen: bool = false
 var roll_delay_timer: float = 0.0
 var original_pos: Vector2
 var roll_rotation: float = 0.0
@@ -32,6 +33,16 @@ func _ready() -> void:
 		kill_area.body_entered.connect(_on_kill_entered)
 
 func _physics_process(delta: float) -> void:
+	if has_fallen:
+		return
+
+	# Qoyaga tushib ketsa
+	if global_position.y > 650.0:
+		has_fallen = true
+		is_rolling = false
+		velocity = Vector2.ZERO
+		return
+
 	if not is_triggered:
 		_check_player_trigger()
 		return
@@ -63,9 +74,10 @@ func _physics_process(delta: float) -> void:
 	
 	# Qoyaga tushib ketsa
 	if global_position.y > 650.0:
-		is_triggered = false
+		has_fallen = true
 		is_rolling = false
 		velocity = Vector2.ZERO
+		return
 
 func _check_player_trigger() -> void:
 	var player = get_tree().get_first_node_in_group("player")
@@ -97,6 +109,7 @@ func _on_kill_entered(body: Node2D) -> void:
 			body.die()
 
 func reset_trap() -> void:
+	has_fallen = false
 	is_triggered = false
 	is_rolling = false
 	roll_delay_timer = 0.0

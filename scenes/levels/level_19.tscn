@@ -58,7 +58,7 @@ active_time = 1.6
 inactive_time = 1.2
 
 [node name="MovingSawChase" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(80, 364)
+position = Vector2(20, 364)
 patrol_distance = 180
 patrol_speed = 160
 patrol_axis = Vector2(1, 0)

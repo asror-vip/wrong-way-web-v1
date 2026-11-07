@@ -145,4 +145,4 @@ run_away_distance = 80
 position = Vector2(895, 380)
 
 [node name="Player" parent="." instance=ExtResource("2_pl")]
-position = Vector2(60, 380)
+position = Vector2(100, 380)

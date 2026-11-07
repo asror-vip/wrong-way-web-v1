@@ -1821,7 +1821,7 @@
       {
         "name": "RollingBoulderBack",
         "type": "rolling_boulder",
-        "x": 80,
+        "x": 10,
         "y": 350,
         "w": 56,
         "h": 56,
@@ -2087,7 +2087,7 @@
       {
         "name": "MovingSawChase",
         "type": "moving_saw",
-        "x": 80,
+        "x": 20,
         "y": 364,
         "w": 32,
         "h": 32,
@@ -2202,7 +2202,7 @@
     "title": "WRONG WAY: Final",
     "gimmick": "grand_finale",
     "player_spawn": [
-      60,
+      100,
       380
     ],
     "door_pos": [
