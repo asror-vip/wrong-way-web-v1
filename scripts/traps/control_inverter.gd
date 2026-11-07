@@ -9,7 +9,7 @@ class_name ControlInverter
 var pulse_time: float = 0.0
 var is_triggered: bool = false
 
-@onready var col_shape: CollisionShape2D = $CollisionShape2D
+@onready var col_shape: CollisionShape2D = get_node_or_null("CollisionShape2D")
 
 func _ready() -> void:
 	add_to_group("traps")
@@ -47,13 +47,17 @@ func _on_body_exited(body: Node2D) -> void:
 
 func reset_trap() -> void:
 	is_triggered = false
-	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var tree := get_tree()
+	var player: Node2D = null
+	if tree:
+		player = tree.get_first_node_in_group("player") as Node2D
 	if player:
-		if player.has_method("clear_inverter_zones"):
-			player.clear_inverter_zones()
+		if player.has_method("remove_inverter_zone"):
+			player.remove_inverter_zone(self)
 		elif "controls_inverted" in player:
 			player.controls_inverted = false
-	queue_redraw()
+	if is_inside_tree():
+		queue_redraw()
 
 func _draw() -> void:
 	var w := zone_size.x

@@ -53,6 +53,8 @@ func reset_level_traps() -> void:
 			unique_traps[trap] = true
 	for trap in unique_traps.keys():
 		trap.reset_trap()
+	if player and player.has_method("clear_inverter_zones"):
+		player.clear_inverter_zones()
 
 func restart_attempt() -> void:
 	reset_level_traps()

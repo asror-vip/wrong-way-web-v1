@@ -6,17 +6,22 @@ extends Node
 signal commercial_break_completed
 signal rewarded_break_completed(success: bool)
 
+enum AdType { NONE, COMMERCIAL, REWARDED }
+
 var is_poki_available: bool = false
 var is_gameplay_running: bool = false
 var _is_ad_playing: bool = false
+var _current_ad_type: AdType = AdType.NONE
 var _js_commercial_callback = null
 var _js_rewarded_callback = null
-var _pending_commercial_callable: Callable = Callable()
-var _pending_rewarded_callable: Callable = Callable()
+var _pending_commercial_callbacks: Array[Callable] = []
+var _pending_rewarded_callbacks: Array[Callable] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_init_poki()
+	if OS.has_feature("web") and not is_poki_available:
+		_poll_sdk_availability()
 
 func _notification(what: int) -> void:
 	# Brauzer tabidan boshqa oynaga o'tganda (blur) ovozni to'xtatish (Poki qat'iy talabi)
@@ -39,20 +44,47 @@ func _restore_audio() -> void:
 
 func _init_poki() -> void:
 	if OS.has_feature("web"):
+		_ensure_poki_sdk()
+		if not is_poki_available:
+			print("PokiService: PokiSDK hali yuklanmadi, kechikib yuklanish monitoringi boshlandi.")
+	else:
+		print("PokiService: Desktop muhiti — PokiSDK simulyatsiya rejimida ishlaydi.")
+
+func _ensure_poki_sdk() -> bool:
+	if is_poki_available:
+		return true
+	if OS.has_feature("web"):
 		var js_poki = JavaScriptBridge.get_interface("PokiSDK")
 		if js_poki:
 			is_poki_available = true
 			print("PokiService: PokiSDK brauzerda muvaffaqiyatli aniqlandi.")
-		else:
-			print("PokiService: PokiSDK topilmadi (offline yoki lokal web test).")
-	else:
-		print("PokiService: Desktop muhiti — PokiSDK simulyatsiya rejimida ishlaydi.")
+			JavaScriptBridge.eval("""
+				if (window.PokiSDK && !window._poki_initialized) {
+					window._poki_initialized = true;
+					PokiSDK.init().then(function() {
+						console.log('PokiService: PokiSDK.init() muvaffaqiyatli.');
+					}).catch(function() {
+						console.log('PokiService: PokiSDK.init() xato yoki adblocker.');
+					});
+				}
+			""")
+			return true
+	return false
+
+func _poll_sdk_availability() -> void:
+	if not OS.has_feature("web"):
+		return
+	for _attempt in range(12):
+		if _ensure_poki_sdk():
+			break
+		await get_tree().create_timer(0.25).timeout
 
 # ------------------------------------------------------------------------------
 # Lifecycle
 # ------------------------------------------------------------------------------
 func game_loading_finished() -> void:
 	print("PokiService: gameLoadingFinished()")
+	_ensure_poki_sdk()
 	if is_poki_available:
 		JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameLoadingFinished(); }")
 
@@ -61,6 +93,7 @@ func gameplay_start() -> void:
 		return
 	is_gameplay_running = true
 	print("PokiService: gameplayStart()")
+	_ensure_poki_sdk()
 	if is_poki_available:
 		JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStart(); }")
 
@@ -69,6 +102,7 @@ func gameplay_stop() -> void:
 		return
 	is_gameplay_running = false
 	print("PokiService: gameplayStop()")
+	_ensure_poki_sdk()
 	if is_poki_available:
 		JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStop(); }")
 
@@ -76,18 +110,23 @@ func gameplay_stop() -> void:
 # Commercial Break (Interstitial Ad)
 # ------------------------------------------------------------------------------
 func commercial_break(on_completed: Callable = Callable()) -> void:
-	# Bir vaqtning o'zida bir nechta so'rov yuborilishini bloklash (callback ustma-ust yozilmasligi uchun)
+	if on_completed.is_valid() and not _pending_commercial_callbacks.has(on_completed):
+		_pending_commercial_callbacks.append(on_completed)
+
+	# Agar hozir allaqachon reklama (commercial yoki rewarded) ko'rsatilayotgan bo'lsa:
+	# Callback DARHOL chaqirilmaydi! Reklama tugamasdan o'yin davom etib ketmasligi uchun
+	# so'rov navbatga qo'yildi va reklama tugashi bilan birgalikda chaqiriladi.
 	if _is_ad_playing:
-		print("PokiService: Reklama allaqachon ko'rsatilmoqda, so'rov rad etildi.")
-		if on_completed.is_valid():
-			on_completed.call()
+		print("PokiService: Reklama allaqachon ko'rsatilmoqda. Yangi commercial so'rovi navbatga qo'yildi (o'yin reklama tugamasdan davom etmaydi).")
 		return
 
 	print("PokiService: commercialBreak chaqirilmoqda...")
-	_pending_commercial_callable = on_completed
 	_is_ad_playing = true
+	_current_ad_type = AdType.COMMERCIAL
 	gameplay_stop()
 	AudioServer.set_bus_mute(0, true)
+	
+	_ensure_poki_sdk()
 	
 	if is_poki_available:
 		_js_commercial_callback = JavaScriptBridge.create_callback(_on_commercial_break_finished)
@@ -113,32 +152,43 @@ func commercial_break(on_completed: Callable = Callable()) -> void:
 		await get_tree().create_timer(0.1).timeout
 		_on_commercial_break_finished([])
 
-func _on_commercial_break_finished(_args: Array) -> void:
+func _on_commercial_break_finished(_args: Array = []) -> void:
 	print("PokiService: commercialBreak yakunlandi.")
 	_is_ad_playing = false
+	_current_ad_type = AdType.NONE
 	_restore_audio()
-	if _pending_commercial_callable.is_valid():
-		var cb := _pending_commercial_callable
-		_pending_commercial_callable = Callable()
-		cb.call()
+	
+	var callbacks := _pending_commercial_callbacks.duplicate()
+	_pending_commercial_callbacks.clear()
+	for cb in callbacks:
+		if cb.is_valid():
+			cb.call()
+			
 	commercial_break_completed.emit()
 
 # ------------------------------------------------------------------------------
 # Rewarded Break (Rewarded Ad for Level Unlock)
 # ------------------------------------------------------------------------------
 func rewarded_break(on_reward_result: Callable = Callable()) -> void:
-	# Bir vaqtning o'zida ikkita rewarded reklama so'rovini bloklash
+	# Agar hozir boshqa reklama ko'rsatilayotgan bo'lsa:
+	# Bir vaqtning o'zida ikkita reklama ko'rsatilishi mumkin emas.
+	# Davom etayotgan reklamani buzmasdan ushbu so'rov xavfsiz rad etiladi.
 	if _is_ad_playing:
-		print("PokiService: Reklama allaqachon ko'rsatilmoqda, so'rov rad etildi.")
+		print("PokiService: Reklama allaqachon ko'rsatilmoqda, yangi rewarded so'rovi xavfsiz rad etildi.")
 		if on_reward_result.is_valid():
 			on_reward_result.call(false)
 		return
 
 	print("PokiService: rewardedBreak chaqirilmoqda...")
-	_pending_rewarded_callable = on_reward_result
+	if on_reward_result.is_valid() and not _pending_rewarded_callbacks.has(on_reward_result):
+		_pending_rewarded_callbacks.append(on_reward_result)
+		
 	_is_ad_playing = true
+	_current_ad_type = AdType.REWARDED
 	gameplay_stop()
 	AudioServer.set_bus_mute(0, true)
+	
+	_ensure_poki_sdk()
 	
 	if is_poki_available:
 		_js_rewarded_callback = JavaScriptBridge.create_callback(_on_rewarded_break_finished)
@@ -165,15 +215,26 @@ func rewarded_break(on_reward_result: Callable = Callable()) -> void:
 		await get_tree().create_timer(0.1).timeout
 		_on_rewarded_break_finished([false])
 
-func _on_rewarded_break_finished(args: Array) -> void:
+func _on_rewarded_break_finished(args: Array = []) -> void:
 	var success: bool = false
 	if args.size() > 0:
 		success = bool(args[0])
 	print("PokiService: rewardedBreak yakunlandi. Natija: ", success)
 	_is_ad_playing = false
+	_current_ad_type = AdType.NONE
 	_restore_audio()
-	if _pending_rewarded_callable.is_valid():
-		var cb := _pending_rewarded_callable
-		_pending_rewarded_callable = Callable()
-		cb.call(success)
+	
+	var rewarded_cbs := _pending_rewarded_callbacks.duplicate()
+	_pending_rewarded_callbacks.clear()
+	for cb in rewarded_cbs:
+		if cb.is_valid():
+			cb.call(success)
+			
+	# Rewarded break vaqtida navbatga tushgan commercial so'rovlar bo'lsa ularni ham chiqaramiz
+	var commercial_cbs := _pending_commercial_callbacks.duplicate()
+	_pending_commercial_callbacks.clear()
+	for cb in commercial_cbs:
+		if cb.is_valid():
+			cb.call()
+			
 	rewarded_break_completed.emit(success)
