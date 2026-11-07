@@ -11,5 +11,6 @@
 .env
 .env.*
 *.secret
+wrong_way_all_code.txt
 
 

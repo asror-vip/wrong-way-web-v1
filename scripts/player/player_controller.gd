@@ -20,6 +20,7 @@ var is_dead: bool = false
 var is_entering_door: bool = false
 var spawn_position: Vector2
 var controls_inverted: bool = false
+var active_inverters: Dictionary = {}
 var is_invulnerable: bool = false
 var invulnerable_timer: float = 0.0
 
@@ -38,9 +39,23 @@ func _ready() -> void:
 	spawn_position = global_position
 	if not InputMap.has_action("dash"):
 		InputMap.add_action("dash")
-		var ev := InputEventKey.new()
-		ev.keycode = KEY_SHIFT
-		InputMap.action_add_event("dash", ev)
+	# Shift va J tugmalarining ikkalasi ham Dash uchun to'liq ishlashini kafolatlaymiz
+	var has_shift := false
+	var has_j := false
+	for ev in InputMap.action_get_events("dash"):
+		if ev is InputEventKey:
+			if ev.keycode == KEY_SHIFT or ev.physical_keycode == KEY_SHIFT:
+				has_shift = true
+			if ev.keycode == KEY_J or ev.physical_keycode == KEY_J:
+				has_j = true
+	if not has_shift:
+		var ev_shift := InputEventKey.new()
+		ev_shift.physical_keycode = KEY_SHIFT
+		InputMap.action_add_event("dash", ev_shift)
+	if not has_j:
+		var ev_j := InputEventKey.new()
+		ev_j.physical_keycode = KEY_J
+		InputMap.action_add_event("dash", ev_j)
 
 func _physics_process(delta: float) -> void:
 	if is_dead or is_entering_door or GameManager.is_countdown_active:
@@ -152,6 +167,7 @@ func kill() -> void:
 	if is_dead or is_entering_door or is_invulnerable:
 		return
 	is_dead = true
+	clear_inverter_zones()
 	is_dashing = false
 	dash_timer = 0.0
 	dash_cooldown_timer = 0.0
@@ -189,7 +205,7 @@ func respawn(at_position: Vector2 = spawn_position) -> void:
 	dash_timer = 0.0
 	dash_cooldown_timer = 0.0
 	is_entering_door = false
-	controls_inverted = false
+	clear_inverter_zones()
 	is_invulnerable = true
 	invulnerable_timer = 0.22 # 220ms spawn protection (takroriy o'limni oldini oladi)
 	coyote_timer = 0.0
@@ -200,6 +216,21 @@ func respawn(at_position: Vector2 = spawn_position) -> void:
 	if visual:
 		visual.scale = Vector2.ONE
 	respawned.emit()
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_signal("player_respawned"):
+		gm.player_respawned.emit()
+
+func add_inverter_zone(zone: Node) -> void:
+	active_inverters[zone] = true
+	controls_inverted = true
+
+func remove_inverter_zone(zone: Node) -> void:
+	active_inverters.erase(zone)
+	controls_inverted = not active_inverters.is_empty()
+
+func clear_inverter_zones() -> void:
+	active_inverters.clear()
+	controls_inverted = false
 
 func enter_door(target_pos: Vector2) -> void:
 	if is_entering_door or is_dead:

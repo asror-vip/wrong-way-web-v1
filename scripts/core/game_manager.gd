@@ -3,6 +3,7 @@ extends Node
 signal level_started(level_id: int)
 signal level_completed(level_id: int, time_ms: float, deaths: int, stars: int)
 signal player_died(deaths_count: int)
+signal player_respawned
 signal request_screen_shake(intensity: float)
 signal custom_level_completed
 signal custom_player_died

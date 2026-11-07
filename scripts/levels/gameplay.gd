@@ -24,6 +24,11 @@ func _ready() -> void:
 		if poki and poki.has_method("gameplay_stop"):
 			poki.gameplay_stop()
 	)
+	GameManager.player_respawned.connect(func():
+		var poki = get_node_or_null("/root/PokiService")
+		if poki and poki.has_method("gameplay_start"):
+			poki.gameplay_start()
+	)
 	GameManager.level_completed.connect(func(_lvl, _t, _d, _s):
 		var poki = get_node_or_null("/root/PokiService")
 		if poki and poki.has_method("gameplay_stop"):
@@ -79,8 +84,9 @@ func _load_level(lvl: int) -> void:
 		poki.gameplay_start()
 	if level_holder:
 		level_holder.process_mode = Node.PROCESS_MODE_INHERIT
-	for child in level_holder.get_children():
-		child.queue_free()
+		for child in level_holder.get_children():
+			level_holder.remove_child(child)
+			child.queue_free()
 		
 	# 1. Asosiy va eng aniq sozlangan sahna (.tscn) kesh orqali tezkor yuklanadi
 	var path := "res://scenes/levels/level_%02d.tscn" % lvl

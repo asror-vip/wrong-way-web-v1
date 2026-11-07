@@ -24,7 +24,18 @@ func _notification(what: int) -> void:
 		AudioServer.set_bus_mute(0, true)
 	elif what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
 		if not _is_ad_playing:
-			AudioServer.set_bus_mute(0, false)
+			_restore_audio()
+
+func _restore_audio() -> void:
+	# Foydalanuvchining shaxsiy sozlamalarini hurmat qilgan holda ovozni tiklash
+	var sm = get_node_or_null("/root/SaveManager")
+	var is_user_muted := false
+	if sm:
+		is_user_muted = (not sm.music_enabled) and (not sm.sfx_enabled)
+	AudioServer.set_bus_mute(0, is_user_muted)
+	var snd = get_node_or_null("/root/SoundManager")
+	if snd and snd.has_method("update_music_volume"):
+		snd.update_music_volume(false)
 
 func _init_poki() -> void:
 	if OS.has_feature("web"):
@@ -65,6 +76,13 @@ func gameplay_stop() -> void:
 # Commercial Break (Interstitial Ad)
 # ------------------------------------------------------------------------------
 func commercial_break(on_completed: Callable = Callable()) -> void:
+	# Bir vaqtning o'zida bir nechta so'rov yuborilishini bloklash (callback ustma-ust yozilmasligi uchun)
+	if _is_ad_playing:
+		print("PokiService: Reklama allaqachon ko'rsatilmoqda, so'rov rad etildi.")
+		if on_completed.is_valid():
+			on_completed.call()
+		return
+
 	print("PokiService: commercialBreak chaqirilmoqda...")
 	_pending_commercial_callable = on_completed
 	_is_ad_playing = true
@@ -91,14 +109,14 @@ func commercial_break(on_completed: Callable = Callable()) -> void:
 			}
 		""")
 	else:
-		# Desktop muhitida 0.1s dan keyin yakunlanadi
+		# Desktop yoki offline muhitda 0.1s dan keyin yakunlanadi
 		await get_tree().create_timer(0.1).timeout
 		_on_commercial_break_finished([])
 
 func _on_commercial_break_finished(_args: Array) -> void:
 	print("PokiService: commercialBreak yakunlandi.")
 	_is_ad_playing = false
-	AudioServer.set_bus_mute(0, false)
+	_restore_audio()
 	if _pending_commercial_callable.is_valid():
 		var cb := _pending_commercial_callable
 		_pending_commercial_callable = Callable()
@@ -109,6 +127,13 @@ func _on_commercial_break_finished(_args: Array) -> void:
 # Rewarded Break (Rewarded Ad for Level Unlock)
 # ------------------------------------------------------------------------------
 func rewarded_break(on_reward_result: Callable = Callable()) -> void:
+	# Bir vaqtning o'zida ikkita rewarded reklama so'rovini bloklash
+	if _is_ad_playing:
+		print("PokiService: Reklama allaqachon ko'rsatilmoqda, so'rov rad etildi.")
+		if on_reward_result.is_valid():
+			on_reward_result.call(false)
+		return
+
 	print("PokiService: rewardedBreak chaqirilmoqda...")
 	_pending_rewarded_callable = on_reward_result
 	_is_ad_playing = true
@@ -131,21 +156,22 @@ func rewarded_break(on_reward_result: Callable = Callable()) -> void:
 					}
 				});
 			} else if (window._poki_rewarded_callback) {
-				window._poki_rewarded_callback(true);
+				// Agar PokiSDK bo'lmasa mukofot berilmasin (false)
+				window._poki_rewarded_callback(false);
 			}
 		""")
 	else:
-		# Desktop muhitida sinov uchun mukofot beriladi
+		# SDK mavjud bo'lmaganda mukofot berilmaydi (false)
 		await get_tree().create_timer(0.1).timeout
-		_on_rewarded_break_finished([true])
+		_on_rewarded_break_finished([false])
 
 func _on_rewarded_break_finished(args: Array) -> void:
-	var success: bool = true
+	var success: bool = false
 	if args.size() > 0:
 		success = bool(args[0])
 	print("PokiService: rewardedBreak yakunlandi. Natija: ", success)
 	_is_ad_playing = false
-	AudioServer.set_bus_mute(0, false)
+	_restore_audio()
 	if _pending_rewarded_callable.is_valid():
 		var cb := _pending_rewarded_callable
 		_pending_rewarded_callable = Callable()

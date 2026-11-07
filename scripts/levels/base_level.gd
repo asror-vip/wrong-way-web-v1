@@ -40,13 +40,19 @@ func _on_player_respawned() -> void:
 		traps_container.set_deferred("process_mode", Node.PROCESS_MODE_INHERIT)
 
 func reset_level_traps() -> void:
-	if exit_door:
+	if exit_door and exit_door.has_method("reset_door"):
 		exit_door.reset_door()
+	# Dublikat reset chaqiruvlarining oldini olish uchun yagona to'plamdan foydalanamiz
+	var unique_traps: Dictionary = {}
 	if traps_container:
 		for trap in traps_container.get_children():
 			if trap.has_method("reset_trap"):
-				trap.reset_trap()
-	get_tree().call_group("traps", "reset_trap")
+				unique_traps[trap] = true
+	for trap in get_tree().get_nodes_in_group("traps"):
+		if trap.has_method("reset_trap"):
+			unique_traps[trap] = true
+	for trap in unique_traps.keys():
+		trap.reset_trap()
 
 func restart_attempt() -> void:
 	reset_level_traps()
