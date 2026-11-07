@@ -24,9 +24,16 @@ enum AdType {
 var sdk_state: SdkState = SdkState.UNINITIALIZED
 var is_poki_available: bool = false # SdkState.READY bo'lgandagina true bo'ladi
 var is_gameplay_running: bool = false
+
 var _is_ad_playing: bool = false
 var _current_ad_type: AdType = AdType.NONE
 var _is_init_in_progress: bool = false
+var _init_token: int = 0
+
+# Lifecycle race condition himoyasi
+var _gameplay_desired: bool = false
+var _gameplay_notified_to_poki: bool = false
+var _lifecycle_seq: int = 0
 
 var _js_commercial_callback = null
 var _js_rewarded_callback = null
@@ -75,9 +82,13 @@ func get_mock_provider() -> Object:
 	return _sdk_mock_provider
 
 func reset_state_for_testing() -> void:
+	_init_token += 1
+	_lifecycle_seq += 1
 	sdk_state = SdkState.UNINITIALIZED
 	is_poki_available = false
 	is_gameplay_running = false
+	_gameplay_desired = false
+	_gameplay_notified_to_poki = false
 	_is_ad_playing = false
 	_current_ad_type = AdType.NONE
 	_is_init_in_progress = false
@@ -112,16 +123,19 @@ func _try_init_sdk() -> bool:
 	if sdk_state == SdkState.FAILED:
 		return false
 
+	_init_token += 1
+	var current_token := _init_token
+
 	# Mock provider orqali tekshirish (testlar uchun)
 	if _sdk_mock_provider != null:
 		if not _sdk_mock_provider.has_method("has_poki_sdk") or not _sdk_mock_provider.has_poki_sdk():
 			return false
 		_is_init_in_progress = true
 		sdk_state = SdkState.INITIALIZING
-		print("PokiService: Mock SDK orqali init boshlandi...")
+		print("PokiService: Mock SDK orqali init boshlandi (token: %d)..." % current_token)
 		_sdk_mock_provider.init_sdk(
-			func(): _on_poki_init_success([]),
-			func(): _on_poki_init_failed([])
+			func(): _on_poki_init_success(current_token, []),
+			func(): _on_poki_init_failed(current_token, [])
 		)
 		return true
 
@@ -136,10 +150,14 @@ func _try_init_sdk() -> bool:
 
 	_is_init_in_progress = true
 	sdk_state = SdkState.INITIALIZING
-	print("PokiService: PokiSDK brauzerda topildi. PokiSDK.init() boshlanmoqda...")
+	print("PokiService: PokiSDK brauzerda topildi. PokiSDK.init() boshlanmoqda (token: %d)..." % current_token)
 
-	_js_init_success_callback = JavaScriptBridge.create_callback(_on_poki_init_success)
-	_js_init_failed_callback = JavaScriptBridge.create_callback(_on_poki_init_failed)
+	_js_init_success_callback = JavaScriptBridge.create_callback(func(args = []):
+		_on_poki_init_success(current_token, args)
+	)
+	_js_init_failed_callback = JavaScriptBridge.create_callback(func(args = []):
+		_on_poki_init_failed(current_token, args)
+	)
 
 	var window = JavaScriptBridge.get_interface("window")
 	window._poki_init_success = _js_init_success_callback
@@ -167,15 +185,26 @@ func _try_init_sdk() -> bool:
 	""")
 	return true
 
-func _on_poki_init_success(_args: Array = []) -> void:
-	print("PokiService: PokiSDK.init() muvaffaqiyatli yakunlandi -> SdkState.READY")
+func _on_poki_init_success(token: int, _args: Array = []) -> void:
+	if token != _init_token:
+		print("PokiService: Kechikkan/eskirgan init_success (token: %d != joriy: %d) e'tiborsiz qoldirildi." % [token, _init_token])
+		return
+	if sdk_state != SdkState.INITIALIZING:
+		print("PokiService: Kutilmagan holatda kelgan init_success (state: %d) e'tiborsiz qoldirildi." % sdk_state)
+		return
+	print("PokiService: PokiSDK.init() muvaffaqiyatli yakunlandi (token: %d) -> SdkState.READY" % token)
 	_is_init_in_progress = false
 	sdk_state = SdkState.READY
 	is_poki_available = true
 	sdk_ready.emit()
 
-func _on_poki_init_failed(_args: Array = []) -> void:
-	print("PokiService: PokiSDK.init() rad etildi -> SdkState.FAILED")
+func _on_poki_init_failed(token: int, _args: Array = []) -> void:
+	if token != _init_token:
+		print("PokiService: Kechikkan/eskirgan init_failed (token: %d != joriy: %d) e'tiborsiz qoldirildi." % [token, _init_token])
+		return
+	if sdk_state != SdkState.INITIALIZING:
+		return
+	print("PokiService: PokiSDK.init() rad etildi (token: %d) -> SdkState.FAILED" % token)
 	_is_init_in_progress = false
 	sdk_state = SdkState.FAILED
 	is_poki_available = false
@@ -188,8 +217,10 @@ func _poll_sdk_availability() -> void:
 		if sdk_state == SdkState.UNINITIALIZED:
 			_try_init_sdk()
 		await get_tree().create_timer(0.25).timeout
-	if sdk_state == SdkState.UNINITIALIZED:
-		print("PokiService: PokiSDK monitoring vaqti tugadi -> SdkState.FAILED")
+	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
+		print("PokiService: PokiSDK monitoring vaqti tugadi -> SdkState.FAILED (token: %d bekor qilindi)" % _init_token)
+		_init_token += 1
+		_is_init_in_progress = false
 		sdk_state = SdkState.FAILED
 		is_poki_available = false
 
@@ -212,14 +243,16 @@ func ensure_sdk_initialized(max_wait: float = 2.5) -> int:
 			_try_init_sdk()
 
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
-		print("PokiService: SDK init kutilishi vaqti tugadi -> SdkState.FAILED")
+		print("PokiService: SDK init kutilishi vaqti tugadi -> SdkState.FAILED (token: %d bekor qilindi)" % _init_token)
+		_init_token += 1
+		_is_init_in_progress = false
 		sdk_state = SdkState.FAILED
 		is_poki_available = false
 
 	return sdk_state
 
 # ------------------------------------------------------------------------------
-# Lifecycle
+# Lifecycle (Race-Protected)
 # ------------------------------------------------------------------------------
 func game_loading_finished() -> void:
 	print("PokiService: gameLoadingFinished()")
@@ -233,32 +266,51 @@ func game_loading_finished() -> void:
 		JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameLoadingFinished(); }")
 
 func gameplay_start() -> void:
-	if is_gameplay_running:
-		return
+	_lifecycle_seq += 1
+	var seq := _lifecycle_seq
+	_gameplay_desired = true
 	is_gameplay_running = true
-	print("PokiService: gameplayStart()")
+	print("PokiService: gameplay_start() so'rovi (seq: %d)" % seq)
+
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
 		await ensure_sdk_initialized(2.0)
-	if _sdk_mock_provider != null:
-		if _sdk_mock_provider.has_method("gameplay_start"):
-			_sdk_mock_provider.gameplay_start()
+
+	# Race condition tekshiruvi: kutish vaqtida stop chaqirilgan yoki reklama boshlangan bo'lsa
+	if seq != _lifecycle_seq:
+		print("PokiService: Eski gameplay_start (seq: %d != joriy: %d) Poki'ga yuborilmadi." % [seq, _lifecycle_seq])
 		return
-	if sdk_state == SdkState.READY:
-		JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStart(); }")
+	if not _gameplay_desired or _is_ad_playing:
+		print("PokiService: gameplay_start bekor qilindi (desired: %s, ad_playing: %s)" % [_gameplay_desired, _is_ad_playing])
+		return
+
+	if sdk_state == SdkState.READY and not _gameplay_notified_to_poki:
+		_gameplay_notified_to_poki = true
+		print("PokiService: PokiSDK.gameplayStart() yuborildi.")
+		if _sdk_mock_provider != null and _sdk_mock_provider.has_method("gameplay_start"):
+			_sdk_mock_provider.gameplay_start()
+		elif OS.has_feature("web"):
+			JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStart(); }")
 
 func gameplay_stop() -> void:
-	if not is_gameplay_running:
-		return
+	_lifecycle_seq += 1
+	var seq := _lifecycle_seq
+	_gameplay_desired = false
 	is_gameplay_running = false
-	print("PokiService: gameplayStop()")
+	print("PokiService: gameplay_stop() so'rovi (seq: %d)" % seq)
+
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
 		await ensure_sdk_initialized(2.0)
-	if _sdk_mock_provider != null:
-		if _sdk_mock_provider.has_method("gameplay_stop"):
-			_sdk_mock_provider.gameplay_stop()
+
+	if seq != _lifecycle_seq or _gameplay_desired:
 		return
-	if sdk_state == SdkState.READY:
-		JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStop(); }")
+
+	if sdk_state == SdkState.READY and _gameplay_notified_to_poki:
+		_gameplay_notified_to_poki = false
+		print("PokiService: PokiSDK.gameplayStop() yuborildi.")
+		if _sdk_mock_provider != null and _sdk_mock_provider.has_method("gameplay_stop"):
+			_sdk_mock_provider.gameplay_stop()
+		elif OS.has_feature("web"):
+			JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStop(); }")
 
 # ------------------------------------------------------------------------------
 # Commercial Break (Interstitial Ad)
@@ -267,7 +319,7 @@ func commercial_break(on_completed: Callable = Callable()) -> void:
 	# Agar allaqachon reklama ko'rsatilayotgan bo'lsa:
 	if _is_ad_playing:
 		if _current_ad_type == AdType.COMMERCIAL:
-			# Davom etayotgan commercial break ga ulanadi (ikkita ketma-ket unskippable bo'lmasligi uchun)
+			# Davom etayotgan commercial break ga ulanadi
 			if on_completed.is_valid() and not _active_commercial_callbacks.has(on_completed):
 				_active_commercial_callbacks.append(on_completed)
 			print("PokiService: Commercial break davom etmoqda. So'rov joriy commercial break ga qo'shildi.")
@@ -327,6 +379,11 @@ func _start_commercial_break(on_completed: Callable = Callable()) -> void:
 		_on_commercial_break_finished([])
 
 func _on_commercial_break_finished(_args: Array = []) -> void:
+	# Duplicate callback guard: agar reklama allaqachon tugagan bo'lsa, takroriy callback e'tiborsiz qoldiriladi
+	if not _is_ad_playing or _current_ad_type != AdType.COMMERCIAL:
+		print("PokiService: Takroriy yoki eskirgan commercialBreak callback e'tiborsiz qoldirildi.")
+		return
+
 	print("PokiService: commercialBreak yakunlandi.")
 	_is_ad_playing = false
 	_current_ad_type = AdType.NONE
@@ -402,6 +459,11 @@ func _start_rewarded_break(on_reward_result: Callable = Callable()) -> void:
 		_on_rewarded_break_finished([false])
 
 func _on_rewarded_break_finished(args: Array = []) -> void:
+	# Duplicate callback guard: agar reklama allaqachon tugagan bo'lsa, takroriy callback e'tiborsiz qoldiriladi
+	if not _is_ad_playing or _current_ad_type != AdType.REWARDED:
+		print("PokiService: Takroriy yoki eskirgan rewardedBreak callback e'tiborsiz qoldirildi.")
+		return
+
 	var success: bool = false
 	if args.size() > 0:
 		success = bool(args[0])
