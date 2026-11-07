@@ -57,13 +57,37 @@ const testCases = [
         expectPoki: false
     },
     {
+        name: 'Non-standard port on Poki CDN (https://game-cdn.poki.com:8443/scripts/v2/poki-sdk.js)',
+        url: 'https://game-cdn.poki.com:8443/scripts/v2/poki-sdk.js',
+        expectTarget: false,
+        expectPoki: false
+    },
+    {
+        name: 'Explicit standard HTTPS port :443 (https://game-cdn.poki.com:443/scripts/v2/poki-sdk.js)',
+        url: 'https://game-cdn.poki.com:443/scripts/v2/poki-sdk.js',
+        expectTarget: true,
+        expectPoki: true
+    },
+    {
+        name: 'Insecure HTTP on Poki CDN (http://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
+        url: 'http://game-cdn.poki.com/scripts/v2/poki-sdk.js',
+        expectTarget: false,
+        expectPoki: false
+    },
+    {
+        name: 'Query parameter pollution on Poki CDN (https://game-cdn.poki.com/scripts/v2/poki-sdk.js?x=1)',
+        url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js?x=1',
+        expectTarget: false,
+        expectPoki: false
+    },
+    {
         name: 'Poki CDN path traversal attack (game-cdn.poki.com/scripts/v2/poki-sdk.js/../../evil)',
         url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js/../../evil',
         expectTarget: false,
         expectPoki: false
     },
     {
-        name: 'Official Poki SDK CDN URL (https://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
+        name: 'Canonical official Poki SDK CDN URL (https://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
         url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js',
         expectTarget: true,
         expectPoki: true
@@ -123,3 +147,4 @@ if (failures === 0) {
     console.log('======================================================================');
     process.exit(1);
 }
+

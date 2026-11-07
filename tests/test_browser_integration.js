@@ -160,9 +160,12 @@ function isOfficialPokiSdkUrl(urlString) {
     if (!urlString || typeof urlString !== 'string') return false;
     try {
         const u = new URL(urlString);
-        return (u.protocol === 'https:' || u.protocol === 'http:')
+        return u.protocol === 'https:'
             && u.hostname === 'game-cdn.poki.com'
-            && u.pathname === '/scripts/v2/poki-sdk.js';
+            && u.pathname === '/scripts/v2/poki-sdk.js'
+            && u.port === ''
+            && u.search === ''
+            && u.hash === '';
     } catch (_) {
         return false;
     }
@@ -233,19 +236,43 @@ function runSuite0UrlSecurityTests(port = 8101) {
             expectPoki: false
         },
         {
-            name: '8. Real official Poki CDN URL (https://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
+            name: '8. Non-standard port on Poki CDN (https://game-cdn.poki.com:8443/scripts/v2/poki-sdk.js)',
+            url: 'https://game-cdn.poki.com:8443/scripts/v2/poki-sdk.js',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '9. Explicit standard HTTPS port :443 (https://game-cdn.poki.com:443/scripts/v2/poki-sdk.js)',
+            url: 'https://game-cdn.poki.com:443/scripts/v2/poki-sdk.js',
+            expectTarget: true,
+            expectPoki: true
+        },
+        {
+            name: '10. Insecure HTTP on Poki CDN (http://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
+            url: 'http://game-cdn.poki.com/scripts/v2/poki-sdk.js',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '11. Query parameter pollution on Poki CDN (https://game-cdn.poki.com/scripts/v2/poki-sdk.js?x=1)',
+            url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js?x=1',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '12. Real canonical official Poki CDN URL (https://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
             url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js',
             expectTarget: true,
             expectPoki: true
         },
         {
-            name: '9. Real local game resource via 127.0.0.1 (http://127.0.0.1:' + port + '/index.html)',
+            name: '13. Real local game resource via 127.0.0.1 (http://127.0.0.1:' + port + '/index.html)',
             url: `http://127.0.0.1:${port}/index.html`,
             expectTarget: true,
             expectPoki: false
         },
         {
-            name: '10. Real local game resource via localhost (http://localhost:' + port + '/index.wasm)',
+            name: '14. Real local game resource via localhost (http://localhost:' + port + '/index.wasm)',
             url: `http://localhost:${port}/index.wasm`,
             expectTarget: true,
             expectPoki: false
