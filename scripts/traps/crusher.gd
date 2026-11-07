@@ -132,21 +132,21 @@ func _draw() -> void:
 	var w := crusher_size.x
 	var h := crusher_size.y
 	
-	# Asosiy ezuvchi blok korpusi (shift bilan 100% bir xil qoplama)
-	# Shift ichigacha yuqoriga uzatilgan to'liq blok (alohida zanjirsiz, shiftning davomidek)
+	# Asosiy ezuvchi blok korpusi (shift bilan bir xil qoplama)
+	# IDLE holatda crusher shift ichida joylashgan bo'lib, shift teksturasi, qor qatlami
+	# va muzchalar tutashuvini uzmasligi uchun faqat pastga tushganda korpus chiziladi.
 	var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
-	draw_rect(Rect2(0, -300.0, w, h + 300.0), body_col, true)
-	
-	# Faqat blok harakatlanganda yon qirralar chiziladi; IDLE holatda shift bilan bir butun
 	if state != State.IDLE:
+		draw_rect(Rect2(0, -300.0, w, h + 300.0), body_col, true)
 		if is_winter:
-			draw_line(Vector2(1, -300), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
+			draw_line(Vector2(1, -300), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.8), 2.0)
 			draw_line(
 				Vector2(w - 1, -300),
 				Vector2(w - 1, h),
-				Color(0.40, 0.70, 0.95, 0.4),
-				1.0
+				Color(0.40, 0.70, 0.95, 0.8),
+				2.0
 			)
+			draw_rect(Rect2(4.0, h - 8.0, w - 8.0, 3.0), Color(0.20, 0.55, 0.85, 0.6), true)
 		else:
 			draw_line(Vector2(1, -300), Vector2(1, h), Color("#334155"), 1.5)
 			draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color("#334155"), 1.5)
