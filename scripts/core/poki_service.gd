@@ -1,7 +1,7 @@
 extends Node
 
 # PokiService - Official Poki SDK v2 Integration for Wrong Way (Godot 4 HTML5)
-# Handles lifecycle, commercial breaks (interstitial), rewarded breaks, audio muting, and tab blur.
+# Handles lifecycle, commercial breaks, rewarded breaks, audio muting, and tab blur.
 
 signal commercial_break_completed
 signal rewarded_break_completed(success: bool)
@@ -29,6 +29,8 @@ var _is_ad_playing: bool = false
 var _current_ad_type: AdType = AdType.NONE
 var _is_init_in_progress: bool = false
 var _init_token: int = 0
+var _ad_token: int = 0
+var ad_timeout_seconds: float = 12.0
 
 # Lifecycle race condition himoyasi
 var _gameplay_desired: bool = false
@@ -90,12 +92,26 @@ func get_current_ad_type() -> AdType:
 func try_init_sdk() -> bool:
 	return _try_init_sdk()
 
+func get_ad_token() -> int:
+	return _ad_token
+
+func is_gameplay_desired() -> bool:
+	return _gameplay_desired
+
+func is_gameplay_notified_to_poki() -> bool:
+	return _gameplay_notified_to_poki
+
 func simulate_commercial_break_finished_for_test() -> void:
 	_on_commercial_break_finished([])
+
+func simulate_rewarded_break_finished_for_test(success: bool) -> void:
+	_on_rewarded_break_finished([success])
 
 func reset_state_for_testing() -> void:
 	_init_token += 1
 	_lifecycle_seq += 1
+	_ad_token += 1
+	ad_timeout_seconds = 12.0
 	sdk_state = SdkState.UNINITIALIZED
 	is_poki_available = false
 	is_gameplay_running = false
@@ -140,7 +156,9 @@ func _try_init_sdk() -> bool:
 
 	# Mock provider orqali tekshirish (testlar uchun)
 	if _sdk_mock_provider != null:
-		if not _sdk_mock_provider.has_method("has_poki_sdk") or not _sdk_mock_provider.has_poki_sdk():
+		var has_sdk: bool = _sdk_mock_provider.has_method("has_poki_sdk") \
+			and _sdk_mock_provider.has_poki_sdk()
+		if not has_sdk:
 			return false
 		_is_init_in_progress = true
 		sdk_state = SdkState.INITIALIZING
@@ -162,7 +180,7 @@ func _try_init_sdk() -> bool:
 
 	_is_init_in_progress = true
 	sdk_state = SdkState.INITIALIZING
-	print("PokiService: PokiSDK brauzerda topildi. PokiSDK.init() boshlanmoqda (token: %d)..." % current_token)
+	print("PokiService: PokiSDK topildi. init() boshlanmoqda (token: %d)..." % current_token)
 
 	_js_init_success_callback = JavaScriptBridge.create_callback(func(args = []):
 		_on_poki_init_success(current_token, args)
@@ -199,12 +217,12 @@ func _try_init_sdk() -> bool:
 
 func _on_poki_init_success(token: int, _args: Array = []) -> void:
 	if token != _init_token:
-		print("PokiService: Kechikkan/eskirgan init_success (token: %d != joriy: %d) e'tiborsiz qoldirildi." % [token, _init_token])
+		print("PokiService: Eskirgan init_success (token: %d) e'tiborsiz qoldirildi." % token)
 		return
 	if sdk_state != SdkState.INITIALIZING:
-		print("PokiService: Kutilmagan holatda kelgan init_success (state: %d) e'tiborsiz qoldirildi." % sdk_state)
+		print("PokiService: Kutilmagan init_success (state: %d) e'tiborsiz qoldirildi." % sdk_state)
 		return
-	print("PokiService: PokiSDK.init() muvaffaqiyatli yakunlandi (token: %d) -> SdkState.READY" % token)
+	print("PokiService: PokiSDK.init() muvaffaqiyatli (token: %d) -> READY" % token)
 	_is_init_in_progress = false
 	sdk_state = SdkState.READY
 	is_poki_available = true
@@ -212,7 +230,7 @@ func _on_poki_init_success(token: int, _args: Array = []) -> void:
 
 func _on_poki_init_failed(token: int, _args: Array = []) -> void:
 	if token != _init_token:
-		print("PokiService: Kechikkan/eskirgan init_failed (token: %d != joriy: %d) e'tiborsiz qoldirildi." % [token, _init_token])
+		print("PokiService: Eskirgan init_failed (token: %d) e'tiborsiz qoldirildi." % token)
 		return
 	if sdk_state != SdkState.INITIALIZING:
 		return
@@ -230,7 +248,7 @@ func _poll_sdk_availability() -> void:
 			_try_init_sdk()
 		await get_tree().create_timer(0.25).timeout
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
-		print("PokiService: PokiSDK monitoring vaqti tugadi -> SdkState.FAILED (token: %d bekor qilindi)" % _init_token)
+		print("PokiService: SDK monitoring vaqti tugadi -> FAILED (token: %d)" % _init_token)
 		_init_token += 1
 		_is_init_in_progress = false
 		sdk_state = SdkState.FAILED
@@ -248,14 +266,15 @@ func ensure_sdk_initialized(max_wait: float = 2.5) -> int:
 		_try_init_sdk()
 
 	var elapsed := 0.0
-	while (sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING) and elapsed < max_wait:
+	while (sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING) \
+			and elapsed < max_wait:
 		await get_tree().create_timer(0.05).timeout
 		elapsed += 0.05
 		if sdk_state == SdkState.UNINITIALIZED:
 			_try_init_sdk()
 
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
-		print("PokiService: SDK init kutilishi vaqti tugadi -> SdkState.FAILED (token: %d bekor qilindi)" % _init_token)
+		print("PokiService: SDK init timeout -> SdkState.FAILED (token: %d bekor)" % _init_token)
 		_init_token += 1
 		_is_init_in_progress = false
 		sdk_state = SdkState.FAILED
@@ -287,21 +306,26 @@ func gameplay_start() -> void:
 	if sdk_state == SdkState.UNINITIALIZED or sdk_state == SdkState.INITIALIZING:
 		await ensure_sdk_initialized(2.0)
 
-	# Race condition tekshiruvi: kutish vaqtida stop chaqirilgan yoki reklama boshlangan bo'lsa
 	if seq != _lifecycle_seq:
-		print("PokiService: Eski gameplay_start (seq: %d != joriy: %d) Poki'ga yuborilmadi." % [seq, _lifecycle_seq])
+		print("PokiService: Eski gameplay_start (seq: %d) e'tiborsiz qoldirildi." % seq)
 		return
-	if not _gameplay_desired or _is_ad_playing:
-		print("PokiService: gameplay_start bekor qilindi (desired: %s, ad_playing: %s)" % [_gameplay_desired, _is_ad_playing])
+	if not _gameplay_desired:
+		return
+	if _is_ad_playing:
+		print("PokiService: Reklama davomida gameplay_start kutish rejimiga o'tdi.")
 		return
 
-	if sdk_state == SdkState.READY and not _gameplay_notified_to_poki:
-		_gameplay_notified_to_poki = true
-		print("PokiService: PokiSDK.gameplayStart() yuborildi.")
-		if _sdk_mock_provider != null and _sdk_mock_provider.has_method("gameplay_start"):
-			_sdk_mock_provider.gameplay_start()
-		elif OS.has_feature("web"):
-			JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStart(); }")
+	_notify_gameplay_start_if_ready()
+
+func _notify_gameplay_start_if_ready() -> void:
+	if sdk_state == SdkState.READY and _gameplay_desired and not _is_ad_playing:
+		if not _gameplay_notified_to_poki:
+			_gameplay_notified_to_poki = true
+			print("PokiService: PokiSDK.gameplayStart() yuborildi.")
+			if _sdk_mock_provider != null and _sdk_mock_provider.has_method("gameplay_start"):
+				_sdk_mock_provider.gameplay_start()
+			elif OS.has_feature("web"):
+				JavaScriptBridge.eval("if (window.PokiSDK) { PokiSDK.gameplayStart(); }")
 
 func gameplay_stop() -> void:
 	_lifecycle_seq += 1
@@ -334,14 +358,13 @@ func commercial_break(on_completed: Callable = Callable()) -> void:
 			# Davom etayotgan commercial break ga ulanadi
 			if on_completed.is_valid() and not _active_commercial_callbacks.has(on_completed):
 				_active_commercial_callbacks.append(on_completed)
-			print("PokiService: Commercial break davom etmoqda. So'rov joriy commercial break ga qo'shildi.")
+			print("PokiService: Commercial break davom etmoqda. So'rov qo'shildi.")
 			return
 		elif _current_ad_type == AdType.REWARDED:
-			# Rewarded reklama ketmoqda! Bu so'rov navbatga qo'yiladi.
-			# Rewarded tugagach, bu so'rov haqiqiy commercialBreak orqali alohida ko'rsatiladi!
+			# Rewarded break vaqtida kelgan commercial so'rov navbatga olinadi
 			if on_completed.is_valid() and not _queued_commercial_requests.has(on_completed):
 				_queued_commercial_requests.append(on_completed)
-			print("PokiService: Rewarded break ketmoqda. Commercial so'rov alohida navbatga olindi (rewarded tugagach haqiqiy commercialBreak chaqiriladi).")
+			print("PokiService: Rewarded break ketmoqda. Commercial so'rov navbatga olindi.")
 			return
 
 	_start_commercial_break(on_completed)
@@ -352,6 +375,10 @@ func _start_commercial_break(on_completed: Callable = Callable()) -> void:
 
 	_is_ad_playing = true
 	_current_ad_type = AdType.COMMERCIAL
+	_ad_token += 1
+	var token := _ad_token
+	_start_ad_safety_timer(token, AdType.COMMERCIAL, ad_timeout_seconds)
+
 	print("PokiService: commercialBreak boshlanmoqda...")
 	gameplay_stop()
 	AudioServer.set_bus_mute(0, true)
@@ -391,9 +418,9 @@ func _start_commercial_break(on_completed: Callable = Callable()) -> void:
 		_on_commercial_break_finished([])
 
 func _on_commercial_break_finished(_args: Array = []) -> void:
-	# Duplicate callback guard: agar reklama allaqachon tugagan bo'lsa, takroriy callback e'tiborsiz qoldiriladi
+	# Duplicate callback guard: reklama tugagan bo'lsa, takroriy callback o'tkazilmaydi
 	if not _is_ad_playing or _current_ad_type != AdType.COMMERCIAL:
-		print("PokiService: Takroriy yoki eskirgan commercialBreak callback e'tiborsiz qoldirildi.")
+		print("PokiService: Takroriy yoki eskirgan commercialBreak callback e'tiborsiz.")
 		return
 
 	print("PokiService: commercialBreak yakunlandi.")
@@ -409,6 +436,10 @@ func _on_commercial_break_finished(_args: Array = []) -> void:
 
 	commercial_break_completed.emit()
 
+	# Agar reklama vaqtida gameplay_start chaqirilgan bo'lsa (start kutayotgan holat)
+	if _gameplay_desired and not _gameplay_notified_to_poki:
+		_notify_gameplay_start_if_ready()
+
 	# Agar navbatda turgan boshqa so'rovlar bo'lsa tekshiramiz
 	_check_queued_ad_requests()
 
@@ -420,7 +451,7 @@ func rewarded_break(on_reward_result: Callable = Callable()) -> void:
 	# Bir vaqtning o'zida ikkita reklama ko'rsatilishi mumkin emas.
 	# Davom etayotgan reklamani buzmasdan ushbu so'rov xavfsiz rad etiladi.
 	if _is_ad_playing:
-		print("PokiService: Reklama allaqachon ko'rsatilmoqda, yangi rewarded so'rovi xavfsiz rad etildi (success=false).")
+		print("PokiService: Reklama ketmoqda, rewarded so'rovi rad etildi (success=false).")
 		if on_reward_result.is_valid():
 			on_reward_result.call(false)
 		return
@@ -433,6 +464,10 @@ func _start_rewarded_break(on_reward_result: Callable = Callable()) -> void:
 
 	_is_ad_playing = true
 	_current_ad_type = AdType.REWARDED
+	_ad_token += 1
+	var token := _ad_token
+	_start_ad_safety_timer(token, AdType.REWARDED, ad_timeout_seconds)
+
 	print("PokiService: rewardedBreak boshlanmoqda...")
 	gameplay_stop()
 	AudioServer.set_bus_mute(0, true)
@@ -471,9 +506,9 @@ func _start_rewarded_break(on_reward_result: Callable = Callable()) -> void:
 		_on_rewarded_break_finished([false])
 
 func _on_rewarded_break_finished(args: Array = []) -> void:
-	# Duplicate callback guard: agar reklama allaqachon tugagan bo'lsa, takroriy callback e'tiborsiz qoldiriladi
+	# Duplicate callback guard: reklama tugagan bo'lsa, takroriy callback o'tkazilmaydi
 	if not _is_ad_playing or _current_ad_type != AdType.REWARDED:
-		print("PokiService: Takroriy yoki eskirgan rewardedBreak callback e'tiborsiz qoldirildi.")
+		print("PokiService: Takroriy yoki eskirgan rewardedBreak callback e'tiborsiz.")
 		return
 
 	var success: bool = false
@@ -493,16 +528,19 @@ func _on_rewarded_break_finished(args: Array = []) -> void:
 
 	rewarded_break_completed.emit(success)
 
+	# Agar navbatda boshqa commercial bo'lmasa va start kutayotgan bo'lsa
+	var queue_empty: bool = _queued_commercial_requests.is_empty()
+	if _gameplay_desired and not _gameplay_notified_to_poki and queue_empty:
+		_notify_gameplay_start_if_ready()
+
 	# 2. Commercial va rewarded navbatlari ARALASHMAYDI!
-	# Rewarded break vaqtida navbatga tushgan commercial so'rov(lar) bo'lsa:
-	# Ularning callback'i reklamasiz chaqirilmaydi! Haqiqiy commercialBreak ishga tushiriladi!
 	_check_queued_ad_requests()
 
 func _check_queued_ad_requests() -> void:
 	if _queued_commercial_requests.is_empty():
 		return
 
-	print("PokiService: Navbatda turgan commercial so'rov(lar) haqiqiy commercialBreak orqali ishga tushirilmoqda...")
+	print("PokiService: Navbatdagi commercial so'rov(lar) ishga tushirilmoqda...")
 	var next_callbacks := _queued_commercial_requests.duplicate()
 	_queued_commercial_requests.clear()
 
@@ -511,3 +549,15 @@ func _check_queued_ad_requests() -> void:
 			_active_commercial_callbacks.append(cb)
 
 	_start_commercial_break()
+
+func _start_ad_safety_timer(token: int, type: AdType, max_wait: float) -> void:
+	var tree := get_tree()
+	if not tree or max_wait <= 0.0:
+		return
+	await tree.create_timer(max_wait).timeout
+	if _is_ad_playing and _current_ad_type == type and _ad_token == token:
+		print("PokiService: Reklama callback timeout (%.1fs). Tiklanmoqda." % max_wait)
+		if type == AdType.COMMERCIAL:
+			_on_commercial_break_finished([])
+		elif type == AdType.REWARDED:
+			_on_rewarded_break_finished([false])
