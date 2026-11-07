@@ -273,11 +273,11 @@
         "name": "Crusher1",
         "type": "crusher",
         "x": 300,
-        "y": 140,
+        "y": -4,
         "w": 64,
         "h": 64,
         "params": {
-          "target_y": 320,
+          "target_y": 304,
           "wait_at_bottom": 1.2
         }
       },
@@ -609,7 +609,7 @@
       {
         "name": "RollingBoulderFront",
         "type": "rolling_boulder",
-        "x": 420,
+        "x": 520,
         "y": 350,
         "w": 56,
         "h": 56,
@@ -775,11 +775,11 @@
         "name": "CrusherMid",
         "type": "crusher",
         "x": 480,
-        "y": 140,
+        "y": -4,
         "w": 68,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
@@ -797,7 +797,7 @@
       {
         "name": "RollingBoulderFront",
         "type": "rolling_boulder",
-        "x": 700,
+        "x": 640,
         "y": 350,
         "w": 56,
         "h": 56,
@@ -1034,11 +1034,11 @@
         "name": "CrusherMid",
         "type": "crusher",
         "x": 480,
-        "y": 140,
+        "y": -4,
         "w": 64,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
@@ -1260,11 +1260,11 @@
         "name": "Crusher1",
         "type": "crusher",
         "x": 140,
-        "y": 140,
+        "y": -4,
         "w": 68,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
@@ -1312,11 +1312,11 @@
         "name": "Crusher2",
         "type": "crusher",
         "x": 460,
-        "y": 140,
+        "y": -4,
         "w": 68,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
@@ -1744,11 +1744,11 @@
         "name": "BigCrusher",
         "type": "crusher",
         "x": 760,
-        "y": 140,
+        "y": -4,
         "w": 80,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       }
     ]
@@ -1967,11 +1967,11 @@
         "name": "CrusherMid",
         "type": "crusher",
         "x": 480,
-        "y": 140,
+        "y": -4,
         "w": 64,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
@@ -2128,22 +2128,22 @@
         "name": "Crusher1",
         "type": "crusher",
         "x": 420,
-        "y": 140,
+        "y": -4,
         "w": 64,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
         "name": "Crusher2",
         "type": "crusher",
         "x": 510,
-        "y": 140,
+        "y": -4,
         "w": 64,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
@@ -2297,7 +2297,7 @@
         "name": "Stalactite1",
         "type": "falling_spike",
         "x": 210,
-        "y": 60,
+        "y": 50,
         "w": 24,
         "h": 32,
         "params": {
@@ -2309,7 +2309,7 @@
         "name": "Stalactite2",
         "type": "falling_spike",
         "x": 260,
-        "y": 60,
+        "y": 50,
         "w": 24,
         "h": 32,
         "params": {
@@ -2321,33 +2321,33 @@
         "name": "Crusher1",
         "type": "crusher",
         "x": 240,
-        "y": 150,
+        "y": -14,
         "w": 50,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
         "name": "Crusher2",
         "type": "crusher",
         "x": 300,
-        "y": 150,
+        "y": -14,
         "w": 50,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {
         "name": "Crusher3",
         "type": "crusher",
         "x": 360,
-        "y": 150,
+        "y": -14,
         "w": 50,
         "h": 64,
         "params": {
-          "target_y": 320
+          "target_y": 304
         }
       },
       {

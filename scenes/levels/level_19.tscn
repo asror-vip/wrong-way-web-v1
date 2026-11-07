@@ -74,14 +74,14 @@ trigger_distance = 260
 shake_duration = 0.5
 
 [node name="Crusher1" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(420, 140)
+position = Vector2(420, -4)
 crusher_size = Vector2(64, 64)
-target_y = 320
+target_y = 304
 
 [node name="Crusher2" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(510, 140)
+position = Vector2(510, -4)
 crusher_size = Vector2(64, 64)
-target_y = 320
+target_y = 304
 
 [node name="PopUpSpikesMid" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(570, 380)

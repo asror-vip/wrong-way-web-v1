@@ -63,9 +63,9 @@ position = Vector2(410, 348)
 spike_size = Vector2(40, 32)
 
 [node name="CrusherMid" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(480, 140)
+position = Vector2(480, -4)
 crusher_size = Vector2(64, 64)
-target_y = 320
+target_y = 304
 
 [node name="RollingBoulderMid" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(650, 350)

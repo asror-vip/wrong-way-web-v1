@@ -84,6 +84,8 @@ func reset_trap() -> void:
 	patrol_t = 0.0
 	moving_forward = true
 	global_position = start_pos
+	if trigger_distance > 0.0 and col_shape:
+		col_shape.disabled = true
 	queue_redraw()
 
 func _draw() -> void:

@@ -43,7 +43,7 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="RollingBoulderFront" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(420, 350)
+position = Vector2(520, 350)
 roll_direction = -1
 roll_speed = 360
 trigger_distance = 260

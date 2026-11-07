@@ -36,9 +36,9 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="Crusher1" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(300, 140)
+position = Vector2(300, -4)
 crusher_size = Vector2(64, 64)
-target_y = 320
+target_y = 304
 wait_at_bottom = 1.2
 
 [node name="SpikesEnd" parent="Traps" instance=ExtResource("6_tr")]

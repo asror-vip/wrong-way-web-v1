@@ -70,9 +70,9 @@ patrol_speed = 130
 patrol_axis = Vector2(1, 0)
 
 [node name="BigCrusher" parent="Traps" instance=ExtResource("9_tr")]
-position = Vector2(760, 140)
+position = Vector2(760, -4)
 crusher_size = Vector2(80, 64)
-target_y = 320
+target_y = 304
 
 [node name="ExitDoor" parent="." instance=ExtResource("4_ed")]
 position = Vector2(870, 380)

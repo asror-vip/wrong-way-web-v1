@@ -50,9 +50,9 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="Crusher1" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(140, 140)
+position = Vector2(140, -4)
 crusher_size = Vector2(68, 64)
-target_y = 320
+target_y = 304
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("6_tr")]
 position = Vector2(190, 60)
@@ -74,9 +74,9 @@ trigger_distance = 75
 warning_time = 0.4
 
 [node name="Crusher2" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(460, 140)
+position = Vector2(460, -4)
 crusher_size = Vector2(68, 64)
-target_y = 320
+target_y = 304
 
 [node name="TrapFloorEnd" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(510, 380)

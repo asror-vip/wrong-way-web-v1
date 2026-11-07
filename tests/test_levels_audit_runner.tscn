@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://testlevelsrunner01"]
+
+[ext_resource type="Script" path="res://tests/test_levels_audit_runner.gd" id="1_tlr"]
+
+[node name="TestLevelsAuditRunner" type="Node2D"]
+script = ExtResource("1_tlr")
+

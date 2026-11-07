@@ -73,29 +73,29 @@ patrol_speed = 160
 patrol_axis = Vector2(1, 0)
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(210, 60)
+position = Vector2(210, 50)
 trigger_distance = 280
 shake_duration = 0.4
 
 [node name="Stalactite2" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(260, 60)
+position = Vector2(260, 50)
 trigger_distance = 260
 shake_duration = 0.5
 
 [node name="Crusher1" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(240, 150)
+position = Vector2(240, -14)
 crusher_size = Vector2(50, 64)
-target_y = 320
+target_y = 304
 
 [node name="Crusher2" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(300, 150)
+position = Vector2(300, -14)
 crusher_size = Vector2(50, 64)
-target_y = 320
+target_y = 304
 
 [node name="Crusher3" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(360, 150)
+position = Vector2(360, -14)
 crusher_size = Vector2(50, 64)
-target_y = 320
+target_y = 304
 
 [node name="LaserPitGate" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(410, 220)

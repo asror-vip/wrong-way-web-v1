@@ -17,8 +17,8 @@ var original_pos: Vector2
 func _ready() -> void:
 	add_to_group("traps")
 	original_pos = global_position
-	# Eski fayllardagi 0.4s - 0.6s kechikishlarni qisqartirib, kutilmaganda tushadigan qilamiz
-	shake_duration = minf(shake_duration, 0.04)
+	# Kutilmagan, ammo adolatli qochish imkoniyatini beruvchi ogohlantirish (0.18s)
+	shake_duration = clampf(shake_duration, 0.16, 0.22)
 	visible = false
 	if col_shape:
 		col_shape.set_deferred("disabled", true)
@@ -68,7 +68,7 @@ func _physics_process(delta: float) -> void:
 
 func _trigger() -> void:
 	is_triggered = true
-	shake_timer = minf(shake_duration, 0.04)
+	shake_timer = clampf(shake_duration, 0.16, 0.22)
 	visible = true
 	if col_shape:
 		col_shape.set_deferred("disabled", false)

@@ -13,7 +13,7 @@ var runaway_tween: Tween = null
 
 func _ready() -> void:
 	add_to_group("traps")
-	start_pos = global_position
+	start_pos = position
 	if col_shape:
 		col_shape.shape = RectangleShape2D.new()
 		col_shape.shape.size = door_size
@@ -120,7 +120,7 @@ func _on_body_entered(body: Node2D) -> void:
 func reset_trap() -> void:
 	if runaway_tween and runaway_tween.is_valid():
 		runaway_tween.kill()
-	global_position = start_pos
+	position = start_pos
 	rotation = 0.0
 	is_triggered = false
 	visible = true

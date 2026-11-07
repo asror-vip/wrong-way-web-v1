@@ -127,38 +127,21 @@ func _draw() -> void:
 	var w := crusher_size.x
 	var h := crusher_size.y
 	
-	# Zanjir (shiftgacha ko'tariluvchi osilgan temir zanjir)
-	var chain_x := w / 2.0
-	var link_spacing := 12.0
-	var current_y := 0.0
-	while current_y > -600.0:
-		# Zanjir halqasi
-		draw_rect(Rect2(chain_x - 3.0, current_y - 10.0, 6.0, 10.0), Color("#1a2230"), false, 1.8)
-		draw_line(Vector2(chain_x, current_y - 10.0), Vector2(chain_x, current_y - 12.0), Color("#2a3548"), 1.5)
-		current_y -= link_spacing
-	
-	# Zanjir qotirgich halqasi (crusher tepasida)
-	draw_circle(Vector2(chain_x, 0), 5.0, Color("#262e3e"))
-	draw_circle(Vector2(chain_x, 0), 2.5, Color("#0c0e14"))
-	
-	# Asosiy ezuvchi blok korpusi
-	var body_col := Color("#0d131f") if is_winter else Color("#0c0e14")
-	draw_rect(Rect2(0, 0, w, h), body_col, true)
+	# Asosiy ezuvchi blok korpusi (shift bilan 100% bir xil qoplama)
+	# Shift ichigacha yuqoriga uzatilgan to'liq blok (alohida zanjirsiz, shiftning davomidek)
+	var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
+	draw_rect(Rect2(0, -300.0, w, h + 300.0), body_col, true)
 	
 	if is_winter:
-		# Crusher tepasidagi qor qatlami
-		draw_rect(Rect2(0, 0, w, 5.0), Color("#ffffff"), true)
-		draw_rect(Rect2(0, 4.0, w, 1.5), Color("#94a3b8"), true)
-		draw_line(Vector2(1, 1), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
-		draw_line(Vector2(w - 1, 1), Vector2(w - 1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
+		draw_line(Vector2(1, -300), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
+		draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color(0.40, 0.70, 0.95, 0.4), 1.0)
 	else:
-		# Korpusning metall qirralari
-		draw_line(Vector2(0, 1), Vector2(w, 1), Color("#475569"), 2.0)
-		draw_line(Vector2(1, 1), Vector2(1, h), Color("#334155"), 1.5)
-		draw_line(Vector2(w - 1, 1), Vector2(w - 1, h), Color("#334155"), 1.5)
+		draw_line(Vector2(1, -300), Vector2(1, h), Color("#334155"), 1.5)
+		draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color("#334155"), 1.5)
 		draw_rect(Rect2(4.0, h - 8.0, w - 8.0, 3.0), Color("#2a2536"), true)
 	
 	# Tishlar: barcha tikanlar bilan 100% BIR XIL po'lat tishlar
+	# (shiftning pastki chekkasidan chiqib turadi)
 	var teeth := 4
 	var tw := w / float(teeth)
 	var tooth_len := 13.0

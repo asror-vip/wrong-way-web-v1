@@ -57,10 +57,7 @@ func reveal(player: Node2D = null) -> void:
 func reset_trap() -> void:
 	if tw and tw.is_valid():
 		tw.kill()
-	# Agar persist_revealed false bo'lsa qayta ko'rinmas bo'ladi,
-	# lekin adolatli troll o'yinlarida bir marta urilgach ko'rinib turishi o'tishni o'rgatadi
-	if not persist_revealed:
-		is_revealed = false
+	is_revealed = false
 	position = original_pos
 	queue_redraw()
 

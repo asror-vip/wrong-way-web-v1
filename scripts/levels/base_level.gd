@@ -48,9 +48,11 @@ func reset_level_traps() -> void:
 		for trap in traps_container.get_children():
 			if trap.has_method("reset_trap"):
 				unique_traps[trap] = true
-	for trap in get_tree().get_nodes_in_group("traps"):
-		if trap.has_method("reset_trap"):
-			unique_traps[trap] = true
+	var tree := get_tree()
+	if tree:
+		for trap in tree.get_nodes_in_group("traps"):
+			if trap.has_method("reset_trap"):
+				unique_traps[trap] = true
 	for trap in unique_traps.keys():
 		trap.reset_trap()
 	if player and player.has_method("clear_inverter_zones"):

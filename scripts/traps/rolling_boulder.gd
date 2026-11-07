@@ -98,6 +98,8 @@ func _on_kill_entered(body: Node2D) -> void:
 
 func reset_trap() -> void:
 	is_triggered = false
+	is_rolling = false
+	roll_delay_timer = 0.0
 	global_position = original_pos
 	velocity = Vector2.ZERO
 	roll_rotation = 0.0
