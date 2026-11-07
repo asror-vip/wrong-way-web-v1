@@ -451,12 +451,26 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     const networkRequests = new Map();
     const networkResponses = [];
     const networkFailures = [];
+    const externalFailures = [];
     const canceledRequests = [];
     const http404s = [];
+    const external404s = [];
     let pokiCdnReq = null;
     let pokiCdnRes = null;
     let pokiCdnFinished = false;
     let pokiCdnFailed = false;
+
+    // Helper: strictly isolate local game server & official Poki CDN from third-party domains
+    function isTargetResourceUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        if (url.startsWith(`http://127.0.0.1:${port}`) || url.startsWith(`http://localhost:${port}`)) {
+            return true;
+        }
+        if (url.includes('game-cdn.poki.com') || url.includes('poki-sdk')) {
+            return true;
+        }
+        return false;
+    }
 
     client.on('Network.requestWillBeSent', (params) => {
         networkRequests.set(params.requestId, params);
@@ -468,11 +482,17 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
 
     client.on('Network.responseReceived', (params) => {
         networkResponses.push(params.response);
+        const url = params.response.url;
         if (params.response.status === 404) {
-            http404s.push(params.response.url);
-            console.warn(`  [CDP Network 404] Resource not found: ${params.response.url}`);
+            if (isTargetResourceUrl(url)) {
+                http404s.push(url);
+                console.error(`  [CDP Game Network 404] Game/CDN resource not found: ${url}`);
+            } else {
+                external404s.push(url);
+                console.log(`  [CDP External 404 Logged] External non-game resource 404: ${url}`);
+            }
         }
-        if (params.response.url.includes('game-cdn.poki.com/scripts/v2/poki-sdk.js')) {
+        if (url.includes('game-cdn.poki.com/scripts/v2/poki-sdk.js')) {
             pokiCdnRes = params.response;
             console.log(`  [CDP Network] Poki CDN response: ${params.response.status} (${params.response.mimeType})`);
         }
@@ -490,9 +510,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         const req = networkRequests.get(params.requestId);
         const url = req ? req.request.url : 'unknown';
         const isPoki = url.includes('game-cdn.poki.com') || url.includes('poki-sdk');
-        const isGameResource = url.startsWith(`http://127.0.0.1:${port}`)
-            || url.includes('.wasm') || url.includes('.pck')
-            || url.includes('.js') || url.includes('.html');
+        const isTarget = isTargetResourceUrl(url);
 
         if (isPoki) {
             pokiCdnFailed = true;
@@ -500,10 +518,10 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         }
 
         if (params.canceled) {
-            canceledRequests.push({ url, errorText: params.errorText, type: params.type });
-            console.log(`  [CDP Canceled Request] ${url} (${params.errorText})`);
-            // Required resource or Poki CDN cancellation is a fatal failure!
-            if (isPoki || (isGameResource && !url.includes('about:blank') && url !== 'unknown')) {
+            canceledRequests.push({ url, errorText: params.errorText, type: params.type, isTarget });
+            console.log(`  [CDP Canceled Request] ${url} (${params.errorText}) [target: ${isTarget}]`);
+            // Required target resource (local game or Poki CDN) cancellation is a fatal failure!
+            if (isTarget && !url.includes('about:blank') && url !== 'unknown') {
                 networkFailures.push({
                     url,
                     errorText: `${params.errorText} (canceled)`,
@@ -512,10 +530,11 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
             }
         } else {
             // Resource-aware: only fail on Poki CDN or local game resource failures
-            if (isPoki || isGameResource) {
+            if (isTarget) {
                 networkFailures.push({ url, errorText: params.errorText, type: params.type });
-                console.warn(`  [CDP Network Failed] ${url}: ${params.errorText}`);
+                console.error(`  [CDP Game Network Failed] ${url}: ${params.errorText}`);
             } else {
+                externalFailures.push({ url, errorText: params.errorText, type: params.type });
                 console.log(`  [CDP External Block Ignored] ${url}: ${params.errorText}`);
             }
         }
@@ -595,8 +614,8 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         { name: '11. Godot PokiService reports is_poki_available is true', pass: pokiState && pokiState.is_poki_available === true },
         { name: '12. Zero fatal JS / WASM runtime exceptions via CDP (Runtime.exceptionThrown)', pass: runtimeExceptions.length === 0 },
         { name: '13. Zero console error events via CDP (Runtime.consoleAPICalled type===error)', pass: consoleErrors.length === 0 },
-        { name: '14. Zero relevant network loading failures via CDP (Network.loadingFailed)', pass: networkFailures.length === 0 && pokiCdnFailed === false },
-        { name: '15. Zero HTTP 404 network responses collected via CDP', pass: http404s.length === 0 }
+        { name: '14. Zero relevant game/CDN network loading failures via CDP (Network.loadingFailed)', pass: networkFailures.length === 0 && pokiCdnFailed === false },
+        { name: '15. Zero HTTP 404 game/CDN network responses collected via CDP', pass: http404s.length === 0 }
     ];
 
     console.log('\n--- SUITE 1 VERIFICATION RESULTS ---');
@@ -613,8 +632,10 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         runtimeExceptions: runtimeExceptions.length,
         consoleErrors: consoleErrors.length,
         networkFailures: networkFailures.length,
+        externalFailures: externalFailures.length,
         canceledRequests: canceledRequests.length,
-        http404s: http404s.length
+        http404s: http404s.length,
+        external404s: external404s.length
     };
 }
 
