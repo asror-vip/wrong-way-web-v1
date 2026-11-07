@@ -190,26 +190,26 @@ func _try_init_sdk() -> bool:
 	)
 
 	var window = JavaScriptBridge.get_interface("window")
-	window._poki_init_success = _js_init_success_callback
-	window._poki_init_failed = _js_init_failed_callback
+	window.poki_init_success = _js_init_success_callback
+	window.poki_init_failed = _js_init_failed_callback
 
 	JavaScriptBridge.eval("""
-		if (window.PokiSDK && !window._poki_init_called) {
-			window._poki_init_called = true;
+		if (window.PokiSDK && !window.poki_init_called) {
+			window.poki_init_called = true;
 			window.PokiSDK.init().then(function() {
 				console.log('PokiSDK init success');
-				if (window._poki_init_success) {
-					window._poki_init_success();
+				if (window.poki_init_success) {
+					window.poki_init_success();
 				}
 			}).catch(function(err) {
 				console.warn('PokiSDK init failed:', err);
-				if (window._poki_init_failed) {
-					window._poki_init_failed();
+				if (window.poki_init_failed) {
+					window.poki_init_failed();
 				}
 			});
 		} else if (!window.PokiSDK) {
-			if (window._poki_init_failed) {
-				window._poki_init_failed();
+			if (window.poki_init_failed) {
+				window.poki_init_failed();
 			}
 		}
 	""")
@@ -395,21 +395,21 @@ func _start_commercial_break(on_completed: Callable = Callable()) -> void:
 	if sdk_state == SdkState.READY:
 		_js_commercial_callback = JavaScriptBridge.create_callback(_on_commercial_break_finished)
 		var window = JavaScriptBridge.get_interface("window")
-		window._poki_commercial_callback = _js_commercial_callback
+		window.poki_commercial_callback = _js_commercial_callback
 		JavaScriptBridge.eval("""
 			if (window.PokiSDK) {
 				PokiSDK.commercialBreak().then(function() {
-					if (window._poki_commercial_callback) {
-						window._poki_commercial_callback();
+					if (window.poki_commercial_callback) {
+						window.poki_commercial_callback();
 					}
 				}).catch(function(err) {
 					console.warn('PokiSDK commercialBreak rejected:', err);
-					if (window._poki_commercial_callback) {
-						window._poki_commercial_callback();
+					if (window.poki_commercial_callback) {
+						window.poki_commercial_callback();
 					}
 				});
-			} else if (window._poki_commercial_callback) {
-				window._poki_commercial_callback();
+			} else if (window.poki_commercial_callback) {
+				window.poki_commercial_callback();
 			}
 		""")
 	else:
@@ -484,21 +484,21 @@ func _start_rewarded_break(on_reward_result: Callable = Callable()) -> void:
 	if sdk_state == SdkState.READY:
 		_js_rewarded_callback = JavaScriptBridge.create_callback(_on_rewarded_break_finished)
 		var window = JavaScriptBridge.get_interface("window")
-		window._poki_rewarded_callback = _js_rewarded_callback
+		window.poki_rewarded_callback = _js_rewarded_callback
 		JavaScriptBridge.eval("""
 			if (window.PokiSDK) {
 				PokiSDK.rewardedBreak().then(function(success) {
-					if (window._poki_rewarded_callback) {
-						window._poki_rewarded_callback(Boolean(success));
+					if (window.poki_rewarded_callback) {
+						window.poki_rewarded_callback(Boolean(success));
 					}
 				}).catch(function(err) {
 					console.warn('PokiSDK rewardedBreak rejected:', err);
-					if (window._poki_rewarded_callback) {
-						window._poki_rewarded_callback(false);
+					if (window.poki_rewarded_callback) {
+						window.poki_rewarded_callback(false);
 					}
 				});
-			} else if (window._poki_rewarded_callback) {
-				window._poki_rewarded_callback(false);
+			} else if (window.poki_rewarded_callback) {
+				window.poki_rewarded_callback(false);
 			}
 		""")
 	else:

@@ -127,9 +127,9 @@ func _test_control_inverter_real_player() -> void:
 	add_child(inv_a)
 	add_child(inv_b)
 
-	# Simulating body_entered into both zones
-	inv_a._on_body_entered(player)
-	inv_b._on_body_entered(player)
+	# Simulating player entering both zones
+	player.add_inverter_zone(inv_a)
+	player.add_inverter_zone(inv_b)
 	assert(player.controls_inverted == true, "Both zones entered -> inverted")
 	assert(player.active_inverters.size() == 2, "Both zones registered")
 
@@ -144,7 +144,7 @@ func _test_control_inverter_real_player() -> void:
 	assert(player.controls_inverted == false, "All zones reset -> controls restored")
 
 	# Respawn clears all active inverters
-	inv_a._on_body_entered(player)
+	player.add_inverter_zone(inv_a)
 	assert(player.controls_inverted == true, "Zone A re-entered")
 	player.respawn()
 	assert(player.controls_inverted == false, "Respawn must clear all zones")
