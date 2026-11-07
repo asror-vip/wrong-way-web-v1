@@ -154,6 +154,122 @@ async function waitForCondition(predicateFn, timeoutMs = 12000, intervalMs = 100
 }
 
 // -------------------------------------------------------------------
+// Safe URL Classification Utilities (Strict Parsed URL Matching)
+// -------------------------------------------------------------------
+function isOfficialPokiSdkUrl(urlString) {
+    if (!urlString || typeof urlString !== 'string') return false;
+    try {
+        const u = new URL(urlString);
+        return (u.protocol === 'https:' || u.protocol === 'http:')
+            && u.hostname === 'game-cdn.poki.com'
+            && u.pathname === '/scripts/v2/poki-sdk.js';
+    } catch (_) {
+        return false;
+    }
+}
+
+function isLocalGameResourceUrl(urlString, port) {
+    if (!urlString || typeof urlString !== 'string') return false;
+    try {
+        const u = new URL(urlString);
+        return u.protocol === 'http:'
+            && (u.hostname === '127.0.0.1' || u.hostname === 'localhost')
+            && u.port === String(port);
+    } catch (_) {
+        return false;
+    }
+}
+
+function isTargetResourceUrl(urlString, port) {
+    return isOfficialPokiSdkUrl(urlString) || isLocalGameResourceUrl(urlString, port);
+}
+
+function runSuite0UrlSecurityTests(port = 8101) {
+    console.log('\n======================================================================');
+    console.log('SUITE 0: URL CLASSIFICATION & SPOOFING RESILIENCE UNIT TESTS');
+    console.log('======================================================================');
+
+    const testCases = [
+        {
+            name: '1. Hostname suffix spoofing (http://127.0.0.1:8101.evil.example/index.html)',
+            url: `http://127.0.0.1:${port}.evil.example/index.html`,
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '2. Path containing Poki CDN domain (http://evil.example/path/game-cdn.poki.com)',
+            url: 'http://evil.example/path/game-cdn.poki.com',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '3. Filename prefix spoofing (http://evil.example/poki-sdk-fake.js)',
+            url: 'http://evil.example/poki-sdk-fake.js',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '4. Non-matching port on localhost (port 9999 vs expected ' + port + ')',
+            url: 'http://127.0.0.1:9999/index.html',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '5. Subdomain spoofing (https://game-cdn.poki.com.evil.example/scripts/v2/poki-sdk.js)',
+            url: 'https://game-cdn.poki.com.evil.example/scripts/v2/poki-sdk.js',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '6. Path spoofing under real domain (https://game-cdn.poki.com/scripts/v2/poki-sdk-fake.js)',
+            url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk-fake.js',
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '7. Non-HTTP protocol on localhost (ftp://127.0.0.1:' + port + '/index.html)',
+            url: `ftp://127.0.0.1:${port}/index.html`,
+            expectTarget: false,
+            expectPoki: false
+        },
+        {
+            name: '8. Real official Poki CDN URL (https://game-cdn.poki.com/scripts/v2/poki-sdk.js)',
+            url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js',
+            expectTarget: true,
+            expectPoki: true
+        },
+        {
+            name: '9. Real local game resource via 127.0.0.1 (http://127.0.0.1:' + port + '/index.html)',
+            url: `http://127.0.0.1:${port}/index.html`,
+            expectTarget: true,
+            expectPoki: false
+        },
+        {
+            name: '10. Real local game resource via localhost (http://localhost:' + port + '/index.wasm)',
+            url: `http://localhost:${port}/index.wasm`,
+            expectTarget: true,
+            expectPoki: false
+        }
+    ];
+
+    let allPass = true;
+    for (const tc of testCases) {
+        const isT = isTargetResourceUrl(tc.url, port);
+        const isP = isOfficialPokiSdkUrl(tc.url);
+        const pass = (isT === tc.expectTarget) && (isP === tc.expectPoki);
+        const mark = pass ? 'PASS' : 'FAIL';
+        console.log(`  [${mark}] ${tc.name}`);
+        if (!pass) {
+            console.error(`       FAILED: expected target=${tc.expectTarget}, poki=${tc.expectPoki}; got target=${isT}, poki=${isP}`);
+            allPass = false;
+        }
+    }
+
+    console.log(`SUITE 0 OVERALL: ${allPass ? 'PASSED' : 'FAILED'}`);
+    return { pass: allPass, count: testCases.length };
+}
+
+// -------------------------------------------------------------------
 // HTTPS Pre-flight to Official CDN
 // -------------------------------------------------------------------
 function verifyOfficialCdnHealth() {
@@ -460,21 +576,9 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     let pokiCdnFinished = false;
     let pokiCdnFailed = false;
 
-    // Helper: strictly isolate local game server & official Poki CDN from third-party domains
-    function isTargetResourceUrl(url) {
-        if (!url || typeof url !== 'string') return false;
-        if (url.startsWith(`http://127.0.0.1:${port}`) || url.startsWith(`http://localhost:${port}`)) {
-            return true;
-        }
-        if (url.includes('game-cdn.poki.com') || url.includes('poki-sdk')) {
-            return true;
-        }
-        return false;
-    }
-
     client.on('Network.requestWillBeSent', (params) => {
         networkRequests.set(params.requestId, params);
-        if (params.request.url.includes('game-cdn.poki.com/scripts/v2/poki-sdk.js')) {
+        if (isOfficialPokiSdkUrl(params.request.url)) {
             pokiCdnReq = params.request;
             console.log(`  [CDP Network] Chrome requested Poki CDN: ${params.request.url}`);
         }
@@ -484,7 +588,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
         networkResponses.push(params.response);
         const url = params.response.url;
         if (params.response.status === 404) {
-            if (isTargetResourceUrl(url)) {
+            if (isTargetResourceUrl(url, port)) {
                 http404s.push(url);
                 console.error(`  [CDP Game Network 404] Game/CDN resource not found: ${url}`);
             } else {
@@ -492,7 +596,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
                 console.log(`  [CDP External 404 Logged] External non-game resource 404: ${url}`);
             }
         }
-        if (url.includes('game-cdn.poki.com/scripts/v2/poki-sdk.js')) {
+        if (isOfficialPokiSdkUrl(url)) {
             pokiCdnRes = params.response;
             console.log(`  [CDP Network] Poki CDN response: ${params.response.status} (${params.response.mimeType})`);
         }
@@ -500,7 +604,7 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
 
     client.on('Network.loadingFinished', (params) => {
         const req = networkRequests.get(params.requestId);
-        if (req && req.request.url.includes('game-cdn.poki.com/scripts/v2/poki-sdk.js')) {
+        if (req && isOfficialPokiSdkUrl(req.request.url)) {
             pokiCdnFinished = true;
             console.log(`  [CDP Network] Poki CDN loading finished successfully.`);
         }
@@ -509,8 +613,8 @@ async function runSuite1RealCDN(port = 8101, debugPort = 9231) {
     client.on('Network.loadingFailed', (params) => {
         const req = networkRequests.get(params.requestId);
         const url = req ? req.request.url : 'unknown';
-        const isPoki = url.includes('game-cdn.poki.com') || url.includes('poki-sdk');
-        const isTarget = isTargetResourceUrl(url);
+        const isPoki = isOfficialPokiSdkUrl(url);
+        const isTarget = isTargetResourceUrl(url, port);
 
         if (isPoki) {
             pokiCdnFailed = true;
@@ -970,8 +1074,13 @@ async function main() {
         process.exit(1);
     }
 
-    let s1, s2, s3;
+    let s0, s1, s2, s3;
     try {
+        s0 = runSuite0UrlSecurityTests(8101);
+        if (!s0.pass) {
+            console.error('\n[FATAL ERROR]: Suite 0 URL Security tests failed!');
+            process.exit(1);
+        }
         s1 = await runSuite1RealCDN(8101, 9231);
         s2 = await runSuite2RealJSBridgeE2E(8102, 9232);
         s3 = await runSuite3MockFaultInjection(8103, 9233);
@@ -982,12 +1091,13 @@ async function main() {
 
     console.log('\n======================================================================');
     console.log('FINAL AUDIT SUMMARY:');
+    console.log(`  Suite 0 (URL Security & Spoofing):       ${s0.pass ? 'PASSED' : 'FAILED'}`);
     console.log(`  Suite 1 (Real Poki CDN):                 ${s1.pass ? 'PASSED' : 'FAILED'}`);
     console.log(`  Suite 2 (Real JSBridge Mock E2E):        ${s2.pass ? 'PASSED' : 'FAILED'}`);
     console.log(`  Suite 3 (Mock Fault Injection 4/4):      ${s3.pass ? 'PASSED' : 'FAILED'}`);
     console.log('======================================================================');
 
-    const allPassed = s1.pass && s2.pass && s3.pass;
+    const allPassed = s0.pass && s1.pass && s2.pass && s3.pass;
     if (allPassed) {
         console.log('\nEXIT 0: All Browser Verification Contracts PASSED cleanly.');
         process.exit(0);
@@ -997,7 +1107,18 @@ async function main() {
     }
 }
 
-main().catch(e => {
-    console.error('Unhandled fatal error in master runner:', e);
-    process.exit(1);
-});
+if (typeof module !== 'undefined') {
+    module.exports = {
+        isOfficialPokiSdkUrl,
+        isLocalGameResourceUrl,
+        isTargetResourceUrl,
+        runSuite0UrlSecurityTests
+    };
+}
+
+if (require.main === module) {
+    main().catch(e => {
+        console.error('Unhandled fatal error in master runner:', e);
+        process.exit(1);
+    });
+}
