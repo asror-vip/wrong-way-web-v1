@@ -4,8 +4,9 @@
  * Validates strict URL parsing via WHATWG URL API:
  * 1. Local game resources require protocol === "http:", hostname === "127.0.0.1" || "localhost",
  *    and port matching the exact active test port.
- * 2. Poki SDK requires protocol === "https:" (or "http:"), hostname === "game-cdn.poki.com",
- *    and pathname === "/scripts/v2/poki-sdk.js".
+ * 2. Poki SDK requires protocol === "https:", hostname === "game-cdn.poki.com",
+ *    pathname === "/scripts/v2/poki-sdk.js", port === "", search === "", hash === "",
+ *    username === "", and password === "".
  * 3. Never uses string.includes() or regex heuristics that can be fooled by spoofed URLs.
  */
 
@@ -77,6 +78,12 @@ const testCases = [
     {
         name: 'Query parameter pollution on Poki CDN (https://game-cdn.poki.com/scripts/v2/poki-sdk.js?x=1)',
         url: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js?x=1',
+        expectTarget: false,
+        expectPoki: false
+    },
+    {
+        name: 'Userinfo pollution on Poki CDN (https://user:pass@game-cdn.poki.com/scripts/v2/poki-sdk.js)',
+        url: 'https://user:pass@game-cdn.poki.com/scripts/v2/poki-sdk.js',
         expectTarget: false,
         expectPoki: false
     },
