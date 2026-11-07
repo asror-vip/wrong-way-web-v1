@@ -59,7 +59,7 @@ class MockPokiSdk extends RefCounted:
 		var tree := Engine.get_main_loop() as SceneTree
 		if ad_delay > 0.0 and tree:
 			await tree.create_timer(ad_delay).timeout
-		on_done.call()
+		on_done.call([commercial_should_succeed])
 
 	func request_rewarded_break(on_result: Callable) -> void:
 		rewarded_call_count += 1
@@ -81,7 +81,7 @@ class MockPokiSdk extends RefCounted:
 
 func _ready() -> void:
 	print("======================================================================")
-	print("STARTING ADVANCED AUDIT TEST SUITE (19 COMPREHENSIVE TESTS)")
+	print("STARTING ADVANCED AUDIT TEST SUITE (22 COMPREHENSIVE TESTS)")
 	print("======================================================================")
 
 	_test_control_inverter_real_player()
@@ -108,7 +108,7 @@ func _ready() -> void:
 	await _test_rewarded_rejection()
 
 	print("\n======================================================================")
-	print("ALL 19 ADVANCED AUDIT TESTS PASSED CLEANLY! (EXIT CODE 0)")
+	print("ALL 22 ADVANCED AUDIT TESTS PASSED CLEANLY! (EXIT CODE 0)")
 	print("======================================================================")
 	get_tree().quit(0)
 
@@ -127,24 +127,34 @@ func _test_control_inverter_real_player() -> void:
 	add_child(inv_a)
 	add_child(inv_b)
 
-	# Simulating player entering both zones
-	player.add_inverter_zone(inv_a)
-	player.add_inverter_zone(inv_b)
-	assert(player.controls_inverted == true, "Both zones entered -> inverted")
-	assert(player.active_inverters.size() == 2, "Both zones registered")
+	# 1. Real collision layers and masks verification
+	assert(inv_a.collision_layer == 4, "ControlInverter collision layer must be 4")
+	assert(inv_a.collision_mask == 2, "ControlInverter mask must be 2 (player)")
+	assert(player.collision_layer == 2, "Player collision layer must be 2")
+	assert(player.collision_mask & 4 != 0, "Player must detect trap layer 4")
 
-	# Reset Zone A ONLY
+	# 2. Area2D body_entered signal dispatch
+	inv_a.body_entered.emit(player)
+	assert(player.controls_inverted == true, "Zone A entered -> controls inverted")
+	assert(player.active_inverters.size() == 1, "Zone A registered in player")
+
+	inv_b.body_entered.emit(player)
+	assert(player.controls_inverted == true, "Zone B entered -> controls stay inverted")
+	assert(player.active_inverters.size() == 2, "Both zones registered in player")
+
+	# 3. Reset Zone A ONLY - does not cancel active Zone B
 	inv_a.reset_trap()
 	assert(player.controls_inverted == true, "Zone A reset must not cancel active Zone B")
 	assert(player.active_inverters.has(inv_b) == true, "Zone B must remain active")
 	assert(player.active_inverters.has(inv_a) == false, "Zone A removed from player")
 
-	# Reset Zone B
-	inv_b.reset_trap()
-	assert(player.controls_inverted == false, "All zones reset -> controls restored")
+	# 4. Exit Zone B via Area2D body_exited signal
+	inv_b.body_exited.emit(player)
+	assert(player.controls_inverted == false, "Zone B exited -> controls restored")
+	assert(player.active_inverters.is_empty() == true, "Inverter map is empty")
 
-	# Respawn clears all active inverters
-	player.add_inverter_zone(inv_a)
+	# 5. Respawn clears all active inverters
+	inv_a.body_entered.emit(player)
 	assert(player.controls_inverted == true, "Zone A re-entered")
 	player.respawn()
 	assert(player.controls_inverted == false, "Respawn must clear all zones")
@@ -153,7 +163,7 @@ func _test_control_inverter_real_player() -> void:
 	inv_a.queue_free()
 	inv_b.queue_free()
 	player.queue_free()
-	print("  -> PASS: Real PlayerController & ControlInverter scenes verified.")
+	print("  -> PASS: Real PlayerController & ControlInverter signals & layers verified.")
 
 # ------------------------------------------------------------------------------
 # Test 2: Late SDK Loading - 300 ms Delay
@@ -480,10 +490,10 @@ func _test_ad_safety_timeout_rewarded() -> void:
 	print("  -> PASS: Rewarded ad safely recovered with success=false.")
 
 # ------------------------------------------------------------------------------
-# Test 16: Late Ad Callback After Timeout Ignored
+# Test 16: Late Ad Callback Token Guard: Stale Ad A Cannot Kill Ad B
 # ------------------------------------------------------------------------------
 func _test_late_ad_callback_after_timeout_ignored() -> void:
-	print("\n[TEST 16] Late Ad Callback After Timeout Ignored...")
+	print("\n[TEST 16] Late Ad Callback Token Guard: Stale Ad A Cannot Kill Ad B...")
 	var poki = get_node_or_null("/root/PokiService")
 	poki.reset_state_for_testing()
 	poki.ad_timeout_seconds = 0.15
@@ -494,17 +504,32 @@ func _test_late_ad_callback_after_timeout_ignored() -> void:
 	poki.set_mock_provider(mock)
 	await poki.ensure_sdk_initialized(0.5)
 
-	var count := {"cb": 0}
-	poki.commercial_break(func(): count["cb"] += 1)
+	# Ad A starts with token_a
+	var token_a: int = poki.get_ad_token() + 1
+	var count_a := {"cb": 0}
+	poki.commercial_break(func(): count_a["cb"] += 1)
 
 	await get_tree().create_timer(0.25).timeout
-	assert(count["cb"] == 1, "Called once via timeout recovery")
-	assert(poki.is_ad_playing() == false, "Ad finished")
+	assert(count_a["cb"] == 1, "Ad A finished via timeout recovery")
+	assert(poki.is_ad_playing() == false, "Ad A finished playing")
 
-	# Now simulate stale/late callback arriving from JS
-	poki.simulate_commercial_break_finished_for_test()
-	assert(count["cb"] == 1, "Duplicate callback after timeout must NOT fire user callback")
-	print("  -> PASS: Late callback after timeout rejected by state guard.")
+	# Now Ad B starts with token_b!
+	var count_b := {"cb": 0}
+	poki.commercial_break(func(): count_b["cb"] += 1)
+	assert(poki.is_ad_playing() == true, "Ad B is now actively playing")
+	var token_b: int = poki.get_ad_token()
+	assert(token_b != token_a, "Ad B must have a new unique token")
+
+	# Late callback from Ad A arrives with token_a!
+	poki.simulate_commercial_break_finished_for_test(token_a)
+	assert(poki.is_ad_playing() == true, "Stale callback from Ad A must NOT kill Ad B!")
+	assert(count_b["cb"] == 0, "Ad B callback must NOT be invoked prematurely")
+
+	# Ad B finishes with token_b
+	poki.simulate_commercial_break_finished_for_test(token_b)
+	assert(poki.is_ad_playing() == false, "Ad B finishes cleanly with its own token")
+	assert(count_b["cb"] == 1, "Ad B callback invoked once when Ad B finished")
+	print("  -> PASS: Stale ad callback safely rejected by token guard.")
 
 # ------------------------------------------------------------------------------
 # Test 17: Commercial -> Commercial Queue (Single Break, Single Callbacks)
@@ -658,6 +683,10 @@ func _test_commercial_rejection() -> void:
 	await get_tree().create_timer(0.15).timeout
 	assert(state["comm_called"] == true, "Commercial callback called gracefully on rejection")
 	assert(poki.is_ad_playing() == false, "Ad state must be reset to false")
+	assert(
+		poki.is_last_commercial_succeeded() == false,
+		"Commercial rejection recorded (success=false)"
+	)
 	print("  -> PASS: Commercial rejection gracefully caught without hanging.")
 
 # ------------------------------------------------------------------------------

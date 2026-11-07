@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -19,6 +20,44 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml',
     '.json': 'application/json'
 };
+
+function verifyOfficialCdnHealth() {
+    return new Promise((resolve, reject) => {
+        const cdnUrl = 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js';
+        console.log(`\n[PRE-FLIGHT] Verifying official Poki CDN endpoint: ${cdnUrl}`);
+        const req = https.get(cdnUrl, (res) => {
+            let data = '';
+            res.on('data', chunk => { data += chunk; });
+            res.on('end', () => {
+                const is200 = res.statusCode === 200;
+                const contentType = res.headers['content-type'] || '';
+                const isJs = contentType.includes('javascript');
+                const hasPoki = data.includes('PokiSDK');
+                const length = data.length;
+
+                console.log(`  -> HTTP Status: ${res.statusCode} ${res.statusMessage}`);
+                console.log(`  -> Content-Type: ${contentType}`);
+                console.log(`  -> Content-Length: ${length} bytes`);
+                console.log(`  -> Valid PokiSDK content: ${hasPoki}`);
+
+                if (is200 && isJs && hasPoki && length > 5000) {
+                    resolve({
+                        ok: true,
+                        statusCode: res.statusCode,
+                        contentType,
+                        length,
+                        hasPoki
+                    });
+                } else {
+                    reject(new Error(
+                        `Poki CDN check failed (status: ${res.statusCode}, len: ${length})`
+                    ));
+                }
+            });
+        });
+        req.on('error', (err) => reject(err));
+    });
+}
 
 function createServer(scenario) {
     return http.createServer((req, res) => {
@@ -59,9 +98,15 @@ function createServer(scenario) {
                             console.log("[MOCK_BROWSER_JS] PokiSDK.init() -> resolving promise");
                             return Promise.resolve();
                         },
-                        gameLoadingFinished: function() { console.log("[MOCK_BROWSER_JS] PokiSDK.gameLoadingFinished()"); },
-                        gameplayStart: function() { console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStart()"); },
-                        gameplayStop: function() { console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStop()"); },
+                        gameLoadingFinished: function() {
+                            console.log("[MOCK_BROWSER_JS] PokiSDK.gameLoadingFinished()");
+                        },
+                        gameplayStart: function() {
+                            console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStart()");
+                        },
+                        gameplayStop: function() {
+                            console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStop()");
+                        },
                         commercialBreak: function() {
                             console.log("[MOCK_BROWSER_JS] PokiSDK.commercialBreak()");
                             return Promise.resolve();
@@ -85,9 +130,15 @@ function createServer(scenario) {
                                 console.log("[MOCK_BROWSER_JS] PokiSDK.init() -> resolving promise");
                                 return Promise.resolve();
                             },
-                            gameLoadingFinished: function() { console.log("[MOCK_BROWSER_JS] PokiSDK.gameLoadingFinished()"); },
-                            gameplayStart: function() { console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStart()"); },
-                            gameplayStop: function() { console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStop()"); }
+                            gameLoadingFinished: function() {
+                                console.log("[MOCK_BROWSER_JS] PokiSDK.gameLoadingFinished()");
+                            },
+                            gameplayStart: function() {
+                                console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStart()");
+                            },
+                            gameplayStop: function() {
+                                console.log("[MOCK_BROWSER_JS] PokiSDK.gameplayStop()");
+                            }
                         };
                     }, 500);
                 </script>
@@ -125,7 +176,7 @@ function createServer(scenario) {
     });
 }
 
-async function runScenario(scenarioName, timeoutMs = 8000) {
+async function runScenario(scenarioName, timeoutMs = 8500) {
     const isReal = scenarioName === 'REAL_CDN';
     console.log(`\n======================================================================`);
     console.log(isReal 
@@ -159,6 +210,7 @@ async function runScenario(scenarioName, timeoutMs = 8000) {
                 || trimmed.includes('POKI') 
                 || trimmed.includes('[MOCK_BROWSER_JS]')
                 || trimmed.includes('Godot Engine')
+                || trimmed.includes('daraja muvaffaqiyatli yuklandi')
                 || trimmed.includes('Uncaught')
                 || trimmed.includes('RuntimeError')) {
                 logs.push(trimmed);
@@ -189,21 +241,36 @@ async function main() {
     // ------------------------------------------------------------------
     // SUITE A: REAL POKI SDK CDN TEST
     // ------------------------------------------------------------------
-    const logsReal = await runScenario('REAL_CDN', 8500);
-    const realSdkLoaded = logsReal.some(l => l.includes('game-cdn.poki.com') || l.includes('POKI'));
+    let cdnHealth = null;
+    try {
+        cdnHealth = await verifyOfficialCdnHealth();
+    } catch (e) {
+        console.error("  [ERROR] CDN health check failed:", e.message);
+    }
+    const cdnLive = cdnHealth !== null && cdnHealth.ok === true;
+
+    const logsReal = await runScenario('REAL_CDN', 12000);
+    const sdkFoundInBrowser = logsReal.some(l => 
+        l.includes('PokiSDK topildi') || l.includes('PokiSDK init success') || l.includes('POKI')
+    );
     const godotLoaded = logsReal.some(l => l.includes('Godot Engine v4.7.2'));
-    const realInitSuccess = logsReal.some(l => l.includes('PokiSDK.init() muvaffaqiyatli') || l.includes('SdkState.READY'));
+    const levelsLoaded = logsReal.some(l => l.includes('60 ta daraja muvaffaqiyatli yuklandi'));
+    const realInitSuccess = logsReal.some(l => 
+        l.includes('PokiSDK.init() muvaffaqiyatli') || l.includes('SdkState.READY') || l.includes('init success')
+    );
     const realLoadingFinished = logsReal.some(l => l.includes('gameLoadingFinished'));
     const noFatalError = !logsReal.some(l => l.includes('Uncaught') || l.includes('RuntimeError'));
 
     console.log("\n--- REAL POKI SDK CDN VERIFICATION RESULTS ---");
-    console.log(`1. Official Poki CDN Script Loaded: ${realSdkLoaded}`);
-    console.log(`2. Godot WebGL Canvas Initialized: ${godotLoaded}`);
-    console.log(`3. Real PokiSDK.init() Resolved (SdkState.READY): ${realInitSuccess}`);
-    console.log(`4. PokiSDK.gameLoadingFinished() Dispatched: ${realLoadingFinished}`);
-    console.log(`5. No Fatal JS/Wasm Errors: ${noFatalError}`);
+    console.log(`1. Official Poki CDN Pre-flight Check (HTTP 200, valid JS, >5KB): ${cdnLive}`);
+    console.log(`2. Browser Detected Official PokiSDK on window: ${sdkFoundInBrowser}`);
+    console.log(`3. Godot WebGL Canvas & Engine Initialized: ${godotLoaded}`);
+    console.log(`4. Game Scene & Levels Initialized (60 levels): ${levelsLoaded}`);
+    console.log(`5. Real PokiSDK.init() Resolved (SdkState.READY): ${realInitSuccess}`);
+    console.log(`6. PokiSDK.gameLoadingFinished() Dispatched: ${realLoadingFinished}`);
+    console.log(`7. Zero Fatal JS / Wasm Errors: ${noFatalError}`);
 
-    const suiteRealPassed = realSdkLoaded && godotLoaded && realInitSuccess && realLoadingFinished && noFatalError;
+    const suiteRealPassed = cdnLive && sdkFoundInBrowser && godotLoaded && levelsLoaded && realInitSuccess && realLoadingFinished && noFatalError;
     console.log(`SUITE A (REAL POKI SDK CDN) OVERALL: ${suiteRealPassed ? 'PASSED' : 'FAILED'}`);
 
     // ------------------------------------------------------------------
@@ -215,7 +282,9 @@ async function main() {
 
     // 1. Mock Success
     const logsMockSuccess = await runScenario('MOCK_SUCCESS', 6000);
-    const mockSuccessVerified = logsMockSuccess.some(l => l.includes('SdkState.READY') || l.includes('init() muvaffaqiyatli'));
+    const mockSuccessVerified = logsMockSuccess.some(l => 
+        l.includes('SdkState.READY') || l.includes('init() muvaffaqiyatli')
+    );
     console.log(`Scenario MOCK_SUCCESS verified: ${mockSuccessVerified}`);
 
     // 2. Mock Delayed (500ms network latency)
@@ -226,7 +295,9 @@ async function main() {
 
     // 3. Mock Reject (Adblock / script reject)
     const logsMockReject = await runScenario('MOCK_REJECT', 6000);
-    const mockRejectVerified = logsMockReject.some(l => l.includes('SdkState.FAILED') || l.includes('rad etildi'));
+    const mockRejectVerified = logsMockReject.some(l => 
+        l.includes('SdkState.FAILED') || l.includes('rad etildi')
+    );
     console.log(`Scenario MOCK_REJECT verified: ${mockRejectVerified}`);
 
     // 4. Mock Missing (Offline / script 404 timeout)
