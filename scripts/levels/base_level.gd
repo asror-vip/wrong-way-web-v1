@@ -22,13 +22,33 @@ func _ready() -> void:
 				
 	if player and player.has_signal("died") and not player.died.is_connected(_on_player_died):
 		player.died.connect(_on_player_died)
-	if player and player.has_signal("respawned") and not player.respawned.is_connected(_on_player_respawned):
-		player.respawned.connect(_on_player_respawned)
+	if player and player.has_signal("respawned"):
+		if not player.respawned.is_connected(_on_player_respawned):
+			player.respawned.connect(_on_player_respawned)
 	
 	# Mark level attempted for ad logic
 	var sm = get_node_or_null("/root/SaveManager")
 	if sm and sm.has_method("record_level_attempt"):
 		sm.record_level_attempt(level_number)
+
+	# Barcha 60 ta darajada tepada tikanli shift bo'lishini ta'minlash
+	var platforms = get_node_or_null("Platforms")
+	if platforms:
+		var has_ceiling := false
+		for p in platforms.get_children():
+			var is_c: bool = p.name.to_lower().contains("ceiling") or p.global_position.y <= 10.0
+			if p is SolidPlatform and is_c:
+				has_ceiling = true
+				break
+		if not has_ceiling:
+			var sp_scn = load("res://scenes/objects/solid_platform.tscn")
+			if sp_scn:
+				var c = sp_scn.instantiate()
+				c.name = "Ceiling"
+				c.position = Vector2(0, 0)
+				c.platform_size = Vector2(960, 60)
+				c.has_ceiling_teeth = true
+				platforms.add_child(c)
 
 func _on_player_died() -> void:
 	if traps_container:
