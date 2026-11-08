@@ -199,8 +199,8 @@ func _update_blur_material() -> void:
 				"inferno_abyss":
 					mat.set_shader_parameter("tint_color", Color(0.32, 0.15, 0.10, 0.18))
 				_:
-					# 1-bob: kontrastli kumushrang tuman qoplamasi
-					mat.set_shader_parameter("tint_color", Color(0.25, 0.28, 0.38, 0.14))
+					# 1-bob: shaffof yumshoq tuman (qora fonni oqartirib yubormaydi)
+					mat.set_shader_parameter("tint_color", Color(0.20, 0.22, 0.30, 0.08))
 		else:
 			mat.set_shader_parameter("tint_color", Color(0.0, 0.0, 0.0, 0.0))
 

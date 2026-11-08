@@ -106,7 +106,7 @@ func _handle_overlap(body: Node2D) -> void:
 		return
 	if body is PlayerController or body.is_in_group("player"):
 		_kill_player(body)
-	elif body is StaticBody2D:
+	elif body is StaticBody2D and _is_ground_body(body):
 		_ground_impact(body)
 
 func _on_body_entered(body: Node2D) -> void:
@@ -114,8 +114,21 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	if body is PlayerController or body.is_in_group("player"):
 		_kill_player(body)
-	elif body is StaticBody2D:
+	elif body is StaticBody2D and _is_ground_body(body):
 		_ground_impact(body)
+
+func _is_ground_body(body: StaticBody2D) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	if body.name.to_lower().contains("ceiling"):
+		return false
+	# Shift platformasi va devorlarning yuqori qismini inkor qilish
+	if body.global_position.y <= original_pos.y + 40.0:
+		return false
+	# Tikan uchi polning yuqori yuzasiga yetgandagina sanchilish
+	if (global_position.y + 24.0) < body.global_position.y:
+		return false
+	return true
 
 func _ground_impact(body: StaticBody2D) -> void:
 	is_falling = false
