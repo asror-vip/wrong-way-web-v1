@@ -17,6 +17,8 @@ var speed: float = 0.0
 var timer: float = 0.0
 var player_ref: Node2D = null
 var has_crushed: bool = false
+var chain_slack: float = 0.0
+var sway_phase: float = 0.0
 
 var is_triggered: bool:
 	get: return state != State.IDLE
@@ -49,6 +51,8 @@ func _physics_process(delta: float) -> void:
 				if absf(player_center_x - crusher_center_x) < trigger_distance:
 					state = State.FALLING
 					speed = 0.0
+					chain_slack = 0.0
+					get_tree().call_group("ceiling_platforms", "queue_redraw")
 					queue_redraw()
 					var sm = get_node_or_null("/root/SoundManager")
 					if sm and sm.has_method("play"):
@@ -57,6 +61,7 @@ func _physics_process(delta: float) -> void:
 		State.FALLING:
 			speed += 3600.0 * delta
 			global_position.y += speed * delta
+			queue_redraw()
 			for b in get_overlapping_bodies():
 				_on_body_entered(b)
 			var p := get_tree().get_first_node_in_group("player") as Node2D
@@ -79,30 +84,45 @@ func _physics_process(delta: float) -> void:
 				if returns_up:
 					state = State.WAITING_BOTTOM
 					timer = wait_at_bottom
+					chain_slack = 1.0
+					sway_phase = 0.0
+					get_tree().call_group("ceiling_platforms", "queue_redraw")
+					queue_redraw()
 				else:
 					has_crushed = true
 					state = State.IDLE
+					get_tree().call_group("ceiling_platforms", "queue_redraw")
 					queue_redraw()
 		
 		State.WAITING_BOTTOM:
 			timer -= delta
+			sway_phase += delta * 12.0
+			queue_redraw()
 			if timer <= 0.0:
 				state = State.RISING
+				chain_slack = 0.0
+				queue_redraw()
 		
 		State.RISING:
+			chain_slack = 0.0
 			global_position.y -= rise_speed * delta
+			queue_redraw()
 			if global_position.y <= initial_position.y:
 				global_position.y = initial_position.y
+				get_tree().call_group("ceiling_platforms", "queue_redraw")
 				if retrigger_delay > 0.0:
 					state = State.COOLDOWN
 					timer = retrigger_delay
 				else:
 					state = State.IDLE
+				queue_redraw()
 		
 		State.COOLDOWN:
 			timer -= delta
 			if timer <= 0.0:
 				state = State.IDLE
+				get_tree().call_group("ceiling_platforms", "queue_redraw")
+				queue_redraw()
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is PlayerController or body.is_in_group("player"):
@@ -120,7 +140,10 @@ func reset_trap() -> void:
 	speed = 0.0
 	timer = 0.0
 	has_crushed = false
+	chain_slack = 0.0
+	sway_phase = 0.0
 	global_position = initial_position
+	get_tree().call_group("ceiling_platforms", "queue_redraw")
 	queue_redraw()
 
 func _draw() -> void:
@@ -132,37 +155,53 @@ func _draw() -> void:
 	var w := crusher_size.x
 	var h := crusher_size.y
 
-	# Zanjir (shiftgacha ko'tariluvchi asl temir zanjir)
+	# Shiftgacha bo'lgan masofaga qarab zanjir chizish (dinamik silkinish & tarang tortilish)
 	var chain_x := w / 2.0
-	var link_spacing := 12.0
-	var current_y := 0.0
-	while current_y > -600.0:
-		draw_rect(
-			Rect2(chain_x - 3.0, current_y - 10.0, 6.0, 10.0),
-			Color("#1a2230"),
-			false,
-			1.8
-		)
-		draw_line(
-			Vector2(chain_x, current_y - 10.0),
-			Vector2(chain_x, current_y - 12.0),
-			Color("#2a3548"),
-			1.5
-		)
-		current_y -= link_spacing
+	var chain_h := maxf(0.0, global_position.y - 10.0)
+	if chain_h > 4.0:
+		var link_spacing := 12.0
+		var current_y := 0.0
+		while current_y > -chain_h:
+			var progress := clampf(-current_y / chain_h, 0.0, 1.0)
+			var offset_x := 0.0
+			# Pastga tushganda zanjirning silkinishi va sal osilishi
+			if state == State.WAITING_BOTTOM:
+				var ratio := clampf(timer / maxf(wait_at_bottom, 0.1), 0.0, 1.0)
+				var sag := sin(progress * PI) * (5.0 * ratio + 1.5)
+				var ripple := sin(progress * PI * 2.0 + sway_phase) * (3.5 * ratio)
+				offset_x = sag + ripple
+			
+			draw_rect(
+				Rect2(chain_x + offset_x - 3.0, current_y - 10.0, 6.0, 10.0),
+				Color("#1a2230"),
+				false,
+				1.8
+			)
+			draw_line(
+				Vector2(chain_x + offset_x, current_y - 10.0),
+				Vector2(chain_x + offset_x, current_y - 12.0),
+				Color("#2a3548"),
+				1.5
+			)
+			current_y -= link_spacing
 
-	# Zanjir qotirgich halqasi (crusher tepasida)
-	draw_circle(Vector2(chain_x, 0), 5.0, Color("#262e3e"))
-	draw_circle(Vector2(chain_x, 0), 2.5, Color("#0c0e14"))
+		# Zanjir qotirgich halqasi (crusher tepasida)
+		draw_circle(Vector2(chain_x, 0), 5.0, Color("#262e3e"))
+		draw_circle(Vector2(chain_x, 0), 2.5, Color("#0c0e14"))
+		# Shift uyasi ichidagi yuqori zanjir halqasi
+		draw_circle(Vector2(chain_x, -chain_h), 4.5, Color("#262e3e"))
 
-	# Asosiy ezuvchi blok korpusi (borderlarsiz sof monolit to'rtburchak)
-	var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
-	draw_rect(Rect2(0, 0, w, h), body_col, true)
+	# Asosiy ezuvchi blok korpusi (shift ustiga chiqib ketmaydi: y >= 0 qirqiladi!)
+	var top_clip := maxf(0.0, -global_position.y)
+	var body_h := h - top_clip
+	if body_h > 0.0:
+		var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
+		draw_rect(Rect2(0, top_clip, w, body_h), body_col, true)
 
-	if is_winter:
-		# Crusher tepasidagi qor qatlami (borderlarsiz)
-		draw_rect(Rect2(0, 0, w, 5.0), Color("#ffffff"), true)
-		draw_rect(Rect2(0, 4.0, w, 1.5), Color("#94a3b8"), true)
+		if is_winter and top_clip < 5.0:
+			# Crusher tepasidagi qor qatlami (borderlarsiz)
+			draw_rect(Rect2(0, top_clip, w, 5.0 - top_clip), Color("#ffffff"), true)
+			draw_rect(Rect2(0, maxf(top_clip, 4.0), w, 1.5), Color("#94a3b8"), true)
 
 	# Tishlar: shift tikanlari bilan bir xil sof rangli tishlar (borderlarsiz!)
 	var teeth := int(round(w / 16.0))

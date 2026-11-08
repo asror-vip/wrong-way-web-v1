@@ -5,6 +5,7 @@ class_name SolidPlatform
 @export var has_ceiling_teeth: bool = false
 
 var _crusher_ranges: Array[Vector2] = []
+var _crushers: Array[Crusher] = []
 var _falling_spike_xs: Array[float] = []
 
 func _ready() -> void:
@@ -26,6 +27,7 @@ func _check_ceiling_traps() -> void:
 	var bot_y := global_position.y + platform_size.y
 	var found_trap := false
 	_crusher_ranges.clear()
+	_crushers.clear()
 	_falling_spike_xs.clear()
 	
 	for t in traps:
@@ -34,6 +36,7 @@ func _check_ceiling_traps() -> void:
 			if absf(cy + t.crusher_size.y - bot_y) <= 24.0 or absf(cy - bot_y) <= 24.0:
 				var rel_x: float = t.global_position.x - global_position.x
 				_crusher_ranges.append(Vector2(rel_x, rel_x + t.crusher_size.x))
+				_crushers.append(t)
 				found_trap = true
 		elif t is FallingSpikeTrap:
 			var sy: float = t.global_position.y
@@ -44,6 +47,7 @@ func _check_ceiling_traps() -> void:
 	
 	if found_trap:
 		has_ceiling_teeth = true
+		add_to_group("ceiling_platforms")
 		queue_redraw()
 
 func _draw() -> void:
@@ -54,6 +58,43 @@ func _draw() -> void:
 
 	var base_col := Color("#0d131f") if is_winter else Color("#1c1a22")
 	draw_rect(Rect2(Vector2.ZERO, platform_size), base_col, true)
+
+	# Ezuvchi (Crusher) pastga tushganda, uning shift ichidagi joyi bo'sh (o'yiq) qolishi
+	for c in _crushers:
+		if c != null and is_instance_valid(c):
+			if c.global_position.y > c.initial_position.y + 2.0:
+				var rel_x: float = c.global_position.x - global_position.x
+				var cw: float = c.crusher_size.x
+				var bot_y := platform_size.y
+				var socket_top := 8.0
+				var cavity_col := Color(0.04, 0.05, 0.08, 1.0)
+				if is_winter:
+					cavity_col = Color(0.03, 0.05, 0.09, 1.0)
+				# Bo'sh qolgan ichki chuqurlik
+				draw_rect(
+					Rect2(rel_x, socket_top, cw, bot_y - socket_top),
+					cavity_col,
+					true
+				)
+				# Uyaning ichki yon va ustki qirralari
+				draw_line(
+					Vector2(rel_x, socket_top),
+					Vector2(rel_x, bot_y),
+					Color("#141722"),
+					1.5
+				)
+				draw_line(
+					Vector2(rel_x + cw, socket_top),
+					Vector2(rel_x + cw, bot_y),
+					Color("#141722"),
+					1.5
+				)
+				draw_line(
+					Vector2(rel_x, socket_top),
+					Vector2(rel_x + cw, socket_top),
+					Color("#141722"),
+					1.5
+				)
 
 	if is_winter:
 		# Yerda qor qatlami (Snow layer on ground/platforms)
