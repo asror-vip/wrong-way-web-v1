@@ -49,42 +49,31 @@ func _check_ceiling_traps() -> void:
 		queue_redraw()
 
 func _draw() -> void:
+	var is_ceiling_plat := name.to_lower().contains("ceiling") or global_position.y <= 10.0
+	if not has_ceiling_teeth and is_ceiling_plat:
+		_check_ceiling_traps()
 	var is_winter := false
 	var gm = get_node_or_null("/root/GameManager")
 	if gm and gm.has_method("is_winter_theme"):
 		is_winter = gm.is_winter_theme()
 
 	var base_col := Color("#0d131f") if is_winter else Color("#1c1a22")
-	draw_rect(Rect2(Vector2.ZERO, platform_size), base_col, true)
 
-	if is_winter:
-		# Yerda qor qatlami (Snow layer on ground/platforms)
-		var snow_h := 5.5
-		if platform_size.x > 36.0:
-			# Asosiy toza qor qoplami
-			draw_rect(Rect2(Vector2.ZERO, Vector2(platform_size.x, snow_h)), Color("#f1f5f9"), true)
-			# Qorning yaltiroq ustki qatlami
-			draw_rect(Rect2(Vector2.ZERO, Vector2(platform_size.x, 2.0)), Color("#ffffff"), true)
-			# Qor ostidagi sovuq soya
-			draw_rect(Rect2(Vector2.ZERO, Vector2(platform_size.x, 1.5)), Color("#94a3b8"), true)
-			
-			# Qirralardan osilib turgan kichik muz donalari (Icicles)
-			var icicle_step := 32.0
-			var num_icicles := int((platform_size.x - 20.0) / icicle_step)
-			for i in range(num_icicles):
-				var ix := 14.0 + float(i) * icicle_step
-				var ilen := 4.0 if (i % 2 == 0) else 6.0
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(ix - 2.0, snow_h),
-					Vector2(ix + 2.0, snow_h),
-					Vector2(ix, snow_h + ilen)
-				]), Color("#bae6fd"))
-		else:
-			# Tik devor uchun muz qirovi
-			var frost_rect := Rect2(Vector2.ZERO, Vector2(2.5, platform_size.y))
-			draw_rect(frost_rect, Color(0.49, 0.86, 0.99, 0.6), true)
+	# Shift platformasida crusher bo'lsa, uzilish (gap) bilan segmentlarga bo'lib chizish
+	if has_ceiling_teeth and not _crusher_ranges.is_empty():
+		var ranges := _crusher_ranges.duplicate()
+		ranges.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+		var cur_x := 0.0
+		for r in ranges:
+			var rx1 := clampf(r.x, 0.0, platform_size.x)
+			var rx2 := clampf(r.y, 0.0, platform_size.x)
+			if rx1 > cur_x:
+				_draw_segment(cur_x, rx1 - cur_x, base_col, is_winter)
+			cur_x = maxf(cur_x, rx2)
+		if cur_x < platform_size.x:
+			_draw_segment(cur_x, platform_size.x - cur_x, base_col, is_winter)
 	else:
-		draw_rect(Rect2(Vector2.ZERO, Vector2(platform_size.x, 3.0)), Color("#342f3a"), true)
+		_draw_segment(0.0, platform_size.x, base_col, is_winter)
 
 	# Shiftning uzluksiz tikanlari va aldovchi (soxta) stalaktitlari (borderlarsiz!)
 	if has_ceiling_teeth and platform_size.x > 64.0:
@@ -133,3 +122,19 @@ func _draw() -> void:
 				])
 				draw_colored_polygon(tooth_pts, teeth_col)
 				cur_x += 16.0
+
+func _draw_segment(sx: float, sw: float, base_col: Color, is_winter: bool) -> void:
+	if sw <= 0.0:
+		return
+	draw_rect(Rect2(sx, 0.0, sw, platform_size.y), base_col, true)
+	if is_winter:
+		var snow_h := 5.5
+		if platform_size.x > 36.0:
+			draw_rect(Rect2(sx, 0.0, sw, snow_h), Color("#f1f5f9"), true)
+			draw_rect(Rect2(sx, 0.0, sw, 2.0), Color("#ffffff"), true)
+			draw_rect(Rect2(sx, 0.0, sw, 1.5), Color("#94a3b8"), true)
+		else:
+			var frost_rect := Rect2(sx, 0.0, minf(sw, 2.5), platform_size.y)
+			draw_rect(frost_rect, Color(0.49, 0.86, 0.99, 0.6), true)
+	else:
+		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#342f3a"), true)

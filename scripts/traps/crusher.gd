@@ -151,7 +151,7 @@ func _draw() -> void:
 
 	# Shiftgacha bo'lgan masofaga qarab zanjir chizish (dinamik silkinish & tarang tortilish)
 	var chain_x := w / 2.0
-	var chain_h := maxf(0.0, global_position.y - 10.0)
+	var chain_h := maxf(0.0, global_position.y)
 	if chain_h > 4.0:
 		var link_spacing := 12.0
 		var current_y := 0.0
@@ -196,6 +196,9 @@ func _draw() -> void:
 			# Crusher tepasidagi qor qatlami (borderlarsiz)
 			draw_rect(Rect2(0, top_clip, w, 5.0 - top_clip), Color("#ffffff"), true)
 			draw_rect(Rect2(0, maxf(top_clip, 4.0), w, 1.5), Color("#94a3b8"), true)
+		elif not is_winter and top_clip <= 4.0:
+			# Shift ustki chizig'i bilan uzluksiz uyg'unlik
+			draw_rect(Rect2(0, top_clip, w, 3.0), Color("#342f3a"), true)
 
 	# Tishlar: shift tikanlari bilan bir xil sof rangli tishlar (borderlarsiz!)
 	var teeth := int(round(w / 16.0))
