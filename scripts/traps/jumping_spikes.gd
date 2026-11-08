@@ -105,5 +105,3 @@ func _draw() -> void:
 			Vector2(x2, -3.0)
 		])
 		draw_colored_polygon(pts, Color("#0a0b10"))
-		draw_line(Vector2(x0, -3.0), Vector2(x1, -h), Color("#e4e4e7"), 1.2)
-		draw_line(Vector2(x1, -h), Vector2(x2, -3.0), Color("#334155"), 1.2)

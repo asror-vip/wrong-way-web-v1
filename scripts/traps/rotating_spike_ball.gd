@@ -81,12 +81,8 @@ func _draw_spiked_ball(pos: Vector2) -> void:
 		var spike_poly := PackedVector2Array([left_pt, tip, right_pt])
 		if is_winter:
 			draw_colored_polygon(spike_poly, Color(0.22, 0.74, 0.97, 0.92))
-			draw_line(left_pt, tip, Color("#ffffff"), 1.2)
-			draw_line(tip, right_pt, Color("#0284c7"), 1.2)
 		else:
 			draw_colored_polygon(spike_poly, Color("#1e1b26"))
-			draw_line(left_pt, tip, Color("#ffffff"), 1.2)
-			draw_line(tip, right_pt, Color("#5c566a"), 1.2)
 		
 	# Asosiy shar
 	var base_col := Color("#0f172a") if is_winter else Color("#18181b")

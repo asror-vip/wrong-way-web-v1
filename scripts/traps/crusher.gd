@@ -131,30 +131,43 @@ func _draw() -> void:
 
 	var w := crusher_size.x
 	var h := crusher_size.y
-	
-	# Asosiy ezuvchi blok korpusi (shift bilan bir xil qoplama)
-	# IDLE holatda crusher shift ichida joylashgan bo'lib, shift teksturasi, qor qatlami
-	# va muzchalar tutashuvini uzmasligi uchun faqat pastga tushganda korpus chiziladi.
+
+	# Zanjir (shiftgacha ko'tariluvchi asl temir zanjir)
+	var chain_x := w / 2.0
+	var link_spacing := 12.0
+	var current_y := 0.0
+	while current_y > -600.0:
+		draw_rect(
+			Rect2(chain_x - 3.0, current_y - 10.0, 6.0, 10.0),
+			Color("#1a2230"),
+			false,
+			1.8
+		)
+		draw_line(
+			Vector2(chain_x, current_y - 10.0),
+			Vector2(chain_x, current_y - 12.0),
+			Color("#2a3548"),
+			1.5
+		)
+		current_y -= link_spacing
+
+	# Zanjir qotirgich halqasi (crusher tepasida)
+	draw_circle(Vector2(chain_x, 0), 5.0, Color("#262e3e"))
+	draw_circle(Vector2(chain_x, 0), 2.5, Color("#0c0e14"))
+
+	# Asosiy ezuvchi blok korpusi (borderlarsiz sof monolit to'rtburchak)
 	var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
-	if state != State.IDLE:
-		draw_rect(Rect2(0, -300.0, w, h + 300.0), body_col, true)
-		if is_winter:
-			draw_line(Vector2(1, -300), Vector2(1, h), Color(0.40, 0.70, 0.95, 0.8), 2.0)
-			draw_line(
-				Vector2(w - 1, -300),
-				Vector2(w - 1, h),
-				Color(0.40, 0.70, 0.95, 0.8),
-				2.0
-			)
-			draw_rect(Rect2(4.0, h - 8.0, w - 8.0, 3.0), Color(0.20, 0.55, 0.85, 0.6), true)
-		else:
-			draw_line(Vector2(1, -300), Vector2(1, h), Color("#334155"), 1.5)
-			draw_line(Vector2(w - 1, -300), Vector2(w - 1, h), Color("#334155"), 1.5)
-			draw_rect(Rect2(4.0, h - 8.0, w - 8.0, 3.0), Color("#2a2536"), true)
-	
-	# Tishlar: barcha tikanlar bilan 100% BIR XIL po'lat tishlar
-	# (shiftning pastki chekkasidan chiqib turadi)
-	var teeth := 4
+	draw_rect(Rect2(0, 0, w, h), body_col, true)
+
+	if is_winter:
+		# Crusher tepasidagi qor qatlami (borderlarsiz)
+		draw_rect(Rect2(0, 0, w, 5.0), Color("#ffffff"), true)
+		draw_rect(Rect2(0, 4.0, w, 1.5), Color("#94a3b8"), true)
+
+	# Tishlar: shift tikanlari bilan bir xil sof rangli tishlar (borderlarsiz!)
+	var teeth := int(round(w / 16.0))
+	if teeth < 1:
+		teeth = 4
 	var tw := w / float(teeth)
 	var tooth_len := 13.0
 	for i in range(teeth):
@@ -162,17 +175,12 @@ func _draw() -> void:
 		var p2 := Vector2((float(i) + 0.5) * tw, h + tooth_len)
 		var p3 := Vector2(float(i + 1) * tw, h)
 		if is_winter:
-			draw_colored_polygon(PackedVector2Array([p1, p2, p3]), Color(0.22, 0.74, 0.97, 0.92))
-			draw_line(p1, p2, Color("#ffffff"), 1.5)
-			draw_line(p2, p3, Color("#0284c7"), 1.2)
+			draw_colored_polygon(
+				PackedVector2Array([p1, p2, p3]),
+				Color(0.22, 0.74, 0.97, 0.92)
+			)
 		else:
-			draw_colored_polygon(PackedVector2Array([p1, p2, p3]), Color("#1e1b26"))
-			var inner_tooth := PackedVector2Array([
-				Vector2((float(i) + 0.2) * tw, h),
-				p2,
-				Vector2((float(i) + 0.55) * tw, h)
-			])
-			draw_colored_polygon(inner_tooth, Color("#2a2536"))
-			draw_line(p1, p2, Color("#ffffff"), 1.5)
-			draw_line(p2, p3, Color("#5c566a"), 1.2)
-			draw_circle(p2, 1.4, Color.WHITE)
+			draw_colored_polygon(
+				PackedVector2Array([p1, p2, p3]),
+				Color("#1c1a22")
+			)

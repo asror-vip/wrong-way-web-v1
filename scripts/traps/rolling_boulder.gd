@@ -146,9 +146,6 @@ func _draw() -> void:
 		var tip := dir * (boulder_radius + 12.0)
 		draw_colored_polygon(PackedVector2Array([base1, tip, base2]), Color("#1e1b26"))
 		draw_colored_polygon(PackedVector2Array([base1 + norm * 2.0, tip, base2]), Color("#2a2536"))
-		draw_line(base1, tip, Color("#ffffff"), 1.4)
-		draw_line(tip, base2, Color("#5c566a"), 1.2)
-		draw_circle(tip, 1.5, Color.WHITE)
 
 	# 2. Asosiy obsidian qoya toshi tanasi
 	draw_circle(Vector2.ZERO, boulder_radius, Color(0.08, 0.10, 0.15, 1.0))

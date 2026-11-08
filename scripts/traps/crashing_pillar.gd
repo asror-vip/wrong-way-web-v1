@@ -115,11 +115,8 @@ func reset_trap() -> void:
 
 func _draw() -> void:
 	var rect := Rect2(0, 0, pillar_size.x, pillar_size.y)
-	# Asosiy quyuq tosh ustun
+	# Asosiy quyuq tosh ustun (borderlarsiz)
 	draw_rect(rect, Color(0.07, 0.09, 0.14, 1.0))
-	# Yon hoshiyalar
-	draw_line(Vector2(0, 0), Vector2(0, pillar_size.y), Color(0.24, 0.32, 0.44, 0.8), 1.5)
-	draw_line(Vector2(pillar_size.x, 0), Vector2(pillar_size.x, pillar_size.y), Color(0.24, 0.32, 0.44, 0.8), 1.5)
 	
 	# Tosh g'ishtlar relyefi
 	for y in range(25, int(pillar_size.y), 35):
