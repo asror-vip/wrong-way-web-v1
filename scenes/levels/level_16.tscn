@@ -30,7 +30,7 @@ platform_size = Vector2(340, 160)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 60)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -70,7 +70,7 @@ patrol_speed = 130
 patrol_axis = Vector2(1, 0)
 
 [node name="BigCrusher" parent="Traps" instance=ExtResource("9_tr")]
-position = Vector2(760, -4)
+position = Vector2(760, 6)
 crusher_size = Vector2(80, 64)
 target_y = 304
 

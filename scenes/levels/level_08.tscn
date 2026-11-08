@@ -30,7 +30,7 @@ platform_size = Vector2(200, 160)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 60)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -50,7 +50,7 @@ trigger_distance = 260
 delay_before_roll = 0.5
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(300, 60)
+position = Vector2(300, 70)
 trigger_distance = 220
 shake_duration = 0.4
 

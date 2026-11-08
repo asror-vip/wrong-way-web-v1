@@ -17,7 +17,7 @@ level_number = 28
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 60)
+platform_size = Vector2(960, 70)
 
 [node name="GroundFull" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 380)
@@ -40,8 +40,8 @@ patrol_speed = 130
 patrol_axis = Vector2(-1, 0)
 
 [node name="MovingSawBack" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(90, 364)
-patrol_distance = 180
+position = Vector2(20, 364)
+patrol_distance = 230
 patrol_speed = 150
 patrol_axis = Vector2(1, 0)
 

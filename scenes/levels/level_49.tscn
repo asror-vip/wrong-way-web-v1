@@ -31,7 +31,7 @@ platform_size = Vector2(210, 30)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 50)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -59,12 +59,12 @@ orbit_radius = 36
 orbit_speed = -2.2
 
 [node name="StalactiteUnder1" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(440, 50)
+position = Vector2(440, 70)
 trigger_distance = 240
 shake_duration = 0.35
 
 [node name="StalactiteUnder2" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(500, 50)
+position = Vector2(500, 70)
 trigger_distance = 240
 shake_duration = 0.35
 

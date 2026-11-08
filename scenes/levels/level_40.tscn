@@ -44,7 +44,7 @@ platform_size = Vector2(150, 30)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 50)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -64,7 +64,7 @@ trigger_distance = 80
 warning_time = 0.4
 
 [node name="MovingSawChase1" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(30, 364)
+position = Vector2(15, 364)
 patrol_distance = 180
 patrol_speed = 160
 patrol_axis = Vector2(1, 0)
@@ -75,17 +75,17 @@ spring_size = Vector2(32, 32)
 launch_velocity = -750
 
 [node name="StalactiteSky1" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(260, 50)
+position = Vector2(260, 70)
 trigger_distance = 250
 shake_duration = 0.4
 
 [node name="StalactiteSky2" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(310, 50)
+position = Vector2(310, 70)
 trigger_distance = 240
 shake_duration = 0.5
 
 [node name="StalactiteSky3" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(360, 50)
+position = Vector2(360, 70)
 trigger_distance = 230
 shake_duration = 0.6
 
@@ -95,17 +95,17 @@ orbit_radius = 32
 orbit_speed = 2.8
 
 [node name="Crusher1" parent="Traps" instance=ExtResource("10_tr")]
-position = Vector2(470, 140)
+position = Vector2(470, 6)
 crusher_size = Vector2(50, 64)
 target_y = 320
 
 [node name="Crusher2" parent="Traps" instance=ExtResource("10_tr")]
-position = Vector2(530, 140)
+position = Vector2(530, 6)
 crusher_size = Vector2(50, 64)
 target_y = 320
 
 [node name="Crusher3" parent="Traps" instance=ExtResource("10_tr")]
-position = Vector2(590, 140)
+position = Vector2(590, 6)
 crusher_size = Vector2(50, 64)
 target_y = 320
 
@@ -155,4 +155,4 @@ orbit_speed = 3.2
 position = Vector2(900, 200)
 
 [node name="Player" parent="." instance=ExtResource("2_pl")]
-position = Vector2(60, 380)
+position = Vector2(75, 380)

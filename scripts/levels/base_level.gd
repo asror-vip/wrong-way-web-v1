@@ -50,7 +50,7 @@ func _ready() -> void:
 				var c = sp_scn.instantiate()
 				c.name = "Ceiling"
 				c.position = Vector2(0, 0)
-				c.platform_size = Vector2(960, 60)
+				c.platform_size = Vector2(960, 70)
 				c.has_ceiling_teeth = true
 				platforms.add_child(c)
 

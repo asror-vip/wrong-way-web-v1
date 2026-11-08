@@ -24,7 +24,7 @@ platform_size = Vector2(960, 160)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 60)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -38,22 +38,22 @@ platform_size = Vector2(32, 540)
 
 [node name="SawFromLeft" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(30, 364)
-patrol_distance = 220
+patrol_distance = 110
 patrol_speed = 140
 patrol_axis = Vector2(1, 0)
 trigger_distance = 120
 
 [node name="CrusherFromRight" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(240, 140)
+position = Vector2(240, 6)
 crusher_size = Vector2(68, 64)
 target_y = 320
 trigger_distance = 70
 
-[node name="BoulderBehind" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(180, 350)
-roll_direction = 1
+[node name="BoulderMid" parent="Traps" instance=ExtResource("7_tr")]
+position = Vector2(380, 350)
+roll_direction = -1
 roll_speed = 290
-trigger_distance = 190
+trigger_distance = 180
 
 [node name="LaserAhead" parent="Traps" instance=ExtResource("8_tr")]
 position = Vector2(450, 220)
@@ -69,7 +69,7 @@ trigger_distance = 75
 warning_time = 0.35
 
 [node name="StalactiteJump" parent="Traps" instance=ExtResource("10_tr")]
-position = Vector2(580, 60)
+position = Vector2(580, 70)
 trigger_distance = 240
 shake_duration = 0.35
 

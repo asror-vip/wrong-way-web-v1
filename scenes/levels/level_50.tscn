@@ -35,7 +35,7 @@ platform_size = Vector2(280, 30)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 50)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -89,13 +89,13 @@ roll_speed = 320
 trigger_distance = 220
 
 [node name="BoulderBack" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(100, 350)
+position = Vector2(25, 350)
 roll_direction = 1
 roll_speed = 280
 trigger_distance = 200
 
 [node name="CrusherMid" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(470, 140)
+position = Vector2(470, 6)
 crusher_size = Vector2(68, 64)
 target_y = 320
 
@@ -115,17 +115,17 @@ spring_size = Vector2(40, 16)
 bounce_force = 620
 
 [node name="StalactiteSky1" parent="Traps" instance=ExtResource("11_tr")]
-position = Vector2(710, 50)
+position = Vector2(710, 70)
 trigger_distance = 240
 shake_duration = 0.35
 
 [node name="StalactiteSky2" parent="Traps" instance=ExtResource("11_tr")]
-position = Vector2(750, 50)
+position = Vector2(750, 70)
 trigger_distance = 240
 shake_duration = 0.35
 
 [node name="StalactiteSky3" parent="Traps" instance=ExtResource("11_tr")]
-position = Vector2(790, 50)
+position = Vector2(790, 70)
 trigger_distance = 240
 shake_duration = 0.35
 
@@ -148,4 +148,4 @@ spike_size = Vector2(28, 32)
 position = Vector2(900, 230)
 
 [node name="Player" parent="." instance=ExtResource("2_pl")]
-position = Vector2(60, 380)
+position = Vector2(80, 380)

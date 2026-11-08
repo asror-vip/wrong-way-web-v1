@@ -437,6 +437,8 @@ func _audit_reset_and_retrigger(
 	traps: Node2D,
 	issues: Array[String]
 ) -> void:
+	if traps:
+		traps.process_mode = Node.PROCESS_MODE_INHERIT
 	# Re-trigger test on first triggerable trap
 	for t in traps.get_children():
 		var trig_pos := _get_trap_trigger_pos(t)
@@ -466,8 +468,14 @@ func _audit_reset_and_retrigger(
 			break
 			
 	# Void recovery test for rolling boulders
+	player.global_position = Vector2(-9999.0, -9999.0)
+	player.is_invulnerable = true
+	if traps:
+		traps.process_mode = Node.PROCESS_MODE_INHERIT
 	for t in traps.get_children():
 		if t is RollingBoulder or t.get_script().get_global_name() == &"RollingBoulder":
+			if traps:
+				traps.process_mode = Node.PROCESS_MODE_INHERIT
 			t.global_position.y = 660.0
 			for i in range(2):
 				await get_tree().physics_frame

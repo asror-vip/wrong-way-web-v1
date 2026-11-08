@@ -34,7 +34,7 @@ platform_size = Vector2(280, 310)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 50)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -52,12 +52,12 @@ spring_size = Vector2(32, 32)
 launch_velocity = -750
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(275, 50)
+position = Vector2(275, 70)
 trigger_distance = 250
 shake_duration = 0.4
 
 [node name="Stalactite2" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(355, 50)
+position = Vector2(355, 70)
 trigger_distance = 240
 shake_duration = 0.55
 
@@ -72,7 +72,7 @@ spring_size = Vector2(32, 32)
 launch_velocity = -750
 
 [node name="SpikesHigh" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(720, 198)
+position = Vector2(755, 198)
 spike_size = Vector2(48, 32)
 
 [node name="LaserHigh" parent="Traps" instance=ExtResource("9_tr")]

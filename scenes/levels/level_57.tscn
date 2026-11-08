@@ -28,7 +28,7 @@ platform_size = Vector2(140, 160)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 60)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -41,24 +41,24 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="Crusher1" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(180, 140)
+position = Vector2(180, 6)
 crusher_size = Vector2(68, 64)
 target_y = 320
 trigger_distance = 64
 
 [node name="Crusher2" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(260, 140)
+position = Vector2(260, 6)
 crusher_size = Vector2(68, 64)
 target_y = 320
 trigger_distance = 64
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(350, 60)
+position = Vector2(350, 70)
 trigger_distance = 240
 shake_duration = 0.35
 
 [node name="Stalactite2" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(400, 60)
+position = Vector2(400, 70)
 trigger_distance = 240
 shake_duration = 0.35
 

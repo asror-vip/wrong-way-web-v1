@@ -30,7 +30,7 @@ platform_size = Vector2(160, 160)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
-platform_size = Vector2(960, 60)
+platform_size = Vector2(960, 70)
 
 [node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -43,12 +43,12 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(180, 60)
+position = Vector2(180, 70)
 trigger_distance = 280
 shake_duration = 0.35
 
 [node name="Stalactite2" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(280, 60)
+position = Vector2(280, 70)
 trigger_distance = 260
 shake_duration = 0.45
 
@@ -67,7 +67,7 @@ patrol_speed = 130
 patrol_axis = Vector2(0, -1)
 
 [node name="Stalactite3" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(560, 60)
+position = Vector2(560, 70)
 trigger_distance = 240
 shake_duration = 0.4
 
@@ -77,7 +77,7 @@ platform_size = Vector2(60, 160)
 crumble_delay = 0.5
 
 [node name="Stalactite4" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(680, 60)
+position = Vector2(680, 70)
 trigger_distance = 220
 shake_duration = 0.3
 
