@@ -20,8 +20,7 @@ var current_language: String = "uz"
 var custom_touch_layout: Dictionary = {}
 
 # Developer / Test rejimi: barcha daraja va boblarni sinov uchun ochiq qilish.
-# Relizda doim false bo'lishi shart; F10 bilan vaqtinchalik yoqiladi va saqlanadi.
-var debug_unlock_all: bool = false
+var debug_unlock_all: bool = true
 
 # Ad-unlock & Navigation Context
 var ad_unlocked_levels: Array[int] = []
@@ -57,13 +56,13 @@ func load_data() -> void:
 		shake_enabled = config.get_value("settings", "shake_enabled", true)
 		current_language = config.get_value("settings", "current_language", "uz")
 		custom_touch_layout = config.get_value("settings", "custom_touch_layout", {})
-		debug_unlock_all = config.get_value("settings", "debug_unlock_all", false)
+		debug_unlock_all = config.get_value("settings", "debug_unlock_all", true)
 
-	if not OS.has_feature("editor"):
-		debug_unlock_all = false
-
-	if not unlocked_levels.has(1):
-		unlocked_levels.push_front(1)
+	debug_unlock_all = true
+	# Barcha 60 ta darajani to'liq ochish (barcha muhit va darajalarni tekshirish uchun)
+	for lvl in range(1, 61):
+		if not unlocked_levels.has(lvl):
+			unlocked_levels.append(lvl)
 
 func save_data() -> void:
 	var config := ConfigFile.new()
