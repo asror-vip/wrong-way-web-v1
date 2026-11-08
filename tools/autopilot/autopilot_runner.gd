@@ -43,7 +43,9 @@ var bot_status_text: String = "Tayyorlanmoqda..."
 @onready var lbl_banner: Label = $CanvasLayer/WinBanner/LblBanner
 
 func _ready() -> void:
-	for arg in OS.get_cmdline_args():
+	var all_args := OS.get_cmdline_args()
+	all_args.append_array(OS.get_cmdline_user_args())
+	for arg in all_args:
 		if arg.begins_with("--start="):
 			current_level_id = clampi(int(arg.trim_prefix("--start=")), 1, MAX_LEVELS)
 
@@ -198,7 +200,7 @@ func is_safe_floor(x: float, y: float) -> bool:
 			if absf(x - sx) < 45.0 and absf(y - sy) < 40.0:
 				return false
 		else:
-			if x >= (h.x1 - 12.0) and x <= (h.x2 + 12.0) and absf(y - h.y) <= 32.0:
+			if x >= (h.x1 - 15.0) and x <= (h.x2 + 15.0) and absf(y - h.y) <= 45.0:
 				return false
 
 	return true
@@ -213,6 +215,12 @@ func _predict_landing_x(p_pos: Vector2, vel: Vector2, floor_y: float) -> float:
 		return p_pos.x
 	var t: float = (-vel.y + sqrt(disc)) / g
 	return p_pos.x + vel.x * t
+
+func _has_solid_under(x: float, y: float) -> bool:
+	for s in solid_zones:
+		if x >= s.x1 and x <= s.x2 and absf(y - s.y) <= 32.0:
+			return true
+	return false
 
 func _find_nearest_floor_y(curr_y: float) -> float:
 	var best_y: float = 380.0
@@ -256,6 +264,8 @@ func _physics_process(delta: float) -> void:
 		_handle_level_won()
 		return
 
+
+
 	if current_player.is_dead:
 		_release_inputs()
 		return
@@ -285,19 +295,9 @@ func _physics_process(delta: float) -> void:
 	var dx: float = target_x - p_pos.x
 	var move_dir: float = signf(dx) if absf(dx) > 2.0 else 0.0
 
-	# Check hazards ahead: Lasers
-	var laser_threat := _get_active_laser_ahead(p_pos, move_dir)
-	if laser_threat:
-		_release_inputs()
-		bot_status_text = "Lazer o'chishi kutilmoqda..."
-		_update_hud()
-		return
-
-	# Check hazards ahead: Crushers
-	var crusher_threat := _get_dropping_crusher_ahead(p_pos, move_dir)
-	if crusher_threat:
-		_release_inputs()
-		bot_status_text = "Ezuvchi qaytishi kutilmoqda..."
+	# Overhead and active hazard avoidance (Crushers, Lasers, Falling Spikes)
+	var hazard_blocking: bool = _check_overhead_hazards(p_pos, move_dir)
+	if hazard_blocking:
 		_update_hud()
 		return
 
@@ -307,7 +307,20 @@ func _physics_process(delta: float) -> void:
 		final_move_dir = -final_move_dir
 
 	# Drive horizontal movement
-	if final_move_dir > 0:
+	var should_airbrake: bool = false
+	if not current_player.is_on_floor() and not launched_by_spring:
+		var curr_fly: float = _find_nearest_floor_y(p_pos.y)
+		var l_x: float = _predict_landing_x(p_pos, current_player.velocity, curr_fly)
+		var l_safe: bool = is_safe_floor(l_x + move_dir * 35.0, curr_fly)
+		var below_safe: bool = is_safe_floor(p_pos.x, curr_fly)
+		if not l_safe and below_safe and (l_x - p_pos.x) * move_dir > 0.0:
+			should_airbrake = true
+
+	if should_airbrake:
+		Input.action_release("move_right")
+		Input.action_release("move_left")
+		bot_status_text = "Havoda tormoz (xavfsiz yerga tushish)!"
+	elif final_move_dir > 0:
 		Input.action_press("move_right")
 		Input.action_release("move_left")
 		bot_status_text = "O'ngga yugurmoqda"
@@ -362,13 +375,17 @@ func _physics_process(delta: float) -> void:
 		var is_land_safe: bool = is_safe_floor(land_x, current_floor_y)
 		var is_under_safe: bool = is_safe_floor(p_pos.x, current_floor_y)
 
-		# If landing unsafe or flying over gap: DASH if dash clears to safety!
-		var over_gap: bool = (not is_under_safe and current_player.velocity.y > -250.0)
-		var needs_dash: bool = (not is_land_safe or over_gap)
+		# If landing unsafe or flying over a pit: DASH if dash clears to safety!
+		var over_pit: bool = (
+			not _has_solid_under(p_pos.x, current_floor_y) and
+			current_player.velocity.y > -250.0
+		)
+		var needs_dash: bool = (not is_land_safe or over_pit)
 		var dash_land_x: float = land_x + move_dir * 125.0
 		var can_clear_by_dash: bool = is_safe_floor(dash_land_x, current_floor_y)
+		var is_high_enough: bool = (p_pos.y < current_floor_y - 42.0) or over_pit
 
-		if needs_dash and can_clear_by_dash and dash_cooldown <= 0.0:
+		if needs_dash and can_clear_by_dash and is_high_enough and dash_cooldown <= 0.0:
 			if not launched_by_spring:
 				Input.action_press("dash")
 				dash_cooldown = 0.45
@@ -377,31 +394,107 @@ func _physics_process(delta: float) -> void:
 
 	_update_hud()
 
-func _get_active_laser_ahead(at_pos: Vector2, dir: float) -> Node2D:
+func _check_overhead_hazards(p_pos: Vector2, move_dir: float) -> bool:
 	if not current_traps:
-		return null
-	for t: Node in current_traps.get_children():
-		if t is LaserBeamTrap:
-			var lb := t as LaserBeamTrap
-			var dx: float = (lb.global_position.x - at_pos.x) * dir
-			if dx > 4.0 and dx < 65.0:
-				if lb.is_active:
-					return lb
-	return null
+		return false
 
-func _get_dropping_crusher_ahead(at_pos: Vector2, dir: float) -> Node2D:
-	if not current_traps:
-		return null
+	# 1. CRUSHERS (Bait & Dash Strategy)
 	for t: Node in current_traps.get_children():
 		if t is Crusher:
 			var cr := t as Crusher
-			var dx: float = (
-				cr.global_position.x + cr.crusher_size.x / 2.0 - at_pos.x
-			) * dir
-			if dx > 0.0 and dx < (cr.crusher_size.x / 2.0 + 36.0):
-				if cr.global_position.y > 60.0:
-					return cr
-	return null
+			var cr_x1: float = cr.global_position.x
+			var cr_x2: float = cr.global_position.x + cr.crusher_size.x
+			var cr_center: float = (cr_x1 + cr_x2) / 2.0
+			var dist_to_center: float = (cr_center - p_pos.x) * move_dir
+			var is_ahead: bool = dist_to_center > -15.0 and dist_to_center < 120.0
+
+			if is_ahead:
+				var safe_stop_x: float = cr_x1 - 20.0 if move_dir > 0 else cr_x2 + 20.0
+				var is_under: bool = p_pos.x >= (cr_x1 - 8.0) and p_pos.x <= (cr_x2 + 8.0)
+
+				var is_crushing: bool = (
+					cr.state == Crusher.State.FALLING or
+					cr.state == Crusher.State.WAITING_BOTTOM
+				)
+				var is_idle: bool = (cr.state == Crusher.State.IDLE)
+				var is_rising: bool = (
+					cr.state == Crusher.State.RISING or
+					cr.state == Crusher.State.COOLDOWN
+				)
+
+				if is_idle:
+					# Hold safely at safe_stop_x to bait the crusher drop
+					var past_stop: bool = (p_pos.x >= safe_stop_x) if move_dir > 0 \
+						else (p_pos.x <= safe_stop_x)
+					if past_stop:
+						_release_inputs()
+						bot_status_text = "Ezuvchi tushishi kutilmoqda..."
+						return true
+
+				elif is_crushing:
+					# Crusher is falling or slamming: DO NOT ENTER crush zone!
+					if not is_under:
+						_release_inputs()
+						bot_status_text = "Ezuvchi chetda kutilmoqda..."
+						return true
+
+				elif is_rising:
+					var cr_bottom: float = cr.global_position.y + cr.crusher_size.y
+					var is_clear: bool = (cr_bottom <= 320.0)
+					if not is_clear:
+						if not is_under:
+							_release_inputs()
+							bot_status_text = "Ezuvchi ko'tarilishi kutilmoqda..."
+							return true
+					else:
+						# Headroom is clear! Dash right through!
+						if dash_cooldown <= 0.0 and current_player.is_on_floor():
+							Input.action_press("dash")
+							dash_cooldown = 0.45
+							bot_status_text = "Ezuvchi tagidan Dash bilan o'tildi!"
+							print("[AUTOPILOT] DASH under Crusher at x=%.1f" % p_pos.x)
+						return false
+
+	# 2. FALLING SPIKES (Stalactites)
+	for t: Node in current_traps.get_children():
+		if t is FallingSpikeTrap:
+			var fs := t as FallingSpikeTrap
+			if not fs.is_grounded:
+				var sx: float = fs.global_position.x
+				var dist_x: float = (sx - p_pos.x) * move_dir
+				if dist_x > 0.0 and dist_x < 70.0:
+					var safe_stop_x: float = sx - 32.0 if move_dir > 0 else sx + 32.0
+					var past_stop: bool = (p_pos.x >= safe_stop_x) if move_dir > 0 \
+						else (p_pos.x <= safe_stop_x)
+					if past_stop and not fs.is_falling:
+						_release_inputs()
+						bot_status_text = "Shift tikani tushishi kutilmoqda..."
+						return true
+
+	# 3. CRASHING PILLARS
+	for t: Node in current_traps.get_children():
+		if t is CrashingPillar:
+			var cp := t as CrashingPillar
+			if not cp.is_grounded:
+				var px: float = cp.global_position.x
+				var dist_x: float = (px - p_pos.x) * move_dir
+				if dist_x > 0.0 and dist_x < 90.0:
+					_release_inputs()
+					bot_status_text = "Qulovchi ustun kutilmoqda..."
+					return true
+
+	# 4. LASER BEAMS
+	for t: Node in current_traps.get_children():
+		if t is LaserBeamTrap:
+			var lb := t as LaserBeamTrap
+			var dx: float = (lb.global_position.x - p_pos.x) * move_dir
+			if dx > 4.0 and dx < 65.0:
+				if lb.is_active:
+					_release_inputs()
+					bot_status_text = "Lazer o'chishi kutilmoqda..."
+					return true
+
+	return false
 
 func _get_boulder_threat(at_pos: Vector2) -> Node2D:
 	if not current_traps:
