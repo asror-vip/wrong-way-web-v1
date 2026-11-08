@@ -3,7 +3,7 @@ class_name Crusher
 
 @export var crusher_size: Vector2 = Vector2(64, 64)
 @export var target_y: float = 325.0
-@export var trigger_distance: float = 64.0
+@export var trigger_distance: float = 100.0
 @export var returns_up: bool = true
 @export var wait_at_bottom: float = 0.7
 @export var rise_speed: float = 140.0
@@ -50,7 +50,7 @@ func _physics_process(delta: float) -> void:
 				var player_center_x: float = player_ref.global_position.x
 				if absf(player_center_x - crusher_center_x) < trigger_distance:
 					state = State.FALLING
-					speed = 0.0
+					speed = 140.0
 					chain_slack = 0.0
 					queue_redraw()
 					var sm = get_node_or_null("/root/SoundManager")

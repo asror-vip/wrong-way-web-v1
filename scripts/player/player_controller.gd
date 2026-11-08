@@ -5,7 +5,7 @@ signal died
 signal respawned
 signal entered_exit
 
-const SPEED: float = 320.0
+const SPEED: float = 280.0
 const DASH_SPEED: float = 660.0
 const DASH_DURATION: float = 0.16
 const DASH_COOLDOWN: float = 0.40
@@ -95,7 +95,8 @@ func _physics_process(delta: float) -> void:
 		move_dir = -move_dir
 
 	# Dash faollashtirish (Faqat bir marta bosilganda - Genshin Impact uslubida)
-	# QAT'IY QOIDA: is_action_just_pressed ishlatiladi, shuning uchun Shift bosib turilsa tez yururmaydi!
+	# QAT'IY QOIDA: is_action_just_pressed ishlatiladi,
+	# shuning uchun Shift bosib turilsa tez yururmaydi!
 	if Input.is_action_just_pressed("dash") and not is_dashing and dash_cooldown_timer <= 0.0:
 		var target_dir := move_dir
 		if target_dir == 0.0:
