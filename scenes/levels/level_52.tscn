@@ -50,7 +50,8 @@ platform_size = Vector2(32, 540)
 [node name="Spring1" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(175, 380)
 spring_size = Vector2(40, 16)
-bounce_force = 600
+launch_velocity = -740
+bounce_force = 0
 
 [node name="CircularSawUpper1" parent="Traps" instance=ExtResource("6_tr")]
 position = Vector2(290, 190)
@@ -81,7 +82,8 @@ trigger_distance = 220
 [node name="Spring2" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(680, 380)
 spring_size = Vector2(40, 16)
-bounce_force = 600
+launch_velocity = -740
+bounce_force = 0
 
 [node name="LaserExitHall" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(810, 80)

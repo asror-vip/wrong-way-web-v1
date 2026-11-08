@@ -41,7 +41,7 @@ trigger_distance = 260
 delay_before_roll = 0.4
 
 [node name="BoulderRear" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(260, 350)
+position = Vector2(20, 350)
 roll_direction = 1
 roll_speed = 300
 trigger_distance = 180
@@ -64,7 +64,7 @@ orbit_speed = 3
 [node name="BoulderFront2" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(870, 350)
 roll_direction = -1
-roll_speed = 340
+roll_speed = 300
 trigger_distance = 180
 delay_before_roll = 0.4
 

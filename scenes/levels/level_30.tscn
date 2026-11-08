@@ -23,8 +23,8 @@ position = Vector2(0, 380)
 platform_size = Vector2(960, 160)
 
 [node name="PlatformHighExit" parent="Platforms" instance=ExtResource("3_sp")]
-position = Vector2(40, 240)
-platform_size = Vector2(160, 30)
+position = Vector2(90, 240)
+platform_size = Vector2(190, 30)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -41,9 +41,9 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="SpringEscape" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(60, 380)
+position = Vector2(50, 380)
 spring_size = Vector2(32, 32)
-launch_velocity = -750
+launch_velocity = -740
 
 [node name="StalactiteReturn" parent="Traps" instance=ExtResource("6_tr")]
 position = Vector2(240, 70)
@@ -80,7 +80,7 @@ patrol_speed = 165
 patrol_axis = Vector2(-1, 0)
 
 [node name="ExitDoor" parent="." instance=ExtResource("4_ed")]
-position = Vector2(130, 240)
+position = Vector2(150, 240)
 
 [node name="Player" parent="." instance=ExtResource("2_pl")]
 position = Vector2(120, 380)

@@ -61,7 +61,7 @@ platform_size = Vector2(70, 160)
 shake_duration = 0.18
 
 [node name="RearBoulder" parent="Traps" instance=ExtResource("7_tr")]
-position = Vector2(120, 350)
+position = Vector2(20, 350)
 roll_direction = 1
 roll_speed = 290
 trigger_distance = 200

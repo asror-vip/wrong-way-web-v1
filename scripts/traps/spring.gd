@@ -30,8 +30,7 @@ func _physics_process(_delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null and is_instance_valid(player):
 		var p_dead: bool = "is_dead" in player and player.is_dead
-		var p_inv: bool = "is_invulnerable" in player and player.is_invulnerable
-		if not p_dead and not p_inv:
+		if not p_dead:
 			var px: float = player.global_position.x
 			var py: float = player.global_position.y
 			var min_x: float = global_position.x - 4.0

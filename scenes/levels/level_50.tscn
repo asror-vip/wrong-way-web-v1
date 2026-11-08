@@ -30,8 +30,8 @@ position = Vector2(640, 380)
 platform_size = Vector2(70, 160)
 
 [node name="UpperBridge" parent="Platforms" instance=ExtResource("3_sp")]
-position = Vector2(680, 230)
-platform_size = Vector2(280, 30)
+position = Vector2(705, 230)
+platform_size = Vector2(255, 30)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -112,7 +112,8 @@ shake_duration = 0.18
 [node name="SpringToSky" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(655, 380)
 spring_size = Vector2(40, 16)
-bounce_force = 620
+launch_velocity = -740
+bounce_force = 0
 
 [node name="StalactiteSky1" parent="Traps" instance=ExtResource("11_tr")]
 position = Vector2(710, 70)

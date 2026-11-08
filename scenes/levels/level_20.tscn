@@ -104,9 +104,9 @@ active_time = 1.4
 inactive_time = 1.4
 
 [node name="SpringLauncher" parent="Traps" instance=ExtResource("10_tr")]
-position = Vector2(450, 380)
+position = Vector2(450, 440)
 spring_size = Vector2(32, 32)
-launch_velocity = -950
+launch_velocity = -840
 
 [node name="CircularSawSkyA" parent="Traps" instance=ExtResource("11_tr")]
 position = Vector2(560, 200)

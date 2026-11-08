@@ -65,7 +65,7 @@ platform_size = Vector2(80, 160)
 crumble_delay = 0.5
 
 [node name="RollingBoulderBack" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(460, 350)
+position = Vector2(20, 350)
 roll_direction = 1
 roll_speed = 340
 trigger_distance = 160

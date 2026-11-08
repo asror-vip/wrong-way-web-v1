@@ -48,7 +48,7 @@ platform_size = Vector2(32, 540)
 [node name="Spring1" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(160, 380)
 spring_size = Vector2(32, 32)
-launch_velocity = -880
+launch_velocity = -680
 
 [node name="Stalactite1" parent="Traps" instance=ExtResource("6_tr")]
 position = Vector2(320, 70)
@@ -69,7 +69,7 @@ trigger_distance = 220
 [node name="Spring2" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(610, 360)
 spring_size = Vector2(32, 32)
-launch_velocity = -900
+launch_velocity = -640
 
 [node name="PopUpSpikesFinal" parent="Traps" instance=ExtResource("8_tr")]
 position = Vector2(780, 280)

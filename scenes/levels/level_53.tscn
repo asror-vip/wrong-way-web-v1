@@ -44,7 +44,7 @@ roll_speed = 300
 trigger_distance = 220
 
 [node name="BoulderBack2" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(120, 350)
+position = Vector2(20, 350)
 roll_direction = 1
 roll_speed = 280
 trigger_distance = 200
@@ -71,7 +71,7 @@ shake_duration = 0.35
 
 [node name="OpposingBoulder1" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(740, 350)
-roll_direction = 1
+roll_direction = -1
 roll_speed = 320
 trigger_distance = 220
 

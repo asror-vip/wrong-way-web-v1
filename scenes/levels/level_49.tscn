@@ -77,7 +77,8 @@ trigger_distance = 220
 [node name="SpringToUpper" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(670, 380)
 spring_size = Vector2(40, 16)
-bounce_force = 620
+launch_velocity = -740
+bounce_force = 0
 
 [node name="FakeDoorUpper" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(810, 230)

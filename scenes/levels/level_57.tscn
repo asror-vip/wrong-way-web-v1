@@ -87,10 +87,11 @@ orbit_radius = 36
 orbit_speed = -2.2
 
 [node name="ChasingBoulder" parent="Traps" instance=ExtResource("9_tr")]
-position = Vector2(560, 350)
+position = Vector2(20, 350)
 roll_direction = 1
-roll_speed = 310
+roll_speed = 240
 trigger_distance = 200
+delay_before_roll = 0.8
 
 [node name="LaserCombo" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(730, 220)

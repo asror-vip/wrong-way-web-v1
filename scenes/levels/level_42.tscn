@@ -48,7 +48,7 @@ roll_speed = 300
 trigger_distance = 220
 
 [node name="RollingBoulderBack" parent="Traps" instance=ExtResource("6_tr")]
-position = Vector2(120, 350)
+position = Vector2(20, 350)
 roll_direction = 1
 roll_speed = 280
 trigger_distance = 200
@@ -61,8 +61,9 @@ orbit_speed = 2.2
 [node name="RollingBoulderFast" parent="Traps" instance=ExtResource("6_tr")]
 position = Vector2(740, 350)
 roll_direction = -1
-roll_speed = 460
+roll_speed = 320
 trigger_distance = 220
+delay_before_roll = 0.35
 
 [node name="TrapFloorFinish" parent="Traps" instance=ExtResource("8_tr")]
 position = Vector2(760, 380)

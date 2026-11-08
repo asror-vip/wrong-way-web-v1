@@ -71,7 +71,8 @@ shake_duration = 0.35
 [node name="SpringGap" parent="Traps" instance=ExtResource("8_tr")]
 position = Vector2(650, 380)
 spring_size = Vector2(40, 16)
-bounce_force = 580
+launch_velocity = -700
+bounce_force = 0
 
 [node name="CircularSawPlatform" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(775, 330)

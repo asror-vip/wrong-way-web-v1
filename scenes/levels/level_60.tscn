@@ -32,7 +32,7 @@ platform_size = Vector2(680, 120)
 
 [node name="UpperLaserLedge" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(550, 210)
-platform_size = Vector2(330, 30)
+platform_size = Vector2(260, 30)
 
 [node name="MidRunway" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(140, 310)
@@ -114,7 +114,7 @@ trigger_distance = 220
 
 [node name="RearBoulder" parent="Traps" instance=ExtResource("11_tr")]
 position = Vector2(580, 390)
-roll_direction = 1
+roll_direction = -1
 roll_speed = 280
 trigger_distance = 180
 
@@ -204,7 +204,7 @@ warning_time = 0.35
 position = Vector2(150, 310)
 spring_size = Vector2(40, 16)
 bounce_force = 660
-launch_velocity = -920
+launch_velocity = -750
 
 [node name="GiantCrusher" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(280, 6)

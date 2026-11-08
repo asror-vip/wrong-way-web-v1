@@ -71,6 +71,21 @@ func _physics_process(delta: float) -> void:
 	
 	move_and_slide()
 	queue_redraw()
+
+	# Devorga yetganda tosh yo'lni to'sib qolmasligi uchun to'xtaydi
+	if is_on_wall() and absf(global_position.x - original_pos.x) > 40.0:
+		has_fallen = true
+		is_rolling = false
+		velocity = Vector2.ZERO
+		if col_shape:
+			col_shape.set_deferred("disabled", true)
+		if kill_area:
+			kill_area.set_deferred("monitoring", false)
+			kill_area.set_deferred("monitorable", false)
+		var tw := create_tween()
+		tw.tween_property(self, "modulate:a", 0.0, 0.25)
+		tw.tween_callback(func(): visible = false)
+		return
 	
 	# Qoyaga tushib ketsa
 	if global_position.y > 650.0:
@@ -94,6 +109,8 @@ func _check_player_trigger() -> void:
 	if roll_direction > 0:
 		# Orqadan quvuvchi tosh: o'yinchi yetarlicha oldinga o'tganda
 		if dx >= trigger_distance:
+			trigger_boulder()
+		elif absf(dx) <= 60.0:
 			trigger_boulder()
 	else:
 		# Oldindan keluvchi tosh: o'yinchi yaqinlashganda
@@ -130,6 +147,13 @@ func reset_trap() -> void:
 	global_position = original_pos
 	velocity = Vector2.ZERO
 	roll_rotation = 0.0
+	modulate.a = 1.0
+	visible = true
+	if col_shape:
+		col_shape.set_deferred("disabled", false)
+	if kill_area:
+		kill_area.set_deferred("monitoring", true)
+		kill_area.set_deferred("monitorable", true)
 	queue_redraw()
 
 func _draw() -> void:
