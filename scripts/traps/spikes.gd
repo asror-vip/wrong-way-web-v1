@@ -9,8 +9,8 @@ func _ready() -> void:
 	add_to_group("traps")
 	if col_shape:
 		col_shape.shape = RectangleShape2D.new()
-		col_shape.shape.size = Vector2(spike_size.x - 4.0, spike_size.y - 6.0)
-		col_shape.position = Vector2(spike_size.x / 2.0, (spike_size.y + 6.0) / 2.0)
+		col_shape.shape.size = Vector2(spike_size.x - 4.0, spike_size.y - 4.0)
+		col_shape.position = Vector2(spike_size.x / 2.0, (spike_size.y + 4.0) / 2.0)
 	body_entered.connect(_on_body_entered)
 	queue_redraw()
 
@@ -24,12 +24,8 @@ func _draw() -> void:
 	var h := spike_size.y
 
 	if is_winter:
-		# Muz tikanlar bazasi (qorli asos)
-		draw_rect(Rect2(0, h - 4.0, w, 4.0), Color("#1e293b"), true)
-		draw_rect(Rect2(0, h - 4.0, w, 2.0), Color("#f1f5f9"), true)
-		
-		# Crystalline ice spikes (o'tkir muz nayzalar)
-		var count := 2
+		# Muz tikanlar (pol bilan to'liq tekis, tagliksiz)
+		var count := int(maxf(1.0, roundf(w / 16.0)))
 		var step := w / float(count)
 		for i in range(count):
 			var x0 := float(i) * step
@@ -37,18 +33,14 @@ func _draw() -> void:
 			var x2 := x0 + step
 			
 			var tri := PackedVector2Array([
-				Vector2(x0 + 1.0, h - 4.0),
-				Vector2(x1, 2.0),
-				Vector2(x2 - 1.0, h - 4.0)
+				Vector2(x0, h),
+				Vector2(x1, 0.0),
+				Vector2(x2, h)
 			])
-			# Shaffofroq muz kristall tusi (borderlarsiz)
 			draw_colored_polygon(tri, Color(0.22, 0.74, 0.97, 0.90))
 	else:
-		# Yashirilmaydigan oddiy tikanlar (borderlarsiz sof poligon)
-		draw_rect(Rect2(0, h - 4.0, w, 4.0), Color("#1c1a22"), true)
-		draw_rect(Rect2(0, h - 4.0, w, 2.0), Color("#342f3a"), true)
-		
-		var count := int(maxf(1.0, w / 16.0))
+		# Yashirilmaydigan oddiy tikanlar (pol bilan to'liq tekis, tagliksiz)
+		var count := int(maxf(1.0, roundf(w / 16.0)))
 		var step := w / float(count)
 		for i in range(count):
 			var x0 := float(i) * step
@@ -56,19 +48,19 @@ func _draw() -> void:
 			var x2 := x0 + step
 			
 			var tri := PackedVector2Array([
-				Vector2(x0 + 1.0, h - 4.0),
-				Vector2(x1, 2.0),
-				Vector2(x2 - 1.0, h - 4.0)
+				Vector2(x0, h),
+				Vector2(x1, 0.0),
+				Vector2(x2, h)
 			])
-			# To'q po'lat asos (barcha tikanlar bilan bir xil, borderlarsiz)
-			draw_colored_polygon(tri, Color("#1e1b26"))
-			# Ichki qirra (facet)
+			# To'q po'lat asos (borderlarsiz, pol bilan to'liq tekis)
+			draw_colored_polygon(tri, Color("#1c1a22"))
+			# Ichki qirra (facet) - nozik chuqurlik
 			var inner_facet := PackedVector2Array([
-				Vector2(x0 + 2.5, h - 4.0),
-				Vector2(x1, 3.5),
-				Vector2(x1 + 1.0, h - 4.0)
+				Vector2(x1, 0.0),
+				Vector2(x2, h),
+				Vector2(x1, h)
 			])
-			draw_colored_polygon(inner_facet, Color("#2a2536"))
+			draw_colored_polygon(inner_facet, Color("#262230"))
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is PlayerController or body.is_in_group("player"):

@@ -191,16 +191,16 @@ func _update_blur_material() -> void:
 		elif blur_amount > 0.01:
 			match _current_theme:
 				"frost_peak":
-					mat.set_shader_parameter("tint_color", Color(0.04, 0.08, 0.16, 0.30))
+					mat.set_shader_parameter("tint_color", Color(0.18, 0.28, 0.42, 0.15))
 				"emerald_woods":
-					mat.set_shader_parameter("tint_color", Color(0.02, 0.06, 0.04, 0.28))
+					mat.set_shader_parameter("tint_color", Color(0.15, 0.26, 0.20, 0.15))
 				"golden_canyon":
-					mat.set_shader_parameter("tint_color", Color(0.12, 0.08, 0.03, 0.26))
+					mat.set_shader_parameter("tint_color", Color(0.28, 0.22, 0.14, 0.15))
 				"inferno_abyss":
-					mat.set_shader_parameter("tint_color", Color(0.14, 0.04, 0.02, 0.32))
+					mat.set_shader_parameter("tint_color", Color(0.32, 0.15, 0.10, 0.18))
 				_:
-					# 1-bob tuman qoplamasi
-					mat.set_shader_parameter("tint_color", Color(0.04, 0.05, 0.09, 0.28))
+					# 1-bob: kontrastli kumushrang tuman qoplamasi
+					mat.set_shader_parameter("tint_color", Color(0.25, 0.28, 0.38, 0.14))
 		else:
 			mat.set_shader_parameter("tint_color", Color(0.0, 0.0, 0.0, 0.0))
 
@@ -232,7 +232,8 @@ func _init_particles() -> void:
 	_particles.clear()
 	var screen_w := maxf(1200.0, get_viewport_rect().size.x if is_inside_tree() else 1200.0)
 	var is_mob := OS.has_feature("mobile")
-	var count := (30 if _current_theme == "frost_peak" else 16) if is_mob else (65 if _current_theme == "frost_peak" else 28)
+	var is_frost := _current_theme == "frost_peak"
+	var count := (30 if is_frost else 16) if is_mob else (65 if is_frost else 28)
 	for i in range(count):
 		match _current_theme:
 			"frost_peak":
@@ -317,7 +318,9 @@ func _draw() -> void:
 	var w: float = maxf(size.x, vp.x)
 	var h: float = maxf(size.y, vp.y)
 
-	if _current_theme == "frost_peak" and (bg_texture_rect == null or not bg_texture_rect.visible):
+	var is_frost_theme := _current_theme == "frost_peak"
+	var no_bg_tex := bg_texture_rect == null or not bg_texture_rect.visible
+	if is_frost_theme and no_bg_tex:
 		draw_rect(Rect2(0, 0, w, h), Color("#060b14"), true)
 	elif bg_texture_rect == null:
 		if _texture:
@@ -329,8 +332,9 @@ func _draw() -> void:
 
 	# Zarrachalar (Har bir bobning o'ziga xos vizual effekti)
 	if show_particles:
+		var wave_amp := 14.0 if is_frost_theme else 8.0
 		for p in _particles:
-			var px: float = p.x + sin(_time * 1.5 + p.offset) * (14.0 if _current_theme == "frost_peak" else 8.0)
+			var px: float = p.x + sin(_time * 1.5 + p.offset) * wave_amp
 			match _current_theme:
 				"frost_peak":
 					draw_circle(Vector2(px, p.y), p.sz + 1.2, Color(0.55, 0.85, 1.0, p.alpha * 0.28))
