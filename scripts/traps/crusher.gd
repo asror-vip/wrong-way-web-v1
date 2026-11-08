@@ -3,7 +3,7 @@ class_name Crusher
 
 @export var crusher_size: Vector2 = Vector2(64, 64)
 @export var target_y: float = 325.0
-@export var trigger_distance: float = 100.0
+@export var trigger_distance: float = 60.0
 @export var returns_up: bool = true
 @export var wait_at_bottom: float = 0.7
 @export var rise_speed: float = 140.0
@@ -19,6 +19,7 @@ var player_ref: Node2D = null
 var has_crushed: bool = false
 var chain_slack: float = 0.0
 var sway_phase: float = 0.0
+var was_in_trigger_zone: bool = false
 
 var is_triggered: bool:
 	get: return state != State.IDLE
@@ -41,29 +42,46 @@ func _physics_process(delta: float) -> void:
 		State.IDLE:
 			if has_crushed:
 				return
-			if player_ref == null:
+			if player_ref == null and is_inside_tree():
 				player_ref = get_tree().get_first_node_in_group("player") as Node2D
 			if player_ref != null and is_instance_valid(player_ref):
 				if "is_dead" in player_ref and player_ref.is_dead:
 					return
 				var crusher_center_x := global_position.x + crusher_size.x / 2.0
 				var player_center_x: float = player_ref.global_position.x
-				if absf(player_center_x - crusher_center_x) < trigger_distance:
-					state = State.FALLING
-					speed = 140.0
-					chain_slack = 0.0
-					queue_redraw()
-					var sm = get_node_or_null("/root/SoundManager")
-					if sm and sm.has_method("play"):
-						sm.play("trap")
+				var dist_x: float = absf(player_center_x - crusher_center_x)
+				if dist_x < trigger_distance:
+					var is_under := player_center_x >= global_position.x and \
+						player_center_x <= (global_position.x + crusher_size.x)
+					var p_vel_x: float = player_ref.velocity.x \
+						if "velocity" in player_ref else 0.0
+					var is_moving_towards := false
+					if player_center_x < crusher_center_x and p_vel_x > 1.0:
+						is_moving_towards = true
+					elif player_center_x > crusher_center_x and p_vel_x < -1.0:
+						is_moving_towards = true
+					
+					if is_under or is_moving_towards or not was_in_trigger_zone:
+						state = State.FALLING
+						speed = 280.0
+						chain_slack = 0.0
+						queue_redraw()
+						var sm = get_node_or_null("/root/SoundManager")
+						if sm and sm.has_method("play"):
+							sm.play("trap")
+					was_in_trigger_zone = true
+				else:
+					was_in_trigger_zone = false
 		
 		State.FALLING:
-			speed += 3600.0 * delta
+			speed += 5400.0 * delta
 			global_position.y += speed * delta
 			queue_redraw()
 			for b in get_overlapping_bodies():
 				_on_body_entered(b)
-			var p := get_tree().get_first_node_in_group("player") as Node2D
+			var p: Node2D = player_ref
+			if (p == null or not is_instance_valid(p)) and is_inside_tree():
+				p = get_tree().get_first_node_in_group("player") as Node2D
 			if p != null and is_instance_valid(p):
 				var p_dead: bool = "is_dead" in p and p.is_dead
 				var p_invuln: bool = "is_invulnerable" in p and p.is_invulnerable
@@ -137,6 +155,7 @@ func reset_trap() -> void:
 	has_crushed = false
 	chain_slack = 0.0
 	sway_phase = 0.0
+	was_in_trigger_zone = false
 	global_position = initial_position
 	queue_redraw()
 
