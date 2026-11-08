@@ -75,68 +75,100 @@ func _draw() -> void:
 	else:
 		_draw_segment(0.0, platform_size.x, base_col, is_winter)
 
-	# Shiftning uzluksiz tikanlari va aldovchi (soxta) stalaktitlari (borderlarsiz!)
+	# Shiftning uzluksiz tikanlari va aldovchi (soxta) stalaktitlari (aniq bitta standart!)
 	if has_ceiling_teeth and platform_size.x > 64.0:
 		var teeth_col := Color(0.22, 0.74, 0.97, 0.92) if is_winter else base_col
 		var bot_y := platform_size.y
 		var start_x := 32.0
 		var end_x := platform_size.x - 32.0
+		var spike_w := 32.0
+		var slot_w := 96.0
+		var cycle_w := spike_w + slot_w # 128.0
 
-		# 1. Har bir ezuvchini 2 ta katta tikan orasiga ramkalash (Framing big spikes)
-		for i in range(_crusher_ranges.size()):
-			var cr: Vector2 = _crusher_ranges[i]
-			var prev_y := _crusher_ranges[i - 1].y if i > 0 else -999.0
-			var next_x := 9999.0
-			if (i + 1) < _crusher_ranges.size():
-				next_x = _crusher_ranges[i + 1].x
+		# 1. Katta tikanlar uchun yagona standart setka (Grid anchor)
+		var anchor_x := start_x + 96.0
+		if not _crusher_ranges.is_empty():
+			var cr: Vector2 = _crusher_ranges[0]
+			var cr_center := (cr.x + cr.y) / 2.0
+			var ideal_spike_x := cr_center - (slot_w / 2.0 + spike_w)
+			anchor_x = ideal_spike_x
+			while anchor_x > (start_x + cycle_w):
+				anchor_x -= cycle_w
+			while anchor_x < start_x:
+				anchor_x += cycle_w
 
-			# Chap tomondagi katta tikan: [cr.x - 32.0, cr.x]
-			if (cr.x - prev_y) >= 32.0 and (cr.x - 32.0) >= 0.0:
-				var left_big := PackedVector2Array([
-					Vector2(cr.x - 32.0, bot_y),
-					Vector2(cr.x - 16.0, bot_y + 32.0),
-					Vector2(cr.x, bot_y)
-				])
-				draw_colored_polygon(left_big, teeth_col)
+		# 2. Standart setka bo'yicha katta tikanlar joylashuvini hisoblash
+		var big_spikes: Array[float] = []
+		var bx := anchor_x
+		while bx <= (end_x - spike_w):
+			big_spikes.append(bx)
+			bx += cycle_w
+		bx = anchor_x - cycle_w
+		while bx >= start_x:
+			big_spikes.push_front(bx)
+			bx -= cycle_w
 
-			# O'ng tomondagi katta tikan: [cr.y, cr.y + 32.0]
-			if (next_x - cr.y) >= 32.0 and (cr.y + 32.0) <= platform_size.x:
-				var right_big := PackedVector2Array([
-					Vector2(cr.y, bot_y),
-					Vector2(cr.y + 16.0, bot_y + 32.0),
-					Vector2(cr.y + 32.0, bot_y)
-				])
-				draw_colored_polygon(right_big, teeth_col)
+		# Ezuvchi bilan to'qnashuvchi katta tikanlarni filtrlash
+		var valid_big_spikes: Array[float] = []
+		for sp_x in big_spikes:
+			var collides := false
+			for cr in _crusher_ranges:
+				if (sp_x + spike_w) > (cr.x - 8.0) and sp_x < (cr.y + 8.0):
+					collides = true
+					break
+			if not collides:
+				valid_big_spikes.append(sp_x)
 
-		# 2. Qolgan ochiq shift qismlarini 16px tishlar va aldovchi tikanlar bilan to'ldirish
+		# Katta tikanlarni chizish (borderlarsiz, toza poligon)
+		for sp_x in valid_big_spikes:
+			var pts := PackedVector2Array([
+				Vector2(sp_x, bot_y),
+				Vector2(sp_x + 16.0, bot_y + 32.0),
+				Vector2(sp_x + 32.0, bot_y)
+			])
+			draw_colored_polygon(pts, teeth_col)
+
+		# 3. Katta tikanlar va ezuvchilar orasidagi zonalarni 16px tishlar bilan to'ldirish
 		var cur_x := start_x
 		while cur_x < end_x:
-			# Ezuvchi yoki uning 2 ta katta tikani zonasida bo'lsa, o'tkazib yuborish
-			var skip_to := -1.0
+			# Katta tikan zonasida bo'lsa, uni o'tkazib yuborish
+			var in_big := false
+			for sp_x in valid_big_spikes:
+				if cur_x >= (sp_x - 1.0) and cur_x < (sp_x + spike_w - 1.0):
+					cur_x = sp_x + spike_w
+					in_big = true
+					break
+			if in_big:
+				continue
+
+			# Ezuvchi zonasida bo'lsa, o'tkazib yuborish (Crusher o'z tishlarini chizadi)
+			var in_crusher := false
 			for cr in _crusher_ranges:
-				var z_left := cr.x - 32.0
-				var z_right := cr.y + 32.0
-				if cur_x >= (z_left - 1.0) and cur_x < (z_right - 1.0):
-					skip_to = maxf(skip_to, z_right)
-			if skip_to > 0.0:
-				cur_x = skip_to
+				if cur_x >= (cr.x - 1.0) and cur_x < (cr.y - 1.0):
+					cur_x = cr.y
+					in_crusher = true
+					break
+			if in_crusher:
 				continue
 
 			# Haqiqiy tushuvchi tikan zonasini tekshirish
-			var spike_skip := -1.0
+			var in_falling := false
 			for sx in _falling_spike_xs:
 				if cur_x >= (sx - 17.0) and cur_x < (sx + 15.0):
-					spike_skip = maxf(spike_skip, sx + 16.0)
-			if spike_skip > 0.0:
-				cur_x = spike_skip
+					cur_x = sx + 16.0
+					in_falling = true
+					break
+			if in_falling:
 				continue
 
-			# Navbatdagi band zonagacha bo'lgan masofani aniqlash
+			# Navbatdagi to'siqqacha bo'lgan masofa
 			var next_bound := end_x
+			for sp_x in valid_big_spikes:
+				if sp_x > cur_x and sp_x < next_bound:
+					next_bound = sp_x
 			for cr in _crusher_ranges:
-				var z_left := cr.x - 32.0
-				if z_left > cur_x and z_left < next_bound:
-					next_bound = z_left
+				if cr.x > cur_x and cr.x < next_bound:
+					next_bound = cr.x
 			for sx in _falling_spike_xs:
 				var z_left := sx - 16.0
 				if z_left > cur_x and z_left < next_bound:
@@ -147,26 +179,15 @@ func _draw() -> void:
 				cur_x = next_bound
 				continue
 
-			# 32px li aldovchi katta tikan (tushuvchi tikan bilan bir xil o'lchamda)
-			var periodic := fposmod(cur_x, 112.0) < 16.0
-			if rem >= 32.0 and periodic and (cur_x + 32.0) <= end_x:
-				var decoy_pts := PackedVector2Array([
+			var tw := minf(16.0, rem)
+			if tw >= 6.0:
+				var tooth_pts := PackedVector2Array([
 					Vector2(cur_x, bot_y),
-					Vector2(cur_x + 16.0, bot_y + 32.0),
-					Vector2(cur_x + 32.0, bot_y)
+					Vector2(cur_x + tw * 0.5, bot_y + 13.0),
+					Vector2(cur_x + tw, bot_y)
 				])
-				draw_colored_polygon(decoy_pts, teeth_col)
-				cur_x += 32.0
-			else:
-				var tw := minf(16.0, rem)
-				if tw >= 6.0:
-					var tooth_pts := PackedVector2Array([
-						Vector2(cur_x, bot_y),
-						Vector2(cur_x + tw * 0.5, bot_y + 13.0),
-						Vector2(cur_x + tw, bot_y)
-					])
-					draw_colored_polygon(tooth_pts, teeth_col)
-				cur_x += tw
+				draw_colored_polygon(tooth_pts, teeth_col)
+			cur_x += tw
 
 func _draw_segment(sx: float, sw: float, base_col: Color, is_winter: bool) -> void:
 	if sw <= 0.0:
