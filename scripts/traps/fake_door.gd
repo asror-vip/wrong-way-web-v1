@@ -13,11 +13,13 @@ var runaway_tween: Tween = null
 
 func _ready() -> void:
 	add_to_group("traps")
+	door_size = Vector2(44, 58)
 	start_pos = position
 	if col_shape:
-		col_shape.shape = RectangleShape2D.new()
-		col_shape.shape.size = door_size
-		col_shape.position = Vector2(0, -door_size.y / 2.0)
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(32, 64)
+		col_shape.shape = rect
+		col_shape.position = Vector2(0, -32)
 	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
@@ -42,7 +44,8 @@ func _run_away(_player: Node2D) -> void:
 	# Eshik pastga pol ichiga tushib yo'qoladi (Falls down and vanishes)
 	runaway_tween = create_tween()
 	runaway_tween.tween_property(self, "position:y", start_pos.y - 3.0, 0.05)
-	runaway_tween.tween_property(self, "position:y", start_pos.y + 120.0, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	runaway_tween.tween_property(self, "position:y", start_pos.y + 120.0, 0.28)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	runaway_tween.tween_callback(func():
 		visible = false
 		if col_shape:
@@ -102,7 +105,8 @@ func _draw() -> void:
 	draw_line(Vector2(-half_w - 2.0, 0.0), Vector2(half_w + 2.0, 0.0), frame_col, 2.0)
 	
 	# 5. Tepada suzib turuvchi oq uchburchak indikator (▼)
-	var tri_y := -(h + 8.0) + sin(pulse_time * 3.5) * 2.5
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var tri_y := -(h + 8.0) + sin(t * 3.5) * 2.5
 	var tri_w := 12.0
 	var tri_h := 8.0
 	var tri_pts := PackedVector2Array([

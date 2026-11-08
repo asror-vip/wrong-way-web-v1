@@ -57,11 +57,14 @@ func _run_away() -> void:
 	var peak_y := orig_y - 130.0 # O'yinchi ustidan baland sakrab narigi tomonga o'tadi
 	
 	runaway_tween_x = create_tween()
-	runaway_tween_x.tween_property(self, "global_position:x", target_x, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	runaway_tween_x.tween_property(self, "global_position:x", target_x, 0.38)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	
 	runaway_tween_y = create_tween()
-	runaway_tween_y.tween_property(self, "global_position:y", peak_y, 0.19).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	runaway_tween_y.chain().tween_property(self, "global_position:y", orig_y, 0.19).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	runaway_tween_y.tween_property(self, "global_position:y", peak_y, 0.19)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	runaway_tween_y.chain().tween_property(self, "global_position:y", orig_y, 0.19)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	runaway_tween_x.finished.connect(func():
 		is_running_away = false
@@ -142,7 +145,8 @@ func _draw() -> void:
 	
 	# 5. Tepada suzib turuvchi oq uchburchak indikator (▼)
 	if show_triangle and sink_amount <= 0.01:
-		var tri_y := -(h + 8.0) + sin(pulse_time * 3.5) * 2.5
+		var t: float = Time.get_ticks_msec() / 1000.0
+		var tri_y := -(h + 8.0) + sin(t * 3.5) * 2.5
 		var tri_w := 12.0
 		var tri_h := 8.0
 		var tri_pts := PackedVector2Array([
@@ -160,7 +164,7 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	if body is PlayerController and not is_sinking:
 		is_sinking = true
-		monitoring = false
+		set_deferred("monitoring", false)
 		var sm = get_node_or_null("/root/SoundManager")
 		if sm and sm.has_method("play"):
 			sm.play("win")

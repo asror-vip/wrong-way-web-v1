@@ -20,9 +20,12 @@ func _ready() -> void:
 				print("step=", step, " player_y=", player.global_position.y, " ext=", node.extension)
 				if node.extension > 15.0:
 					await get_tree().process_frame
-					var img = get_viewport().get_texture().get_image()
-					img.save_png("C:/Users/asror/.gemini/antigravity/brain/e8e16c92-b1ce-4557-9005-b70c46ad996a/test_level_26_spring_extended.png")
-					print("CAPTURED_EXTENDED!")
+					var tex = get_viewport().get_texture()
+					if tex:
+						var img = tex.get_image()
+						if img:
+							img.save_png("C:/Users/asror/.gemini/antigravity/brain/e8e16c92-b1ce-4557-9005-b70c46ad996a/test_level_26_spring_extended.png")
+							print("CAPTURED_EXTENDED!")
 
 	Input.action_release("move_right")
 	get_tree().quit(0)

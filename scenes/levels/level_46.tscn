@@ -45,7 +45,7 @@ platform_size = Vector2(32, 540)
 
 [node name="FakeDoor1" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(200, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="PopUpSpikesDoor1" parent="Traps" instance=ExtResource("6_tr")]
@@ -62,12 +62,12 @@ shake_duration = 0.18
 
 [node name="FakeDoor2" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(330, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="FakeDoor3" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(480, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="StalactiteDoor3" parent="Traps" instance=ExtResource("8_tr")]

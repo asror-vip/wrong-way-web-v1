@@ -159,7 +159,7 @@ shake_duration = 0.18
 
 [node name="FakeDoorGrand" parent="Traps" instance=ExtResource("15_tr")]
 position = Vector2(380, 310)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="CircularSaw5A" parent="Traps" instance=ExtResource("12_tr")]

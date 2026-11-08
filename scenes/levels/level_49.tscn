@@ -81,7 +81,7 @@ bounce_force = 620
 
 [node name="FakeDoorUpper" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(810, 230)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="ExitDoor" parent="." instance=ExtResource("4_ed")]

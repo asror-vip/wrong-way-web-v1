@@ -44,7 +44,7 @@ platform_size = Vector2(32, 540)
 
 [node name="FakeDoorFront" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(260, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 90
 
 [node name="TrapFloorUnder" parent="Traps" instance=ExtResource("6_tr")]

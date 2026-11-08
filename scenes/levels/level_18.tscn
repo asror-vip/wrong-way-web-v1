@@ -80,7 +80,7 @@ orbit_speed = 2.4
 
 [node name="FakeDoorBeforeEnd" parent="Traps" instance=ExtResource("11_tr")]
 position = Vector2(780, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 90
 
 [node name="ExitDoor" parent="." instance=ExtResource("4_ed")]

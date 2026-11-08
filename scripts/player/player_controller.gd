@@ -6,7 +6,7 @@ signal respawned
 signal entered_exit
 
 const SPEED: float = 280.0
-const DASH_SPEED: float = 660.0
+const DASH_SPEED: float = 725.0
 const DASH_DURATION: float = 0.16
 const DASH_COOLDOWN: float = 0.40
 const JUMP_VELOCITY: float = -560.0

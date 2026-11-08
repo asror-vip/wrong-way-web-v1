@@ -48,7 +48,7 @@ spike_size = Vector2(48, 32)
 
 [node name="FakeDoorTrap" parent="Traps" instance=ExtResource("6_tr")]
 position = Vector2(340, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 95
 
 [node name="PopUpSpikesBehind" parent="Traps" instance=ExtResource("7_tr")]

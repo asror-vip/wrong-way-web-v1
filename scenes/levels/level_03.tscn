@@ -36,7 +36,7 @@ platform_size = Vector2(32, 540)
 [node name="Traps" type="Node2D" parent="."]
 
 [node name="PopUpSpike1" parent="Traps" instance=ExtResource("5_tr")]
-position = Vector2(260, 380)
+position = Vector2(200, 380)
 spike_width = 48
 max_spike_height = 32
 trigger_distance = 70

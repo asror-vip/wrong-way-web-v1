@@ -137,7 +137,7 @@ inactive_time = 1.2
 
 [node name="FakeDoorSky" parent="Traps" instance=ExtResource("13_tr")]
 position = Vector2(840, 230)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="SpikesFinal" parent="Traps" instance=ExtResource("14_tr")]

@@ -102,7 +102,7 @@ patrol_axis = Vector2(-1, 0)
 
 [node name="FakeDoorTrap" parent="Traps" instance=ExtResource("12_tr")]
 position = Vector2(800, 380)
-door_size = Vector2(32, 64)
+door_size = Vector2(44, 58)
 run_away_distance = 85
 
 [node name="PopUpSpikesFinal" parent="Traps" instance=ExtResource("13_tr")]
