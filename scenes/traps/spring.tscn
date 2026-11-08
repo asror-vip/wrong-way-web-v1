@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/traps/spring.gd" id="1_spr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spr"]
-size = Vector2(32, 32)
+size = Vector2(32, 24)
 
 [node name="Spring" type="Area2D" groups=["traps"]]
 collision_layer = 8
@@ -11,5 +11,5 @@ collision_mask = 2
 script = ExtResource("1_spr")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(16, 16)
+position = Vector2(16, -12)
 shape = SubResource("RectangleShape2D_spr")
