@@ -52,7 +52,6 @@ func _physics_process(delta: float) -> void:
 					state = State.FALLING
 					speed = 0.0
 					chain_slack = 0.0
-					get_tree().call_group("ceiling_platforms", "queue_redraw")
 					queue_redraw()
 					var sm = get_node_or_null("/root/SoundManager")
 					if sm and sm.has_method("play"):
@@ -86,12 +85,10 @@ func _physics_process(delta: float) -> void:
 					timer = wait_at_bottom
 					chain_slack = 1.0
 					sway_phase = 0.0
-					get_tree().call_group("ceiling_platforms", "queue_redraw")
 					queue_redraw()
 				else:
 					has_crushed = true
 					state = State.IDLE
-					get_tree().call_group("ceiling_platforms", "queue_redraw")
 					queue_redraw()
 		
 		State.WAITING_BOTTOM:
@@ -109,7 +106,6 @@ func _physics_process(delta: float) -> void:
 			queue_redraw()
 			if global_position.y <= initial_position.y:
 				global_position.y = initial_position.y
-				get_tree().call_group("ceiling_platforms", "queue_redraw")
 				if retrigger_delay > 0.0:
 					state = State.COOLDOWN
 					timer = retrigger_delay
@@ -121,7 +117,6 @@ func _physics_process(delta: float) -> void:
 			timer -= delta
 			if timer <= 0.0:
 				state = State.IDLE
-				get_tree().call_group("ceiling_platforms", "queue_redraw")
 				queue_redraw()
 
 func _on_body_entered(body: Node2D) -> void:
@@ -143,7 +138,6 @@ func reset_trap() -> void:
 	chain_slack = 0.0
 	sway_phase = 0.0
 	global_position = initial_position
-	get_tree().call_group("ceiling_platforms", "queue_redraw")
 	queue_redraw()
 
 func _draw() -> void:

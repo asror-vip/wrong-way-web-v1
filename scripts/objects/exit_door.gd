@@ -43,7 +43,9 @@ func _run_away() -> void:
 		return
 	has_run_away = true
 	is_running_away = true
-	SoundManager.play("trap")
+	var sm = get_node_or_null("/root/SoundManager")
+	if sm and sm.has_method("play"):
+		sm.play("trap")
 	
 	if runaway_tween_x and runaway_tween_x.is_valid():
 		runaway_tween_x.kill()
@@ -159,10 +161,14 @@ func _on_body_entered(body: Node2D) -> void:
 	if body is PlayerController and not is_sinking:
 		is_sinking = true
 		monitoring = false
-		SoundManager.play("win")
+		var sm = get_node_or_null("/root/SoundManager")
+		if sm and sm.has_method("play"):
+			sm.play("win")
 		body.enter_door(global_position + Vector2(0.0, -20.0))
 		show_triangle = false
-		GameManager.is_level_running = false # Level shu ondayoq yutildi
+		var gm = get_node_or_null("/root/GameManager")
+		if gm:
+			gm.is_level_running = false # Level shu ondayoq yutildi
 		queue_redraw()
 
 		# Qisqa pauzasiz to'g'ridan-to'g'ri tushishni boshlash (xavfsizroq)
@@ -180,7 +186,9 @@ func _sink_door() -> void:
 		return
 	visible = false
 	door_sunk_completely.emit()
-	GameManager.complete_level()
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("complete_level"):
+		gm.complete_level()
 
 func reset_door() -> void:
 	if runaway_tween_x and runaway_tween_x.is_valid():
