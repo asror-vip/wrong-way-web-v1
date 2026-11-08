@@ -18,7 +18,7 @@ var warning_timer: float = 0.0
 
 func _ready() -> void:
 	add_to_group("traps")
-	# Level sahnalaridagi eski kechikishlarni (0.3s-0.7s) tozalaymiz, kutilmaganda darhol otilishi shart
+	# Level sahnalaridagi eski kechikishlarni tozalaymiz, kutilmaganda darhol otilishi shart
 	warning_time = minf(warning_time, 0.02)
 	if col_shape:
 		var rect := RectangleShape2D.new()
@@ -44,7 +44,9 @@ func _physics_process(delta: float) -> void:
 		if not is_triggered:
 			var player := get_tree().get_first_node_in_group("player") as Node2D
 			if player != null and is_instance_valid(player):
-				if not ("is_dead" in player and player.is_dead) and not ("is_invulnerable" in player and player.is_invulnerable):
+				var p_dead: bool = "is_dead" in player and player.is_dead
+				var p_inv: bool = "is_invulnerable" in player and player.is_invulnerable
+				if not p_dead and not p_inv:
 					var center_x := global_position.x + spike_width / 2.0
 					var dx: float = abs(player.global_position.x - center_x)
 					var dy: float = abs(player.global_position.y - global_position.y)
@@ -55,7 +57,7 @@ func _physics_process(delta: float) -> void:
 		elif warning_timer > 0.0:
 			warning_timer -= delta
 		else:
-			# Kutilmaganda yashindek tez otilib chiqish (1200 px/s - atigi 0.025 soniyada to'liq ko'tariladi)
+			# Kutilmaganda yashindek tez otilib chiqish (1200 px/s)
 			current_height = move_toward(current_height, max_spike_height, delta * 1200.0)
 			is_active = current_height > 4.0
 			
@@ -74,7 +76,9 @@ func _physics_process(delta: float) -> void:
 			_kill_player(b)
 		var p := get_tree().get_first_node_in_group("player") as Node2D
 		if p != null and is_instance_valid(p):
-			if not ("is_dead" in p and p.is_dead) and not ("is_invulnerable" in p and p.is_invulnerable):
+			var p_dead: bool = "is_dead" in p and p.is_dead
+			var p_inv: bool = "is_invulnerable" in p and p.is_invulnerable
+			if not p_dead and not p_inv:
 				var px: float = p.global_position.x
 				var py: float = p.global_position.y
 				if px + 10.0 >= global_position.x and px - 10.0 <= global_position.x + spike_width:
@@ -108,21 +112,17 @@ func _draw() -> void:
 		var sx1 := sx0 + step / 2.0
 		var sx2 := sx0 + step
 		
+		# Pol bilan uzviy birlashish uchun asos 2px chuqurroq tushiriladi
 		var tri := PackedVector2Array([
-			Vector2(sx0 + 2.0, 0.0),
+			Vector2(sx0, 2.0),
 			Vector2(sx1, -current_height),
-			Vector2(sx2 - 2.0, 0.0)
+			Vector2(sx2, 2.0)
 		])
 		if is_winter:
 			draw_colored_polygon(tri, Color(0.22, 0.74, 0.97, 0.90))
 		else:
-			draw_colored_polygon(tri, Color("#1e1b26"))
-			var inner_facet := PackedVector2Array([
-				Vector2(sx0 + 2.5, 0.0),
-				Vector2(sx1, -current_height + 2.0),
-				Vector2(sx1 + 1.0, 0.0)
-			])
-			draw_colored_polygon(inner_facet, Color("#2a2536"))
+			# Pol bilan 100% bir xil qorong'u siluet (#1c1a22), bo'shliqlarsiz
+			draw_colored_polygon(tri, Color("#1c1a22"))
 
 func _on_body_entered(body: Node2D) -> void:
 	if is_active:

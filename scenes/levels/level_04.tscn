@@ -13,6 +13,10 @@ level_number = 4
 
 [node name="Platforms" type="Node2D" parent="."]
 
+[node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(0, 0)
+platform_size = Vector2(960, 60)
+
 [node name="GroundStart" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 380)
 platform_size = Vector2(420, 160)

@@ -7,6 +7,13 @@ class_name SolidPlatform
 var _crusher_ranges: Array[Vector2] = []
 var _falling_spike_xs: Array[float] = []
 
+func _is_ceiling_platform() -> bool:
+	if name.to_lower().contains("ceiling"):
+		return true
+	if name.to_lower().contains("wall"):
+		return false
+	return global_position.y <= 30.0 and platform_size.x >= 200.0
+
 func _ready() -> void:
 	var col = get_node_or_null("CollisionShape2D")
 	if col:
@@ -15,7 +22,7 @@ func _ready() -> void:
 		col.position = platform_size / 2.0
 	
 	# Shift platformasi bo'lsa, har doim tikanli bo'lishi kerak
-	var is_ceiling := name.to_lower().contains("ceiling") or global_position.y <= 10.0
+	var is_ceiling := _is_ceiling_platform()
 	if is_ceiling:
 		has_ceiling_teeth = true
 		add_to_group("ceiling_platforms")
@@ -42,14 +49,14 @@ func _check_ceiling_traps() -> void:
 				var rel_x: float = t.global_position.x - global_position.x
 				_falling_spike_xs.append(rel_x)
 	
-	var is_ceiling := name.to_lower().contains("ceiling") or global_position.y <= 10.0
+	var is_ceiling := _is_ceiling_platform()
 	if is_ceiling:
 		has_ceiling_teeth = true
 		add_to_group("ceiling_platforms")
 	queue_redraw()
 
 func _draw() -> void:
-	var is_ceiling_plat := name.to_lower().contains("ceiling") or global_position.y <= 10.0
+	var is_ceiling_plat := _is_ceiling_platform()
 	if not has_ceiling_teeth and is_ceiling_plat:
 		_check_ceiling_traps()
 	var is_winter := false
@@ -202,5 +209,3 @@ func _draw_segment(sx: float, sw: float, base_col: Color, is_winter: bool) -> vo
 		else:
 			var frost_rect := Rect2(sx, 0.0, minf(sw, 2.5), platform_size.y)
 			draw_rect(frost_rect, Color(0.49, 0.86, 0.99, 0.6), true)
-	else:
-		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#342f3a"), true)

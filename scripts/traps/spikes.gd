@@ -48,19 +48,12 @@ func _draw() -> void:
 			var x2 := x0 + step
 			
 			var tri := PackedVector2Array([
-				Vector2(x0, h),
+				Vector2(x0, h + 2.0),
 				Vector2(x1, 0.0),
-				Vector2(x2, h)
+				Vector2(x2, h + 2.0)
 			])
-			# To'q po'lat asos (borderlarsiz, pol bilan to'liq tekis)
+			# To'q po'lat asos (borderlarsiz, pol bilan to'liq tekis va bir xil rang)
 			draw_colored_polygon(tri, Color("#1c1a22"))
-			# Ichki qirra (facet) - nozik chuqurlik
-			var inner_facet := PackedVector2Array([
-				Vector2(x1, 0.0),
-				Vector2(x2, h),
-				Vector2(x1, h)
-			])
-			draw_colored_polygon(inner_facet, Color("#262230"))
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is PlayerController or body.is_in_group("player"):

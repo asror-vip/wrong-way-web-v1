@@ -36,10 +36,14 @@ func _ready() -> void:
 	if platforms:
 		var has_ceiling := false
 		for p in platforms.get_children():
-			var is_c: bool = p.name.to_lower().contains("ceiling") or p.global_position.y <= 10.0
-			if p is SolidPlatform and is_c:
-				has_ceiling = true
-				break
+			if p is SolidPlatform:
+				var is_c: bool = p.name.to_lower().contains("ceiling") or (
+					p.global_position.y <= 30.0 and p.platform_size.x >= 200.0
+					and not p.name.to_lower().contains("wall")
+				)
+				if is_c:
+					has_ceiling = true
+					break
 		if not has_ceiling:
 			var sp_scn = load("res://scenes/objects/solid_platform.tscn")
 			if sp_scn:
