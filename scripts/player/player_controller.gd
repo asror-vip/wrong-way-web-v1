@@ -31,6 +31,10 @@ var dash_cooldown_timer: float = 0.0
 var dash_dir: float = 1.0
 var ghost_trail_timer: float = 0.0
 
+const DashGhostScript = preload("res://scripts/player/dash_ghost.gd")
+const DeathParticlesScene = preload("res://scenes/player/death_particles.tscn")
+var _ghost_pool: Array[Node2D] = []
+
 @onready var visual: Node2D = $Visual
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -190,8 +194,8 @@ func kill() -> void:
 	# O'lik gavdani xaritadagi tuzoqlar zonasidan chetga olamiz
 	global_position = Vector2(-9999, -9999)
 	
-	# Original: setTimeout(() => resetPlayer(), 340)
-	await get_tree().create_timer(0.34).timeout
+	# O'yin pauza qilinganda taymer to'xtab turishi uchun false (process_always = false) qo'shildi
+	await get_tree().create_timer(0.34, false).timeout
 	if is_instance_valid(self):
 		respawn()
 
@@ -218,8 +222,18 @@ func respawn(at_position: Vector2 = spawn_position) -> void:
 		visual.scale = Vector2.ONE
 	respawned.emit()
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_signal("player_respawned"):
-		gm.player_respawned.emit()
+	if gm:
+		if gm.has_signal("player_respawned"):
+			gm.player_respawned.emit()
+
+		# Qayta tirilgandan SO'NG (xavfsiz holatda) 10-chi o'lim reklamasini ko'rsatamiz
+		if gm.level_deaths > 0 and gm.level_deaths % 10 == 0:
+			var adm = get_node_or_null("/root/AdManager")
+			if adm and adm.has_method("show_interstitial_ad"):
+				get_tree().paused = true
+				adm.show_interstitial_ad(func():
+					get_tree().paused = false
+				)
 
 func add_inverter_zone(zone: Node) -> void:
 	active_inverters[zone] = true
@@ -252,18 +266,40 @@ func enter_finish(target_pos: Vector2) -> void:
 	enter_door(target_pos)
 
 func _spawn_particles() -> void:
-	var p_scene: PackedScene = load("res://scenes/player/death_particles.tscn")
-	if p_scene:
-		var p: CPUParticles2D = p_scene.instantiate()
+	if DeathParticlesScene:
+		var p: CPUParticles2D = DeathParticlesScene.instantiate()
 		p.global_position = global_position - Vector2(0, 16)
 		get_parent().add_child(p)
 
 func _spawn_dash_ghost() -> void:
 	if not is_inside_tree() or not get_parent():
 		return
-	var ghost := Node2D.new()
+
+	var ghost: Node2D = null
+
+	# Hovuzdan bo'sh (yashiringan) sharpani qidiramiz
+	for g in _ghost_pool:
+		if is_instance_valid(g) and not g.visible:
+			ghost = g
+			break
+
+	# Agar topilmasa va hovuzda 8 tadan kam bo'lsa, yangi yaratamiz
+	if ghost == null:
+		if _ghost_pool.size() < 8:
+			ghost = Node2D.new()
+			ghost.set_script(DashGhostScript)
+			get_parent().add_child(ghost)
+			_ghost_pool.append(ghost)
+		else:
+			return
+
+	# Ota tuguni o'zgargan bo'lsa to'g'rilaymiz
+	if ghost.get_parent() != get_parent():
+		ghost.reparent(get_parent())
+
 	ghost.global_position = global_position
 	if visual:
 		ghost.scale = visual.scale
-	ghost.set_script(load("res://scripts/player/dash_ghost.gd"))
-	get_parent().add_child(ghost)
+
+	if ghost.has_method("play_effect"):
+		ghost.play_effect()

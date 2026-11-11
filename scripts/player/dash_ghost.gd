@@ -1,11 +1,19 @@
 extends Node2D
 
 var lifetime: float = 0.20
+var _tween: Tween
 
 func _ready() -> void:
-	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, lifetime).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_callback(queue_free)
+	play_effect()
+
+func play_effect() -> void:
+	modulate.a = 1.0
+	show()
+	if _tween and _tween.is_valid():
+		_tween.kill()
+	_tween = create_tween()
+	_tween.tween_property(self, "modulate:a", 0.0, lifetime).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_tween.tween_callback(hide)
 
 func _draw() -> void:
 	var w: float = 28.0

@@ -30,6 +30,7 @@ var is_falling: bool:
 
 func _ready() -> void:
 	add_to_group("traps")
+	z_index = 1
 	initial_position = global_position
 	if col_shape:
 		col_shape.shape = RectangleShape2D.new()
@@ -168,7 +169,7 @@ func _draw() -> void:
 	var w := crusher_size.x
 	var h := crusher_size.y
 
-	# Shiftgacha bo'lgan masofaga qarab zanjir chizish (dinamik silkinish & tarang tortilish)
+	# Shiftgacha bo'lgan masofaga qarab zanjir chizish (ezuvchi z_index=1 bilan shift z_index=10 orqasida turadi)
 	var chain_x := w / 2.0
 	var chain_h := maxf(0.0, global_position.y)
 	if chain_h > 4.0:
@@ -210,14 +211,6 @@ func _draw() -> void:
 	if body_h > 0.0:
 		var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
 		draw_rect(Rect2(0, top_clip, w, body_h), body_col, true)
-
-		if is_winter and top_clip < 5.0:
-			# Crusher tepasidagi qor qatlami (borderlarsiz)
-			draw_rect(Rect2(0, top_clip, w, 5.0 - top_clip), Color("#ffffff"), true)
-			draw_rect(Rect2(0, maxf(top_clip, 4.0), w, 1.5), Color("#94a3b8"), true)
-		elif not is_winter and top_clip <= 4.0:
-			# Shift ustki chizig'i bilan uzluksiz uyg'unlik
-			draw_rect(Rect2(0, top_clip, w, 3.0), Color("#342f3a"), true)
 
 	# Tishlar: shift tikanlari bilan bir xil sof rangli tishlar (borderlarsiz!)
 	var teeth := int(round(w / 16.0))

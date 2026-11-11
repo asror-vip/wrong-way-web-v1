@@ -73,7 +73,17 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 	# Devorga yetganda tosh yo'lni to'sib qolmasligi uchun to'xtaydi
-	if is_on_wall() and absf(global_position.x - original_pos.x) > 40.0:
+	var wall_in_front := false
+	if is_on_wall():
+		for i in get_slide_collision_count():
+			var collision := get_slide_collision(i)
+			var normal := collision.get_normal()
+			# Normal harakat yo'nalishiga qarama-qarshi bo'lsagina haqiqiy devor hisoblanadi
+			if (roll_direction > 0 and normal.x < -0.5) or (roll_direction < 0 and normal.x > 0.5):
+				wall_in_front = true
+				break
+
+	if wall_in_front and absf(global_position.x - original_pos.x) > 60.0:
 		has_fallen = true
 		is_rolling = false
 		velocity = Vector2.ZERO
@@ -107,10 +117,8 @@ func _check_player_trigger() -> void:
 		return
 		
 	if roll_direction > 0:
-		# Orqadan quvuvchi tosh: o'yinchi yetarlicha oldinga o'tganda
+		# Orqadan quvuvchi arra/tosh: Faqat o'yinchi oldinga yetarlicha yurganidagina ishga tushadi
 		if dx >= trigger_distance:
-			trigger_boulder()
-		elif absf(dx) <= 60.0:
 			trigger_boulder()
 	else:
 		# Oldindan keluvchi tosh: o'yinchi yaqinlashganda

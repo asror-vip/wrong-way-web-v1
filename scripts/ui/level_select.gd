@@ -78,6 +78,13 @@ var current_chapter: int = 1
 var is_animating: bool = false
 var star_chip_icon: TextureRect
 
+var ch4_view: Control = null
+var ch5_view: Control = null
+var backdrop_ch4: TextureRect = null
+var backdrop_ch5: TextureRect = null
+var lock_card_ch4: Control = null
+var lock_card_ch5: Control = null
+
 # Jonli interaktiv surish (Continuous Drag & Halfway Snap)
 var is_dragging: bool = false
 var has_dragged: bool = false
@@ -94,6 +101,7 @@ func _ready() -> void:
 	SoundManager.set_gameplay_mode(false)
 	SoundManager.play_music()
 	
+	_setup_coming_soon_views()
 	_setup_top_bar()
 	_setup_nav_connections()
 	_setup_seamless_backdrop_materials()
@@ -109,6 +117,116 @@ func _ready() -> void:
 	
 	# Boshlang'ich bobni animatsiyasiz ko'rsatish
 	switch_to_chapter(1, false)
+
+func _setup_coming_soon_views() -> void:
+	if not chapter_slider:
+		return
+
+	var blur_shader = preload("res://shaders/bokeh_blur.gdshader")
+
+	# 4-BOB (Sahro / Oltin Kanyon)
+	ch4_view = chapter_slider.get_node_or_null("Chapter4View")
+	if not ch4_view:
+		ch4_view = Control.new()
+		ch4_view.name = "Chapter4View"
+		ch4_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		chapter_slider.add_child(ch4_view)
+
+		backdrop_ch4 = TextureRect.new()
+		backdrop_ch4.name = "BackdropCh4"
+		backdrop_ch4.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		backdrop_ch4.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		var tex4 = load("res://assets/images/maps-images/4.jpg")
+		if tex4:
+			backdrop_ch4.texture = tex4
+
+		var m4 := ShaderMaterial.new()
+		m4.shader = blur_shader
+		m4.set_shader_parameter("blur_amount", 0.0)
+		backdrop_ch4.material = m4
+		ch4_view.add_child(backdrop_ch4)
+
+		var card4 = _create_coming_soon_card(4, "4-BOB: OLTIN KANYON", "Sahro va Kanyon yangilanishi tez kunda taqdim etiladi!")
+		ch4_view.add_child(card4)
+
+	# 5-BOB (Lava / Olovli Abiss)
+	ch5_view = chapter_slider.get_node_or_null("Chapter5View")
+	if not ch5_view:
+		ch5_view = Control.new()
+		ch5_view.name = "Chapter5View"
+		ch5_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		chapter_slider.add_child(ch5_view)
+
+		backdrop_ch5 = TextureRect.new()
+		backdrop_ch5.name = "BackdropCh5"
+		backdrop_ch5.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		backdrop_ch5.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		var tex5 = load("res://assets/images/maps-images/5.jpg")
+		if not tex5:
+			tex5 = load("res://assets/images/maps-images/5.png")
+		if tex5:
+			backdrop_ch5.texture = tex5
+
+		var m5 := ShaderMaterial.new()
+		m5.shader = blur_shader
+		m5.set_shader_parameter("blur_amount", 0.0)
+		backdrop_ch5.material = m5
+		ch5_view.add_child(backdrop_ch5)
+
+		var card5 = _create_coming_soon_card(5, "5-BOB: OLOVLI ABISS", "Lava va Vulqon yangilanishi tez kunda taqdim etiladi!")
+		ch5_view.add_child(card5)
+
+func _create_coming_soon_card(chapter: int, title_str: String, desc_str: String) -> Control:
+	var card_w: float = 380.0
+	var card_h: float = 90.0
+
+	var card := PanelContainer.new()
+	card.name = "ComingSoonCard%d" % chapter
+	card.custom_minimum_size = Vector2(card_w, card_h)
+	card.size = Vector2(card_w, card_h)
+	card.position = Vector2((get_viewport_rect().size.x - card_w) * 0.5, (get_viewport_rect().size.y - card_h) * 0.5)
+	card.z_index = 100
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.08, 0.14, 0.94)
+	style.border_color = Color("#f59e0b")
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(16)
+	style.shadow_color = Color(0, 0, 0, 0.75)
+	style.shadow_size = 16
+	style.content_margin_left = 16.0
+	style.content_margin_right = 16.0
+	style.content_margin_top = 12.0
+	style.content_margin_bottom = 12.0
+	card.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 6)
+	card.add_child(vbox)
+
+	var hbox := HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 8)
+	vbox.add_child(hbox)
+
+	var lock_icon := IconFactory.create_texture_rect("lock", Vector2(22, 22), 0.9)
+	hbox.add_child(lock_icon)
+
+	var lbl_title := Label.new()
+	lbl_title.text = title_str.to_upper()
+	lbl_title.add_theme_font_size_override("font_size", 16)
+	lbl_title.add_theme_color_override("font_color", Color(0.98, 0.90, 0.55))
+	hbox.add_child(lbl_title)
+
+	var lbl_sub := Label.new()
+	lbl_sub.text = "✦  COMING SOON  ✦\n" + desc_str
+	lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl_sub.add_theme_font_size_override("font_size", 12)
+	lbl_sub.add_theme_color_override("font_color", Color(0.85, 0.90, 0.98))
+	vbox.add_child(lbl_sub)
+
+	return card
 
 func _get_step_width() -> float:
 	return get_viewport_rect().size.x
@@ -134,7 +252,17 @@ func _setup_widescreen_layout() -> void:
 	if ch3_view:
 		ch3_view.offset_left = step_w * 2.0
 		ch3_view.offset_right = step_w * 2.0
-		
+	if ch4_view:
+		ch4_view.offset_left = step_w * 3.0
+		ch4_view.offset_right = step_w * 3.0
+		if lock_card_ch4:
+			lock_card_ch4.position = Vector2((step_w - lock_card_ch4.size.x) * 0.5, (get_viewport_rect().size.y - lock_card_ch4.size.y) * 0.5)
+	if ch5_view:
+		ch5_view.offset_left = step_w * 4.0
+		ch5_view.offset_right = step_w * 4.0
+		if lock_card_ch5:
+			lock_card_ch5.position = Vector2((step_w - lock_card_ch5.size.x) * 0.5, (get_viewport_rect().size.y - lock_card_ch5.size.y) * 0.5)
+
 	var insets := UIResponsive.get_safe_insets(self)
 	if back_btn:
 		back_btn.position.x = 20.0 + insets["left"]
@@ -241,10 +369,8 @@ func _setup_nav_connections() -> void:
 		side_nav_left.add_theme_stylebox_override("hover", solid_box)
 		side_nav_left.add_theme_stylebox_override("pressed", solid_box)
 		side_nav_left.pressed.connect(func():
-			if current_chapter == 3:
-				switch_to_chapter(2, true)
-			elif current_chapter == 2:
-				switch_to_chapter(1, true)
+			if current_chapter > 1:
+				switch_to_chapter(current_chapter - 1, true)
 		)
 	if btn_ch1:
 		btn_ch1.pressed.connect(func(): switch_to_chapter(1, true))
@@ -338,10 +464,8 @@ func _show_notice(title_text: String, message_text: String) -> void:
 	toast_tween.chain().tween_callback(func(): toast_panel.visible = false)
 
 func _on_side_nav_right_pressed() -> void:
-	if current_chapter == 1:
-		switch_to_chapter(2, true)
-	elif current_chapter == 2:
-		switch_to_chapter(3, true)
+	if current_chapter < 5:
+		switch_to_chapter(current_chapter + 1, true)
 
 func _input(event: InputEvent) -> void:
 	if is_animating:
@@ -373,7 +497,7 @@ func _input(event: InputEvent) -> void:
 		if has_dragged:
 			var step_w := _get_step_width()
 			var target_x: float = slider_start_x + dx
-			target_x = clampf(target_x, -step_w * 2.0 - 50.0, 50.0)
+			target_x = clampf(target_x, -step_w * 4.0 - 50.0, 50.0)
 			chapter_slider.position.x = target_x
 			_update_realtime_drag_feedback(target_x)
 			get_viewport().set_input_as_handled()
@@ -403,7 +527,7 @@ func _input(event: InputEvent) -> void:
 		if has_dragged:
 			var step_w := _get_step_width()
 			var target_x: float = slider_start_x + dx
-			target_x = clampf(target_x, -step_w * 2.0 - 50.0, 50.0)
+			target_x = clampf(target_x, -step_w * 4.0 - 50.0, 50.0)
 			chapter_slider.position.x = target_x
 			_update_realtime_drag_feedback(target_x)
 			get_viewport().set_input_as_handled()
@@ -411,7 +535,11 @@ func _input(event: InputEvent) -> void:
 func _update_realtime_drag_feedback(slider_x: float) -> void:
 	var step_w := _get_step_width()
 	var target_ch: int = 1
-	if slider_x <= -step_w * 1.5:
+	if slider_x <= -step_w * 3.5:
+		target_ch = 5
+	elif slider_x <= -step_w * 2.5:
+		target_ch = 4
+	elif slider_x <= -step_w * 1.5:
 		target_ch = 3
 	elif slider_x <= -step_w * 0.5:
 		target_ch = 2
@@ -425,7 +553,14 @@ func _update_realtime_drag_feedback(slider_x: float) -> void:
 		var title_key := "chapter_1_title"
 		if target_ch == 2: title_key = "chapter_2_title"
 		elif target_ch == 3: title_key = "chapter_3_title"
-		title_label.text = "< ◇ ── " + LocaleManager.t(title_key).to_upper() + " ── ◇ >"
+		elif target_ch == 4: title_key = "4-BOB: OLTIN KANYON"
+		elif target_ch == 5: title_key = "5-BOB: OLOVLI ABISS"
+
+		if target_ch <= 3:
+			title_label.text = "< ◇ ── " + LocaleManager.t(title_key).to_upper() + " ── ◇ >"
+		else:
+			title_label.text = "< ◇ ── " + title_key.to_upper() + " ── ◇ >"
+
 	if lock_card_ch2:
 		lock_card_ch2.visible = (!SaveManager.is_chapter_unlocked(2) and slider_x <= -step_w * 0.75 and slider_x >= -step_w * 1.25)
 	if lock_card_ch3:
@@ -438,7 +573,11 @@ func _update_realtime_drag_feedback(slider_x: float) -> void:
 func _finish_drag() -> void:
 	var step_w := _get_step_width()
 	var slider_x := chapter_slider.position.x
-	if slider_x <= -step_w * 1.5:
+	if slider_x <= -step_w * 3.5:
+		switch_to_chapter(5, true)
+	elif slider_x <= -step_w * 2.5:
+		switch_to_chapter(4, true)
+	elif slider_x <= -step_w * 1.5:
 		switch_to_chapter(3, true)
 	elif slider_x <= -step_w * 0.5:
 		switch_to_chapter(2, true)
@@ -448,11 +587,7 @@ func _finish_drag() -> void:
 func switch_to_chapter(target_chapter: int, animated: bool = true) -> void:
 	current_chapter = target_chapter
 	var step_w := _get_step_width()
-	var target_x: float = 0.0
-	if current_chapter == 2:
-		target_x = -step_w
-	elif current_chapter == 3:
-		target_x = -step_w * 2.0
+	var target_x: float = -step_w * (current_chapter - 1)
 	
 	if pass1 and pass1.has_method("set_card_active"):
 		pass1.set_card_active(false)
@@ -479,31 +614,43 @@ func switch_to_chapter(target_chapter: int, animated: bool = true) -> void:
 
 func _update_top_bar_data() -> void:
 	if title_label:
-		var title_key := "chapter_1_title"
-		if current_chapter == 2:
-			title_key = "chapter_2_title"
-		elif current_chapter == 3:
-			title_key = "chapter_3_title"
-		title_label.text = "< ◇ ── " + LocaleManager.t(title_key).to_upper() + " ── ◇ >"
+		var title_str := ""
+		if current_chapter == 1: title_str = LocaleManager.t("chapter_1_title")
+		elif current_chapter == 2: title_str = LocaleManager.t("chapter_2_title")
+		elif current_chapter == 3: title_str = LocaleManager.t("chapter_3_title")
+		elif current_chapter == 4: title_str = "4-BOB: OLTIN KANYON"
+		elif current_chapter == 5: title_str = "5-BOB: OLOVLI ABISS"
+		title_label.text = "< ◇ ── " + title_str.to_upper() + " ── ◇ >"
 		
 	if total_stars_chip:
-		var ch_stars := SaveManager.get_chapter_stars(current_chapter)
-		total_stars_chip.text = "     %d / 60" % ch_stars
+		if current_chapter <= 3:
+			var ch_stars := SaveManager.get_chapter_stars(current_chapter)
+			total_stars_chip.text = "     %d / 60" % ch_stars
+		else:
+			total_stars_chip.text = "     COMING SOON"
 
 func _update_nav_buttons() -> void:
 	if side_nav_right:
-		side_nav_right.visible = (current_chapter < 3)
+		side_nav_right.visible = (current_chapter < 5)
 		if current_chapter == 1:
 			side_nav_right.text = "2-BOB ▶"
 		elif current_chapter == 2:
 			side_nav_right.text = "3-BOB ▶"
+		elif current_chapter == 3:
+			side_nav_right.text = "4-BOB ▶"
+		elif current_chapter == 4:
+			side_nav_right.text = "5-BOB ▶"
 	if side_nav_left:
 		side_nav_left.visible = (current_chapter > 1)
 		if current_chapter == 2:
 			side_nav_left.text = "◀ 1-BOB"
 		elif current_chapter == 3:
 			side_nav_left.text = "◀ 2-BOB"
-		
+		elif current_chapter == 4:
+			side_nav_left.text = "◀ 3-BOB"
+		elif current_chapter == 5:
+			side_nav_left.text = "◀ 4-BOB"
+
 	if btn_ch1 and btn_ch2:
 		_set_btn_active(btn_ch1, current_chapter == 1)
 		_set_btn_active(btn_ch2, current_chapter == 2)
@@ -632,7 +779,14 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 			
 			btn.pressed.connect(func(): _on_level_btn_pressed(lvl))
 		else:
-			var can_ad_unlock := SaveManager.is_level_ad_unlockable(lvl)
+			# Qulflangan daraja uchun qoida: Undan oldingi daraja ochilgan bo'lishi SHART!
+			var is_prev_unlocked: bool = true
+			if lvl > 1:
+				is_prev_unlocked = SaveManager.is_level_unlocked(lvl - 1)
+
+			# Qoida: Darajani reklama orqali ochish faqat har 3 darajada bir marta ishlaydi
+			var can_ad_unlock := SaveManager.is_level_ad_unlockable(lvl) and is_prev_unlocked and (lvl % 3 == 0)
+
 			if can_ad_unlock:
 				style.bg_color = Color(0.12, 0.10, 0.16, 0.90)
 				style.border_color = Color("#eab308")

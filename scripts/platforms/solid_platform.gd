@@ -21,10 +21,11 @@ func _ready() -> void:
 		col.shape.size = platform_size
 		col.position = platform_size / 2.0
 	
-	# Shift platformasi bo'lsa, har doim tikanli bo'lishi kerak
+	# Shift platformasi bo'lsa, har doim tikanli bo'lishi va ezuvchidan oldi qatlamda (z_index=10) turishi kerak
 	var is_ceiling := _is_ceiling_platform()
 	if is_ceiling:
 		has_ceiling_teeth = true
+		z_index = 10
 		add_to_group("ceiling_platforms")
 		call_deferred("_check_ceiling_traps")
 	queue_redraw()
@@ -66,7 +67,7 @@ func _draw() -> void:
 
 	var base_col := Color("#0d131f") if is_winter else Color("#1c1a22")
 
-	# Shift platformasida crusher bo'lsa, uzilish (gap) bilan segmentlarga bo'lib chizish
+	# Shift platformasida crusher bo'lsa, o'sha kichik ochiq joy uchun kichik shiftcha chizish (tepa tarafi butun shift bilan bir tekis)
 	if has_ceiling_teeth and not _crusher_ranges.is_empty():
 		var ranges := _crusher_ranges.duplicate()
 		ranges.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
@@ -76,6 +77,7 @@ func _draw() -> void:
 			var rx2 := clampf(r.y, 0.0, platform_size.x)
 			if rx1 > cur_x:
 				_draw_segment(cur_x, rx1 - cur_x, base_col, is_winter)
+			_draw_top_ceiling_cap(rx1, rx2 - rx1, base_col)
 			cur_x = maxf(cur_x, rx2)
 		if cur_x < platform_size.x:
 			_draw_segment(cur_x, platform_size.x - cur_x, base_col, is_winter)
@@ -196,16 +198,14 @@ func _draw() -> void:
 				draw_colored_polygon(tooth_pts, teeth_col)
 			cur_x += tw
 
-func _draw_segment(sx: float, sw: float, base_col: Color, is_winter: bool) -> void:
+func _draw_segment(sx: float, sw: float, base_col: Color, _is_winter: bool) -> void:
 	if sw <= 0.0:
 		return
 	draw_rect(Rect2(sx, 0.0, sw, platform_size.y), base_col, true)
-	if is_winter:
-		var snow_h := 5.5
-		if platform_size.x > 36.0:
-			draw_rect(Rect2(sx, 0.0, sw, snow_h), Color("#f1f5f9"), true)
-			draw_rect(Rect2(sx, 0.0, sw, 2.0), Color("#ffffff"), true)
-			draw_rect(Rect2(sx, 0.0, sw, 1.5), Color("#94a3b8"), true)
-		else:
-			var frost_rect := Rect2(sx, 0.0, minf(sw, 2.5), platform_size.y)
-			draw_rect(frost_rect, Color(0.49, 0.86, 0.99, 0.6), true)
+
+func _draw_top_ceiling_cap(sx: float, sw: float, base_col: Color) -> void:
+	if sw <= 0.0:
+		return
+	# Ezuvchi ustidagi kichik ochiq joy uchun kichik shiftcha (tepa tarafi butun shift bilan 100% bir tekis)
+	var cap_h := 16.0
+	draw_rect(Rect2(sx, 0.0, sw, cap_h), base_col, true)

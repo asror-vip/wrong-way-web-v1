@@ -5,7 +5,7 @@ extends Node
 
 signal language_changed(lang_code: String)
 
-var current_language: String = "uz"
+var current_language: String = "en"
 
 const LANGUAGES = {
 	"uz": "O'zbekcha",
@@ -59,8 +59,8 @@ const STRINGS = {
 		"setting_shake": "Ekran silkinishi:",
 		"status_on": "YONIQ",
 		"status_off": "O'CHIQ",
-		"controls_title": "Boshqaruv:",
-		"controls_desc": "Yurish: A/D yoki Sensor tugmalar\nSakrash: W / Space / SAKRA\nMenyu / Pauza: Pause yoki Esc",
+		"controls_title": "Boshqaruv va Klaviatura:",
+		"controls_desc": "Yurish: A / D yoki ◄ / ► (Sensor)\nSakrash: W / Space / ▲\nDash (Tezlashuv): Shift / J\nQayta boshlash: R\nPauza / Menyu: Esc / P\nTo'liq ekran: F11",
 				"btn_close": "Yopish",
 		"btn_customize_controls": "Tugmalar joyini sozlash",
 		"controls_customizer_title": "TUGMALAR JOYINI SOZLASH",
@@ -195,8 +195,8 @@ const STRINGS = {
 		"setting_shake": "Тряска экрана:",
 		"status_on": "ВКЛ",
 		"status_off": "ВЫКЛ",
-		"controls_title": "Управление:",
-		"controls_desc": "Ходьба: A/D или сенсорные кнопки\nПрыжок: W / Пробел / ПРЫЖОК\nМеню / Пауза: Pause или Esc",
+		"controls_title": "Управление и Клавиатура:",
+		"controls_desc": "Движение: A / D или ◄ / ► (Сенсор)\nПрыжок: W / Пробел / ▲\nРывок (Dash): Shift / J\nБыстрый рестарт: R\nПауза / Меню: Esc / P\nПолный экран: F11",
 				"btn_close": "Закрыть",
 		"btn_customize_controls": "Настроить кнопки",
 		"controls_customizer_title": "НАСТРОЙКА КНОПОК",
@@ -331,8 +331,8 @@ const STRINGS = {
 		"setting_shake": "Screen Shake:",
 		"status_on": "ON",
 		"status_off": "OFF",
-		"controls_title": "Controls:",
-		"controls_desc": "Movement: A/D or Touch D-Pad\nJump: W / Space / JUMP\nMenu / Pause: Pause or Esc",
+		"controls_title": "Controls & Keyboard:",
+		"controls_desc": "Movement: A / D or ◄ / ► (Touch D-Pad)\nJump: W / Space / ▲\nDash: Shift / J\nQuick Restart: R\nPause / Menu: Esc / P\nFullscreen: F11",
 				"btn_close": "Close",
 		"btn_customize_controls": "Customize Controls",
 		"controls_customizer_title": "CUSTOMIZE CONTROLS",
@@ -467,8 +467,8 @@ const STRINGS = {
 		"setting_shake": "Ekran Sarsıntısı:",
 		"status_on": "AÇIK",
 		"status_off": "KAPALI",
-		"controls_title": "Kontroller:",
-		"controls_desc": "Hareket: A/D veya Dokunmatik Tuşlar\nZıplama: W / Boşluk / ZIPLA\nMenü / Duraklat: Pause veya Esc",
+		"controls_title": "Kontroller ve Klavye:",
+		"controls_desc": "Hareket: A / D veya ◄ / ► (Dokunmatik)\nZıplama: W / Boşluk / ▲\nHızlı Koşu (Dash): Shift / J\nHızlı Yeniden Başlat: R\nMenü / Duraklat: Esc / P\nTam Ekran: F11",
 				"btn_close": "Kapat",
 		"btn_customize_controls": "Tuşları Özelleştir",
 		"controls_customizer_title": "TUŞLARI ÖZELLEŞTİR",
@@ -577,7 +577,7 @@ func set_language(lang_code: String) -> void:
 	language_changed.emit(lang_code)
 
 func t(key: String, args: Array = []) -> String:
-	var dict: Dictionary = STRINGS.get(current_language, STRINGS["uz"])
+	var dict: Dictionary = STRINGS.get(current_language, STRINGS["en"])
 	var text: String = dict.get(key, key)
 	if not args.is_empty():
 		return text % args

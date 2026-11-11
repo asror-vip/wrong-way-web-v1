@@ -65,7 +65,8 @@ func _ready() -> void:
 	_setup_icons()
 	_update_all_texts()
 	_update_record()
-		
+	_setup_leaderboard_click()
+
 	get_viewport().size_changed.connect(_apply_responsive_layout)
 	_apply_responsive_layout()
 		
@@ -171,6 +172,37 @@ func _update_record() -> void:
 			best_chip_lbl.text = "Best: %d" % stars
 		else:
 			best_chip_lbl.text = "Best: 0"
+
+func _setup_leaderboard_click() -> void:
+	var best_badge = get_node_or_null("TopBar/BestBadge")
+	if best_badge:
+		best_badge.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		best_badge.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+				SoundManager.play("click")
+				_open_leaderboard_modal()
+		)
+
+func _open_leaderboard_modal() -> void:
+	if info_modal:
+		if info_title_icon:
+			info_title_icon.texture = IconFactory.get_icon("crown_gold", 1.0)
+		if info_title_label:
+			info_title_label.text = LocaleManager.t("leaderboard_title")
+
+		var total_stars := SaveManager.get_total_stars()
+		var highest_lvl := SaveManager.get_highest_unlocked_level()
+		var best_time := SaveManager.get_overall_best_text()
+
+		var msg := "★ " + LocaleManager.t("leaderboard_total_stars") % total_stars + "\n"
+		msg += "🏆 " + LocaleManager.t("level_header") % highest_lvl + "\n"
+		msg += "⏱ " + LocaleManager.t("best_chip") % best_time + "\n\n"
+		msg += "Poki Cloud Sync: " + LocaleManager.t("status_on")
+
+		if info_desc_label:
+			info_desc_label.text = msg
+
+		info_modal.visible = true
 
 func _on_play_pressed() -> void:
 	SoundManager.play("click")

@@ -147,7 +147,10 @@ func _render_win_data() -> void:
 		win_title.text = "LEVEL COMPLETE"
 	
 	if subtitle:
-		subtitle.text = LocaleManager.t("great_job")
+		if last_lvl == 60:
+			subtitle.text = "BARCHA 60 TA DARAJA YAKUNLANDI! 🎉\n4-BOB VA 5-BOB TEZ KUNDA (COMING SOON)"
+		else:
+			subtitle.text = LocaleManager.t("great_job")
 		
 	# 3 ta katta yulduz (glowing oq yulduzlar)
 	if star_box:

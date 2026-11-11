@@ -18,6 +18,8 @@ var is_duel_mode: bool = false
 var is_countdown_active: bool = false
 var duel_random_seed: int = 0
 
+var levels_beaten_this_session: int = 0
+
 func get_current_chapter() -> int:
 	if current_level_id <= 20:
 		return 1
@@ -51,14 +53,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			restart_current_level()
 		elif event.keycode == KEY_F11:
 			toggle_fullscreen()
-		elif event.keycode == KEY_F10 and OS.has_feature("editor"):
-			var sm = get_node_or_null("/root/SaveManager")
-			if sm:
-				var new_val: bool = not bool(sm.get("debug_unlock_all"))
-				sm.set("debug_unlock_all", new_val)
-				if sm.has_method("save_data"):
-					sm.save_data()
-				print("SaveManager: debug_unlock_all = ", new_val)
 
 
 func start_game(level_id: int) -> void:
@@ -70,6 +64,11 @@ func start_game(level_id: int) -> void:
 	level_timer_ms = 0.0
 	level_start_time = Time.get_ticks_msec()
 	is_level_running = true
+
+	# Yangi daraja boshlanganda pauza sanagichini tozalaymiz
+	var pm = get_node_or_null("/root/Gameplay/CanvasLayer/PauseModal")
+	if pm and "restart_session_count" in pm:
+		pm.restart_session_count = 0
 
 	var cur_scene = get_tree().current_scene
 	if cur_scene and cur_scene.name == "Gameplay" and cur_scene.has_method("reload_to_level"):
@@ -100,6 +99,7 @@ func record_death() -> void:
 		return
 	level_deaths += 1
 	player_died.emit(level_deaths)
+
 	var sm = get_node_or_null("/root/SaveManager")
 	if sm == null or sm.shake_enabled:
 		request_screen_shake.emit(10.0)
@@ -109,6 +109,7 @@ func complete_level() -> void:
 		custom_level_completed.emit()
 		return
 	is_level_running = false
+	levels_beaten_this_session += 1
 	level_timer_ms = Time.get_ticks_msec() - level_start_time
 	var stars: int = 1
 	var sm = get_node_or_null("/root/SaveManager")
@@ -120,6 +121,16 @@ func complete_level() -> void:
 			"deaths": level_deaths,
 			"stars": stars
 		}
+
+	# Har 5-darajani yutganda reklama ko'rsatamiz (Poki o'zi 3 daqiqa o'tganini tekshiradi)
+	if levels_beaten_this_session > 0 and levels_beaten_this_session % 5 == 0:
+		var adm = get_node_or_null("/root/AdManager")
+		if adm and adm.has_method("show_interstitial_ad"):
+			adm.show_interstitial_ad(func():
+				level_completed.emit(current_level_id, level_timer_ms, level_deaths, stars)
+			)
+			return
+
 	level_completed.emit(current_level_id, level_timer_ms, level_deaths, stars)
 
 func restart_current_level() -> void:
@@ -129,6 +140,8 @@ func restart_current_level() -> void:
 	level_start_time = Time.get_ticks_msec()
 	is_level_running = true
 	level_started.emit(current_level_id)
+
+	# Reset bo'lganda, reset sanagich joyida qoladi, u faqat yangi levelga kirganda tozalanadi.
 
 func go_to_level_select() -> void:
 	get_tree().paused = false

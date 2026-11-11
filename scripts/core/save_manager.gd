@@ -16,11 +16,11 @@ var music_enabled: bool = true
 var music_volume: float = 0.8
 var sfx_volume: float = 1.0
 var shake_enabled: bool = true
-var current_language: String = "uz"
+var current_language: String = "en"
 var custom_touch_layout: Dictionary = {}
 
-# Developer / Test rejimi: barcha daraja va boblarni sinov uchun ochiq qilish.
-var debug_unlock_all: bool = true
+# Production mode: barcha darajalar o'yinchi tomonidan ketma-ket ochilishi shart.
+var debug_unlock_all: bool = false
 
 # Ad-unlock & Navigation Context
 var ad_unlocked_levels: Array[int] = []
@@ -54,15 +54,16 @@ func load_data() -> void:
 		music_volume = config.get_value("settings", "music_volume", 0.8)
 		sfx_volume = config.get_value("settings", "sfx_volume", 1.0)
 		shake_enabled = config.get_value("settings", "shake_enabled", true)
-		current_language = config.get_value("settings", "current_language", "uz")
+		current_language = config.get_value("settings", "current_language", "en")
 		custom_touch_layout = config.get_value("settings", "custom_touch_layout", {})
-		debug_unlock_all = config.get_value("settings", "debug_unlock_all", true)
+		debug_unlock_all = config.get_value("settings", "debug_unlock_all", false)
 
-	debug_unlock_all = true
-	# Barcha 60 ta darajani to'liq ochish (barcha muhit va darajalarni tekshirish uchun)
-	for lvl in range(1, 61):
-		if not unlocked_levels.has(lvl):
-			unlocked_levels.append(lvl)
+	debug_unlock_all = false
+
+	# Test davomida saqlanib qolgan "barcha darajalar ochiq" holatini birlamchi 1-darajaga qaytarish:
+	if unlocked_levels.size() >= 60 and level_stars.is_empty():
+		unlocked_levels = [1]
+		save_data()
 
 func save_data() -> void:
 	var config := ConfigFile.new()
