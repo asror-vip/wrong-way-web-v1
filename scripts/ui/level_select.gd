@@ -802,10 +802,10 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 				btn.add_theme_font_size_override("font_size", 14)
 				btn.add_theme_color_override("font_color", Color(0.98, 0.85, 0.40))
 				
-				var ad_badge := IconFactory.create_texture_rect("video_ad", Vector2(13, 13), 0.55)
-				ad_badge.position = pos + Vector2(9, -17)
+				var ad_badge := IconFactory.create_texture_rect("video_ad", Vector2(14, 14), 0.60)
+				ad_badge.position = Vector2(20, -5)
 				ad_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				container.add_child(ad_badge)
+				btn.add_child(ad_badge)
 				
 				btn.pressed.connect(func():
 					SoundManager.play("click")
@@ -832,11 +832,10 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 				btn.add_theme_font_size_override("font_size", 14)
 				btn.add_theme_color_override("font_color", Color(0.45, 0.50, 0.60))
 				
-				var lock_badge := IconFactory.create_texture_rect("lock", Vector2(12, 12), 0.50)
-				lock_badge.position = (pos + Vector2(9, -17)) * map_scale + offset
-				lock_badge.scale = Vector2(map_scale, map_scale)
+				var lock_badge := IconFactory.create_texture_rect("lock", Vector2(13, 13), 0.55)
+				lock_badge.position = Vector2(21, -5)
 				lock_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				container.add_child(lock_badge)
+				btn.add_child(lock_badge)
 				
 				btn.pressed.connect(func():
 					SoundManager.play("click")
