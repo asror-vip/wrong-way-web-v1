@@ -1,50 +1,13 @@
 [gd_scene load_steps=5 format=3 uid="uid://trapfloor01"]
 
 [ext_resource type="Script" path="res://scripts/traps/trap_floor.gd" id="1_tf"]
+[ext_resource type="Script" path="res://scripts/traps/trap_floor_visual.gd" id="2_tfv"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_tf1"]
 size = Vector2(140, 160)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trig"]
 size = Vector2(230, 90)
-
-[sub_resource type="GDScript" id="GDScript_vis"]
-script/source = "extends Node2D
-func _draw() -> void:
-	var target = get_parent()
-	var w: float = 140.0
-	var h: float = 160.0
-	if target and \"platform_size\" in target:
-		w = target.platform_size.x
-		h = target.platform_size.y
-	var is_winter := false
-	var gm = get_node_or_null(\"/root/GameManager\")
-	if gm and gm.has_method(\"is_winter_theme\"):
-		is_winter = gm.is_winter_theme()
-	var rect := Rect2(0, 0, w, h)
-	var base_col := Color(\"#0d131f\") if is_winter else Color(\"#1c1a22\")
-	draw_rect(rect, base_col, true)
-	if is_winter:
-		var snow_h := 5.5
-		if w > 36.0:
-			draw_rect(Rect2(Vector2.ZERO, Vector2(w, snow_h)), Color(\"#f1f5f9\"), true)
-			draw_rect(Rect2(Vector2.ZERO, Vector2(w, 2.0)), Color(\"#ffffff\"), true)
-			draw_rect(Rect2(Vector2(0, snow_h - 1.5), Vector2(w, 1.5)), Color(\"#94a3b8\"), true)
-			var icicle_step := 32.0
-			var num_icicles := int((w - 20.0) / icicle_step)
-			for i in range(num_icicles):
-				var ix := 14.0 + float(i) * icicle_step
-				var ilen := 4.0 if (i % 2 == 0) else 6.0
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(ix - 2.0, snow_h),
-					Vector2(ix + 2.0, snow_h),
-					Vector2(ix, snow_h + ilen)
-				]), Color(\"#bae6fd\"))
-		else:
-			draw_rect(Rect2(Vector2.ZERO, Vector2(2.5, h)), Color(0.49, 0.86, 0.99, 0.6), true)
-	else:
-		draw_rect(Rect2(Vector2.ZERO, Vector2(w, 3.0)), Color(\"#342f3a\"), true)
-"
 
 [node name="TrapFloor" type="StaticBody2D" groups=["traps"]]
 collision_layer = 1
@@ -55,7 +18,6 @@ script = ExtResource("1_tf")
 position = Vector2(70, 80)
 shape = SubResource("RectangleShape2D_tf1")
 
-
 [node name="TriggerArea" type="Area2D" parent="."]
 collision_layer = 8
 collision_mask = 2
@@ -65,4 +27,4 @@ position = Vector2(25, 25)
 shape = SubResource("RectangleShape2D_trig")
 
 [node name="Visual" type="Node2D" parent="."]
-script = SubResource("GDScript_vis")
+script = ExtResource("2_tfv")
