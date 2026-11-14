@@ -211,6 +211,9 @@ func _on_play_pressed() -> void:
 
 func _on_level_select_pressed() -> void:
 	SoundManager.play("click")
+	var sm = get_node_or_null("/root/SaveManager")
+	if sm:
+		sm.navigation_source = "home_menu"
 	GameManager.go_to_level_select()
 
 func _on_settings_pressed() -> void:

@@ -18,16 +18,19 @@ var is_countdown_active: bool = false
 
 var levels_beaten_this_session: int = 0
 
-func get_current_chapter() -> int:
-	if current_level_id <= 20:
+func get_chapter_for_level(lvl: int) -> int:
+	if lvl <= 20:
 		return 1
-	elif current_level_id <= 40:
+	elif lvl <= 40:
 		return 2
-	elif current_level_id <= 60:
+	elif lvl <= 60:
 		return 3
-	elif current_level_id <= 80:
+	elif lvl <= 80:
 		return 4
 	return 5
+
+func get_current_chapter() -> int:
+	return get_chapter_for_level(current_level_id)
 
 func is_winter_theme() -> bool:
 	return get_current_chapter() == 2

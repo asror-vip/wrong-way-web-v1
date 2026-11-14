@@ -115,8 +115,23 @@ func _ready() -> void:
 	
 	_update_chapter_locks()
 	
-	# Boshlang'ich bobni animatsiyasiz ko'rsatish
-	switch_to_chapter(1, false)
+	# Boshlang'ich bobni tanlash va animatsiyasiz ko'rsatish
+	var target_chapter: int = 1
+	var sm = get_node_or_null("/root/SaveManager")
+	var is_from_level: bool = sm and (
+		sm.navigation_source == "game_pause" or sm.navigation_source == "result_modal"
+	)
+	if is_from_level:
+		var lvl: int = sm.return_level_num
+		if lvl <= 0:
+			lvl = GameManager.current_level_id
+		target_chapter = GameManager.get_chapter_for_level(lvl)
+		sm.navigation_source = "home_menu"
+
+	if sm and not sm.is_chapter_unlocked(target_chapter):
+		target_chapter = 1
+
+	switch_to_chapter(target_chapter, false)
 
 func _setup_coming_soon_views() -> void:
 	if not chapter_slider:
@@ -307,7 +322,10 @@ func _setup_widescreen_layout() -> void:
 		
 	if toast_panel and toast_panel.visible:
 		toast_panel.position.x = (step_w - toast_panel.size.x) * 0.5
-		
+
+	if chapter_slider and not is_animating:
+		chapter_slider.position.x = -step_w * (current_chapter - 1)
+
 	_reposition_all_chapter_nodes()
 
 func _reposition_all_chapter_nodes() -> void:
@@ -1011,4 +1029,7 @@ func _refresh_lock_card_texts(card: Control, chapter: int) -> void:
 
 func _on_back_pressed() -> void:
 	SoundManager.play("click")
+	var sm = get_node_or_null("/root/SaveManager")
+	if sm:
+		sm.navigation_source = "home_menu"
 	get_tree().change_scene_to_file("res://scenes/main/main_menu.tscn")
