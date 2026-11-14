@@ -56,7 +56,8 @@ func _on_language_changed(_lang: String) -> void:
 
 func _update_texts() -> void:
 	if title_label:
-		title_label.text = "P A U S E D"
+		var p_txt := LocaleManager.t("pause_title").to_upper()
+		title_label.text = " ".join(p_txt.split(""))
 	if resume_btn: resume_btn.text = "  " + LocaleManager.t("btn_resume")
 	if restart_btn:
 		# Restart tugmasiga doim oddiy tekstni yozib turamiz

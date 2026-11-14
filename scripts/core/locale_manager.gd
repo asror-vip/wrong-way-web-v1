@@ -72,6 +72,13 @@ const STRINGS = {
 		"chapter_1_title": "1-BOB: DARAJALAR",
 		"chapter_2_title": "2-BOB: DARAJALAR",
 		"chapter_3_title": "3-BOB: DARAJALAR",
+		"chapter_4_title": "4-BOB: OLTIN KANYON",
+		"chapter_5_title": "5-BOB: OLOVLI ABISS",
+		"chapter_4_desc": "Sahro va Kanyon yangilanishi tez kunda taqdim etiladi!",
+		"chapter_5_desc": "Lava va Vulqon yangilanishi tez kunda taqdim etiladi!",
+		"chapter_nav_btn": "%d-BOB",
+		"coming_soon_caps": "TEZ KUNDA",
+		"more_levels_soon": "Yangi darajalar tez kunda taqdim etiladi!",
 		"chapter_2_locked": "2-BOB QULFLANGAN",
 		"chapter_2_unlock_req": "Ochish uchun 1-bobni (20-darajani) yakunlang",
 		"chapter_3_locked": "3-BOB QULFLANGAN",
@@ -115,7 +122,19 @@ const STRINGS = {
 		"win_1_star": "Keyingi darajani ochish uchun kamida 2 ta yulduz oling!",
 		"win_time": "Vaqt: %.2fs",
 		"win_deaths": "%d ta o'lim",
+		"win_stats": "Vaqt: %ds   •   O'limlar: %d",
+		"win_all_60_complete": "BARCHA 60 TA DARAJA YAKUNLANDI! 🎉\n4-BOB VA 5-BOB TEZ KUNDA",
 		"btn_next_lvl": "KEYINGI DARAJA",
+
+		# Splash Hints & Game Info
+		"hint_0": "O'yin sozlamalari tekshirilmoqda...",
+		"hint_1": "Tuzoqlarning barcha mexanizmlari yashirilmoqda...",
+		"hint_2": "Hech qachon pol va eshiklarga ko'r-ko'rona ishonmang...",
+		"hint_3": "Hamma narsa tayyor. Qorong'u olamga xush kelibsiz!",
+		"game_desc_info": (
+			"Wrong Way — 2D Tuzoq-Platformer.\n\nPoki Web Edition.\n"
+			+ "Barcha 60 ta darajadan muvaffaqiyatli o'tib, yulduzlarni to'plang!"
+		),
 		
 		# Level & Trap Editor
 		"btn_editor": "ZONA YARATISH",
@@ -208,6 +227,13 @@ const STRINGS = {
 		"chapter_1_title": "ГЛАВА 1: УРОВНИ",
 		"chapter_2_title": "ГЛАВА 2: УРОВНИ",
 		"chapter_3_title": "ГЛАВА 3: УРОВНИ",
+		"chapter_4_title": "ГЛАВА 4: ЗОЛОТОЙ КАНЬОН",
+		"chapter_5_title": "ГЛАВА 5: АДСКАЯ БЕЗДНА",
+		"chapter_4_desc": "Обновление с Пустыней и Каньоном скоро выйдет!",
+		"chapter_5_desc": "Обновление с Лавой и Вулканом скоро выйдет!",
+		"chapter_nav_btn": "ГЛАВА %d",
+		"coming_soon_caps": "СКОРО",
+		"more_levels_soon": "Новые уровни появятся в следующем обновлении!",
 		"chapter_2_locked": "ГЛАВА 2 ЗАБЛОКИРОВАНА",
 		"chapter_2_unlock_req": "Пройдите 1-ю главу (уровень 20), чтобы открыть",
 		"chapter_3_locked": "ГЛАВА 3 ЗАБЛОКИРОВАНА",
@@ -251,7 +277,19 @@ const STRINGS = {
 		"win_1_star": "Получите минимум 2 звезды, чтобы открыть следующий уровень!",
 		"win_time": "Время: %.2fs",
 		"win_deaths": "%d смертей",
+		"win_stats": "Время: %ds   •   Смертей: %d",
+		"win_all_60_complete": "ВСЕ 60 УРОВНЕЙ ПРОЙДЕНЫ! 🎉\nГЛАВЫ 4 И 5 СКОРО",
 		"btn_next_lvl": "СЛЕДУЮЩИЙ УРОВЕНЬ",
+
+		# Splash Hints & Game Info
+		"hint_0": "Проверка настроек игры...",
+		"hint_1": "Скрытие механизмов ловушек...",
+		"hint_2": "Никогда слепо не верьте полам и дверям...",
+		"hint_3": "Все готово. Добро пожаловать во тьму!",
+		"game_desc_info": (
+			"Wrong Way — 2D платформер с ловушками.\n\nPoki Web Edition.\n"
+			+ "Пройдите все 60 уровней и соберите звезды!"
+		),
 		
 		# Level & Trap Editor
 		"btn_editor": "РЕДАКТОР ЗОНЫ",
@@ -344,6 +382,13 @@ const STRINGS = {
 		"chapter_1_title": "CHAPTER 1: LEVELS",
 		"chapter_2_title": "CHAPTER 2: LEVELS",
 		"chapter_3_title": "CHAPTER 3: LEVELS",
+		"chapter_4_title": "CHAPTER 4: GOLDEN CANYON",
+		"chapter_5_title": "CHAPTER 5: INFERNO ABYSS",
+		"chapter_4_desc": "Desert and Canyon update coming soon!",
+		"chapter_5_desc": "Lava and Volcano update coming soon!",
+		"chapter_nav_btn": "CHAPTER %d",
+		"coming_soon_caps": "COMING SOON",
+		"more_levels_soon": "New levels will be available in the next update!",
 		"chapter_2_locked": "CHAPTER 2 LOCKED",
 		"chapter_2_unlock_req": "Complete Chapter 1 (Level 20) to unlock",
 		"chapter_3_locked": "CHAPTER 3 LOCKED",
@@ -387,7 +432,19 @@ const STRINGS = {
 		"win_1_star": "Earn at least 2 stars to unlock the next level!",
 		"win_time": "Time: %.2fs",
 		"win_deaths": "%d deaths",
+		"win_stats": "Time: %ds   •   Deaths: %d",
+		"win_all_60_complete": "ALL 60 LEVELS COMPLETED! 🎉\nCHAPTER 4 & 5 COMING SOON",
 		"btn_next_lvl": "NEXT LEVEL",
+
+		# Splash Hints & Game Info
+		"hint_0": "Checking game settings...",
+		"hint_1": "Concealing all trap mechanisms...",
+		"hint_2": "Never blindly trust floors or doors...",
+		"hint_3": "Everything is ready. Welcome to the shadows!",
+		"game_desc_info": (
+			"Wrong Way — Competitive 2D Trap-Platformer.\n\nPoki Web Edition.\n"
+			+ "Beat all 60 levels and collect all the stars!"
+		),
 		
 		# Level & Trap Editor
 		"btn_editor": "ZONE CREATOR",
@@ -480,6 +537,13 @@ const STRINGS = {
 		"chapter_1_title": "BÖLÜM 1: SEVİYELER",
 		"chapter_2_title": "BÖLÜM 2: SEVİYELER",
 		"chapter_3_title": "BÖLÜM 3: SEVİYELER",
+		"chapter_4_title": "BÖLÜM 4: ALTIN KANYON",
+		"chapter_5_title": "BÖLÜM 5: CEHENNEM ÇUKURU",
+		"chapter_4_desc": "Çöl ve Kanyon güncellemesi çok yakında!",
+		"chapter_5_desc": "Lav ve Volkan güncellemesi çok yakında!",
+		"chapter_nav_btn": "BÖLÜM %d",
+		"coming_soon_caps": "YAKINDA",
+		"more_levels_soon": "Yeni seviyeler bir sonraki güncellemede sunulacak!",
 		"chapter_2_locked": "2. BÖLÜM KİLİTLİ",
 		"chapter_2_unlock_req": "Kilidi açmak için 1. bölümü (20. seviye) tamamlayın",
 		"chapter_3_locked": "3. BÖLÜM KİLİTLİ",
@@ -523,7 +587,19 @@ const STRINGS = {
 		"win_1_star": "Sonraki seviyeyi açmak için en az 2 yıldız kazanın!",
 		"win_time": "Süre: %.2fs",
 		"win_deaths": "%d ölüm",
+		"win_stats": "Süre: %ds   •   Ölüm: %d",
+		"win_all_60_complete": "TÜM 60 SEVİYE TAMAMLANDI! 🎉\nBÖLÜM 4 VE 5 YAKINDA",
 		"btn_next_lvl": "SONRAKİ SEVİYE",
+
+		# Splash Hints & Game Info
+		"hint_0": "Oyun ayarları kontrol ediliyor...",
+		"hint_1": "Tüm tuzak mekanizmaları gizleniyor...",
+		"hint_2": "Zeminlere ve kapılara asla körü körüne güvenmeyin...",
+		"hint_3": "Her şey hazır. Karanlık dünyaya hoş geldiniz!",
+		"game_desc_info": (
+			"Wrong Way — 2D Tuzak Platform Oyunu.\n\nPoki Web Edition.\n"
+			+ "Tüm 60 seviyeyi geçin ve yıldızları toplayın!"
+		),
 		
 		# Level & Trap Editor
 		"btn_editor": "BÖLGE OLUŞTUR",

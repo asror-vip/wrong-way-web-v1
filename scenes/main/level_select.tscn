@@ -272,7 +272,7 @@ grow_vertical = 2
 theme_override_colors/font_color = Color(0.95, 0.96, 1, 1)
 theme_override_font_sizes/font_size = 15
 theme_override_constants/letter_spacing = 3
-text = "< ◇ ── 1-BOB: DARAJALAR ── ◇ >"
+text = "< ◇ ── CHAPTER 1: LEVELS ── ◇ >"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -315,7 +315,7 @@ theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = ExtResource("8_capsule")
 theme_override_styles/hover = ExtResource("11_g_hov")
 theme_override_styles/focus = ExtResource("7_focus")
-text = "2-BOB ▶"
+text = "CH. 2 ▶"
 
 [node name="SideNavLeft" type="Button" parent="."]
 visible = false
@@ -336,7 +336,7 @@ theme_override_font_sizes/font_size = 13
 theme_override_styles/normal = ExtResource("8_capsule")
 theme_override_styles/hover = ExtResource("11_g_hov")
 theme_override_styles/focus = ExtResource("7_focus")
-text = "◀ 1-BOB"
+text = "◀ CH. 1"
 
 [node name="BottomBar" type="PanelContainer" parent="."]
 z_index = 8
@@ -364,7 +364,7 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 12
 theme_override_styles/focus = ExtResource("7_focus")
-text = "1-BOB"
+text = "CH. 1"
 
 [node name="BtnCh2" type="Button" parent="BottomBar/HBox"]
 custom_minimum_size = Vector2(86, 28)
@@ -372,7 +372,7 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 12
 theme_override_styles/focus = ExtResource("7_focus")
-text = "2-BOB"
+text = "CH. 2"
 
 [node name="BtnCh3" type="Button" parent="BottomBar/HBox"]
 custom_minimum_size = Vector2(86, 28)
@@ -380,5 +380,5 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 12
 theme_override_styles/focus = ExtResource("7_focus")
-text = "3-BOB"
+text = "CH. 3"
 

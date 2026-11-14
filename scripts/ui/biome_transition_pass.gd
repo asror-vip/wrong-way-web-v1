@@ -123,8 +123,8 @@ func update_state() -> void:
 		var lbl_title: Label = lock_card.get_node_or_null("VBox/HBox/Title")
 		var lbl_sub: Label = lock_card.get_node_or_null("VBox/Sub")
 		if pass_index == 1:
-			if lbl_title: lbl_title.text = "2-BOB QULFLANGAN"
-			if lbl_sub: lbl_sub.text = "1-bobni (20-darajani) yakunlang"
+			if lbl_title: lbl_title.text = LocaleManager.t("chapter_2_locked")
+			if lbl_sub: lbl_sub.text = LocaleManager.t("chapter_2_unlock_req")
 		else:
-			if lbl_title: lbl_title.text = "3-BOB QULFLANGAN"
-			if lbl_sub: lbl_sub.text = "2-bobni (40-darajani) yakunlang"
+			if lbl_title: lbl_title.text = LocaleManager.t("chapter_3_locked")
+			if lbl_sub: lbl_sub.text = LocaleManager.t("chapter_3_unlock_req")

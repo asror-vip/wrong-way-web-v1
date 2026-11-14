@@ -144,11 +144,11 @@ func _on_level_completed(lvl: int, time_ms: float, deaths: int, stars: int) -> v
 
 func _render_win_data() -> void:
 	if win_title:
-		win_title.text = "LEVEL COMPLETE"
+		win_title.text = LocaleManager.t("level_complete")
 	
 	if subtitle:
 		if last_lvl == 60:
-			subtitle.text = "BARCHA 60 TA DARAJA YAKUNLANDI! 🎉\n4-BOB VA 5-BOB TEZ KUNDA (COMING SOON)"
+			subtitle.text = LocaleManager.t("win_all_60_complete")
 		else:
 			subtitle.text = LocaleManager.t("great_job")
 		
@@ -164,7 +164,7 @@ func _render_win_data() -> void:
 			
 	if stats_label:
 		var time_sec: int = maxi(1, int(round(last_time_ms / 1000.0)))
-		stats_label.text = "Vaqt: %ds   •   O'limlar: %d" % [time_sec, last_deaths]
+		stats_label.text = LocaleManager.t("win_stats", [time_sec, last_deaths])
 		
 	if next_btn:
 		next_btn.text = "  " + LocaleManager.t("btn_next_lvl")

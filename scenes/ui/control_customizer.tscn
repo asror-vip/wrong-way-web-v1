@@ -59,13 +59,13 @@ theme_override_constants/separation = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.97, 1, 1)
 theme_override_font_sizes/font_size = 14
-text = "TUGMALAR JOYINI SOZLASH"
+text = "CUSTOMIZE CONTROLS"
 
 [node name="SubtitleLbl" type="Label" parent="TopBar/TitleBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.60, 0.68, 0.80, 1)
 theme_override_font_sizes/font_size = 11
-text = "Tugmalarni xohlagan joyga surib joylashtiring"
+text = "Drag buttons to your preferred positions"
 
 [node name="BtnBox" type="HBoxContainer" parent="TopBar"]
 layout_mode = 1
@@ -94,7 +94,7 @@ theme_override_styles/normal = ExtResource("2_g_norm")
 theme_override_styles/hover = ExtResource("3_g_hov")
 theme_override_styles/pressed = ExtResource("4_g_press")
 theme_override_styles/focus = ExtResource("7_focus")
-text = "Asliga qaytarish"
+text = "Reset Default"
 
 [node name="SaveBtn" type="Button" parent="TopBar/BtnBox"]
 custom_minimum_size = Vector2(100, 34)
@@ -107,7 +107,7 @@ theme_override_styles/normal = ExtResource("5_w_norm")
 theme_override_styles/hover = ExtResource("6_w_hov")
 theme_override_styles/pressed = ExtResource("6_w_hov")
 theme_override_styles/focus = ExtResource("7_focus")
-text = "Saqlash"
+text = "Save"
 
 [node name="CloseBtn" type="Button" parent="TopBar/BtnBox"]
 custom_minimum_size = Vector2(34, 34)

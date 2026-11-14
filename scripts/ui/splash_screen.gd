@@ -19,12 +19,7 @@ var load_progress: float = 0.0
 var target_progress: float = 0.0
 var is_transitioning: bool = false
 
-const HINTS := [
-	"O'yin sozlamalari tekshirilmoqda...",
-	"Tuzoqlarning barcha mexanizmlari yashirilmoqda...",
-	"Hech qachon pol va eshiklarga ko'r-ko'rona ishonmang...",
-	"Hamma narsa tayyor. Qorong'u olamga xush kelibsiz!"
-]
+const HINTS_COUNT: int = 4
 
 func _ready() -> void:
 	if curtain:
@@ -56,11 +51,11 @@ func _start_background_drift() -> void:
 	tween.tween_property(bg_texture, "scale", Vector2(1.0, 1.0), 3.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _update_hint(idx: int) -> void:
-	if status_label and idx < HINTS.size():
+	if status_label and idx < HINTS_COUNT:
 		var tween := create_tween()
 		tween.tween_property(status_label, "modulate:a", 0.0, 0.12)
 		tween.tween_callback(func():
-			status_label.text = HINTS[idx]
+			status_label.text = LocaleManager.t("hint_%d" % idx)
 		)
 		tween.tween_property(status_label, "modulate:a", 1.0, 0.18)
 

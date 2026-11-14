@@ -155,8 +155,10 @@ func _update_all_texts() -> void:
 	if game_title_lbl:
 		game_title_lbl.text = "WRONG\nWAY"
 	if play_btn_label:
-		var has_progress := SaveManager.get_highest_unlocked_level() > 1
-		play_btn_label.text = LocaleManager.t("btn_continue") if has_progress else LocaleManager.t("btn_play")
+		var has_progress := SaveManager.get_highest_completed_level() > 0 or \
+				SaveManager.get_total_stars() > 0
+		play_btn_label.text = LocaleManager.t("btn_continue") if has_progress \
+				else LocaleManager.t("btn_play")
 	if level_select_btn:
 		level_select_btn.text = "   " + LocaleManager.t("btn_levels")
 	if settings_btn:
@@ -168,10 +170,7 @@ func _update_all_texts() -> void:
 func _update_record() -> void:
 	if best_chip_lbl:
 		var stars: int = SaveManager.get_total_stars()
-		if stars > 0:
-			best_chip_lbl.text = "Best: %d" % stars
-		else:
-			best_chip_lbl.text = "Best: 0"
+		best_chip_lbl.text = LocaleManager.t("best_chip", [str(stars)])
 
 func _setup_leaderboard_click() -> void:
 	var best_badge = get_node_or_null("TopBar/BestBadge")
@@ -194,9 +193,9 @@ func _open_leaderboard_modal() -> void:
 		var highest_lvl := SaveManager.get_highest_unlocked_level()
 		var best_time := SaveManager.get_overall_best_text()
 
-		var msg := "★ " + LocaleManager.t("leaderboard_total_stars") % total_stars + "\n"
-		msg += "🏆 " + LocaleManager.t("level_header") % highest_lvl + "\n"
-		msg += "⏱ " + LocaleManager.t("best_chip") % best_time + "\n\n"
+		var msg := "★ " + LocaleManager.t("leaderboard_total_stars", [total_stars]) + "\n"
+		msg += "🏆 " + LocaleManager.t("level_header", [highest_lvl]) + "\n"
+		msg += "⏱ " + LocaleManager.t("best_chip", [best_time]) + "\n\n"
 		msg += "Poki Cloud Sync: " + LocaleManager.t("status_on")
 
 		if info_desc_label:
@@ -206,7 +205,8 @@ func _open_leaderboard_modal() -> void:
 
 func _on_play_pressed() -> void:
 	SoundManager.play("click")
-	var target_lvl := SaveManager.get_highest_unlocked_level()
+	var completed := SaveManager.get_highest_completed_level()
+	var target_lvl: int = mini(60, completed + 1) if completed > 0 else 1
 	GameManager.start_game(target_lvl)
 
 func _on_level_select_pressed() -> void:
@@ -224,7 +224,7 @@ func _on_quit_pressed() -> void:
 		# Brauzerda ilovani yopib bo'lmaydi, o'yin ma'lumotini ochamiz
 		if info_modal:
 			if info_title_label: info_title_label.text = "WRONG WAY"
-			if info_desc_label: info_desc_label.text = "Wrong Way — Competitive 2D Trap-Platformer.\n\nPoki Web Edition.\nBarcha 60 ta darajadan muvaffaqiyatli o'tib, yulduzlarni to'plang!"
+			if info_desc_label: info_desc_label.text = LocaleManager.t("game_desc_info")
 			info_modal.visible = true
 	else:
 		get_tree().quit()

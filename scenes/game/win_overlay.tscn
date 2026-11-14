@@ -122,7 +122,7 @@ offset_bottom = 310.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.68, 0.74, 0.86, 1)
 theme_override_font_sizes/font_size = 13
-text = "0.00s  •  0 o'lim"
+text = "0s  •  0"
 horizontal_alignment = 1
 
 [node name="BtnRow" type="HBoxContainer" parent="."]
@@ -149,7 +149,7 @@ theme_override_styles/normal = ExtResource("4_w_norm")
 theme_override_styles/hover = ExtResource("5_w_hov")
 theme_override_styles/pressed = ExtResource("6_w_press")
 theme_override_styles/focus = ExtResource("10_focus")
-text = "KEYINGI DARAJA"
+text = "NEXT LEVEL"
 
 [node name="ReplayBtn" type="Button" parent="BtnRow"]
 custom_minimum_size = Vector2(140, 44)
@@ -161,7 +161,7 @@ theme_override_styles/normal = ExtResource("7_g_norm")
 theme_override_styles/hover = ExtResource("8_g_hov")
 theme_override_styles/pressed = ExtResource("9_g_press")
 theme_override_styles/focus = ExtResource("10_focus")
-text = "Qayta"
+text = "Restart"
 
 [node name="MapBtn" type="Button" parent="."]
 custom_minimum_size = Vector2(44, 44)

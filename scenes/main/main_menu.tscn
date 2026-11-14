@@ -177,7 +177,7 @@ theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   DARAJALAR"
+text = "   LEVEL SELECT"
 alignment = 0
 
 [node name="SettingsBtn" type="Button" parent="MenuStack"]
@@ -189,7 +189,7 @@ theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   SOZLAMALAR"
+text = "   SETTINGS"
 alignment = 0
 
 [node name="QuitBtn" type="Button" parent="MenuStack"]
@@ -201,7 +201,7 @@ theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = ExtResource("5_glass")
 theme_override_styles/hover = ExtResource("6_glass_hov")
 theme_override_styles/pressed = ExtResource("7_glass_press")
-text = "   CHIQISH"
+text = "   QUIT"
 alignment = 0
 
 [node name="SettingsModal" parent="." instance=ExtResource("11_sm")]

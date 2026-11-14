@@ -146,8 +146,12 @@ func _setup_coming_soon_views() -> void:
 		backdrop_ch4.material = m4
 		ch4_view.add_child(backdrop_ch4)
 
-		var card4 = _create_coming_soon_card(4, "4-BOB: OLTIN KANYON", "Sahro va Kanyon yangilanishi tez kunda taqdim etiladi!")
-		ch4_view.add_child(card4)
+		lock_card_ch4 = _create_coming_soon_card(
+			4,
+			LocaleManager.t("chapter_4_title"),
+			LocaleManager.t("chapter_4_desc")
+		)
+		ch4_view.add_child(lock_card_ch4)
 
 	# 5-BOB (Lava / Olovli Abiss)
 	ch5_view = chapter_slider.get_node_or_null("Chapter5View")
@@ -173,8 +177,12 @@ func _setup_coming_soon_views() -> void:
 		backdrop_ch5.material = m5
 		ch5_view.add_child(backdrop_ch5)
 
-		var card5 = _create_coming_soon_card(5, "5-BOB: OLOVLI ABISS", "Lava va Vulqon yangilanishi tez kunda taqdim etiladi!")
-		ch5_view.add_child(card5)
+		lock_card_ch5 = _create_coming_soon_card(
+			5,
+			LocaleManager.t("chapter_5_title"),
+			LocaleManager.t("chapter_5_desc")
+		)
+		ch5_view.add_child(lock_card_ch5)
 
 func _create_coming_soon_card(chapter: int, title_str: String, desc_str: String) -> Control:
 	var card_w: float = 380.0
@@ -184,7 +192,10 @@ func _create_coming_soon_card(chapter: int, title_str: String, desc_str: String)
 	card.name = "ComingSoonCard%d" % chapter
 	card.custom_minimum_size = Vector2(card_w, card_h)
 	card.size = Vector2(card_w, card_h)
-	card.position = Vector2((get_viewport_rect().size.x - card_w) * 0.5, (get_viewport_rect().size.y - card_h) * 0.5)
+	card.position = Vector2(
+		(get_viewport_rect().size.x - card_w) * 0.5,
+		(get_viewport_rect().size.y - card_h) * 0.5
+	)
 	card.z_index = 100
 
 	var style := StyleBoxFlat.new()
@@ -201,11 +212,13 @@ func _create_coming_soon_card(chapter: int, title_str: String, desc_str: String)
 	card.add_theme_stylebox_override("panel", style)
 
 	var vbox := VBoxContainer.new()
+	vbox.name = "VBox"
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 6)
 	card.add_child(vbox)
 
 	var hbox := HBoxContainer.new()
+	hbox.name = "HBox"
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox.add_theme_constant_override("separation", 8)
 	vbox.add_child(hbox)
@@ -214,19 +227,38 @@ func _create_coming_soon_card(chapter: int, title_str: String, desc_str: String)
 	hbox.add_child(lock_icon)
 
 	var lbl_title := Label.new()
+	lbl_title.name = "Title"
 	lbl_title.text = title_str.to_upper()
 	lbl_title.add_theme_font_size_override("font_size", 16)
 	lbl_title.add_theme_color_override("font_color", Color(0.98, 0.90, 0.55))
 	hbox.add_child(lbl_title)
 
 	var lbl_sub := Label.new()
-	lbl_sub.text = "✦  COMING SOON  ✦\n" + desc_str
+	lbl_sub.name = "Sub"
+	var coming_soon_tag := "✦  " + LocaleManager.t("coming_soon_caps") + "  ✦\n"
+	lbl_sub.text = coming_soon_tag + desc_str
 	lbl_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_sub.add_theme_font_size_override("font_size", 12)
 	lbl_sub.add_theme_color_override("font_color", Color(0.85, 0.90, 0.98))
 	vbox.add_child(lbl_sub)
 
 	return card
+
+func _refresh_coming_soon_cards() -> void:
+	if lock_card_ch4:
+		var t4: Label = lock_card_ch4.get_node_or_null("VBox/HBox/Title")
+		var s4: Label = lock_card_ch4.get_node_or_null("VBox/Sub")
+		if t4: t4.text = LocaleManager.t("chapter_4_title").to_upper()
+		if s4:
+			var p4 := "✦  " + LocaleManager.t("coming_soon_caps") + "  ✦\n"
+			s4.text = p4 + LocaleManager.t("chapter_4_desc")
+	if lock_card_ch5:
+		var t5: Label = lock_card_ch5.get_node_or_null("VBox/HBox/Title")
+		var s5: Label = lock_card_ch5.get_node_or_null("VBox/Sub")
+		if t5: t5.text = LocaleManager.t("chapter_5_title").to_upper()
+		if s5:
+			var p5 := "✦  " + LocaleManager.t("coming_soon_caps") + "  ✦\n"
+			s5.text = p5 + LocaleManager.t("chapter_5_desc")
 
 func _get_step_width() -> float:
 	return get_viewport_rect().size.x
@@ -550,16 +582,9 @@ func _update_realtime_drag_feedback(slider_x: float) -> void:
 		_set_btn_active(btn_ch2, target_ch == 2)
 		if btn_ch3: _set_btn_active(btn_ch3, target_ch == 3)
 	if title_label:
-		var title_key := "chapter_1_title"
-		if target_ch == 2: title_key = "chapter_2_title"
-		elif target_ch == 3: title_key = "chapter_3_title"
-		elif target_ch == 4: title_key = "4-BOB: OLTIN KANYON"
-		elif target_ch == 5: title_key = "5-BOB: OLOVLI ABISS"
-
-		if target_ch <= 3:
-			title_label.text = "< ◇ ── " + LocaleManager.t(title_key).to_upper() + " ── ◇ >"
-		else:
-			title_label.text = "< ◇ ── " + title_key.to_upper() + " ── ◇ >"
+		var title_key := "chapter_%d_title" % target_ch
+		var title_str := LocaleManager.t(title_key)
+		title_label.text = "< ◇ ── " + title_str.to_upper() + " ── ◇ >"
 
 	if lock_card_ch2:
 		lock_card_ch2.visible = (!SaveManager.is_chapter_unlocked(2) and slider_x <= -step_w * 0.75 and slider_x >= -step_w * 1.25)
@@ -614,12 +639,8 @@ func switch_to_chapter(target_chapter: int, animated: bool = true) -> void:
 
 func _update_top_bar_data() -> void:
 	if title_label:
-		var title_str := ""
-		if current_chapter == 1: title_str = LocaleManager.t("chapter_1_title")
-		elif current_chapter == 2: title_str = LocaleManager.t("chapter_2_title")
-		elif current_chapter == 3: title_str = LocaleManager.t("chapter_3_title")
-		elif current_chapter == 4: title_str = "4-BOB: OLTIN KANYON"
-		elif current_chapter == 5: title_str = "5-BOB: OLOVLI ABISS"
+		var title_key := "chapter_%d_title" % current_chapter
+		var title_str := LocaleManager.t(title_key)
 		title_label.text = "< ◇ ── " + title_str.to_upper() + " ── ◇ >"
 		
 	if total_stars_chip:
@@ -627,35 +648,29 @@ func _update_top_bar_data() -> void:
 			var ch_stars := SaveManager.get_chapter_stars(current_chapter)
 			total_stars_chip.text = "     %d / 60" % ch_stars
 		else:
-			total_stars_chip.text = "     COMING SOON"
+			total_stars_chip.text = "     " + LocaleManager.t("coming_soon_caps")
 
 func _update_nav_buttons() -> void:
 	if side_nav_right:
 		side_nav_right.visible = (current_chapter < 5)
-		if current_chapter == 1:
-			side_nav_right.text = "2-BOB ▶"
-		elif current_chapter == 2:
-			side_nav_right.text = "3-BOB ▶"
-		elif current_chapter == 3:
-			side_nav_right.text = "4-BOB ▶"
-		elif current_chapter == 4:
-			side_nav_right.text = "5-BOB ▶"
+		if current_chapter < 5:
+			var next_txt := LocaleManager.t("chapter_nav_btn", [current_chapter + 1])
+			side_nav_right.text = next_txt + " ▶"
 	if side_nav_left:
 		side_nav_left.visible = (current_chapter > 1)
-		if current_chapter == 2:
-			side_nav_left.text = "◀ 1-BOB"
-		elif current_chapter == 3:
-			side_nav_left.text = "◀ 2-BOB"
-		elif current_chapter == 4:
-			side_nav_left.text = "◀ 3-BOB"
-		elif current_chapter == 5:
-			side_nav_left.text = "◀ 4-BOB"
+		if current_chapter > 1:
+			var prev_txt := LocaleManager.t("chapter_nav_btn", [current_chapter - 1])
+			side_nav_left.text = "◀ " + prev_txt
 
-	if btn_ch1 and btn_ch2:
+	if btn_ch1:
+		btn_ch1.text = LocaleManager.t("btn_chapter_1")
 		_set_btn_active(btn_ch1, current_chapter == 1)
+	if btn_ch2:
+		btn_ch2.text = LocaleManager.t("btn_chapter_2")
 		_set_btn_active(btn_ch2, current_chapter == 2)
-		if btn_ch3:
-			_set_btn_active(btn_ch3, current_chapter == 3)
+	if btn_ch3:
+		btn_ch3.text = LocaleManager.t("btn_chapter_3")
+		_set_btn_active(btn_ch3, current_chapter == 3)
 
 func _set_btn_active(btn: Button, active: bool) -> void:
 	if active:
@@ -682,6 +697,7 @@ func _on_language_changed(_lang: String) -> void:
 	_update_top_bar_data()
 	_update_nav_buttons()
 	_update_chapter_locks()
+	_refresh_coming_soon_cards()
 	_create_nodes_for_chapter(1)
 	_create_nodes_for_chapter(2)
 	_create_nodes_for_chapter(3)
@@ -714,9 +730,11 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 		start_lvl = 41
 
 	var max_unlocked: int = 1
-	for lvl in SaveManager.unlocked_levels:
-		if lvl > max_unlocked:
-			max_unlocked = lvl
+	var completed := SaveManager.get_highest_completed_level()
+	if completed > 0:
+		max_unlocked = mini(60, completed + 1)
+	else:
+		max_unlocked = 1
 
 	for i in range(20):
 		var lvl := start_lvl + i
@@ -840,8 +858,8 @@ func _create_nodes_for_chapter(chapter: int) -> void:
 				btn.pressed.connect(func():
 					SoundManager.play("click")
 					var info: Dictionary = SaveManager.get_lock_reason_dialog(lvl)
-					var t: String = info.get("title", "Qulflangan")
-					var m: String = info.get("text", "Bu daraja hozircha ochilmagan.")
+					var t: String = info.get("title", LocaleManager.t("lvl_locked"))
+					var m: String = info.get("text", LocaleManager.t("lock_must_open_earlier"))
 					_show_notice(t, m)
 				)
 				
@@ -854,7 +872,10 @@ func _on_level_btn_pressed(lvl: int) -> void:
 	
 	var level_scene_path := "res://scenes/levels/level_%02d.tscn" % lvl
 	if lvl > 60 and not ResourceLoader.exists(level_scene_path):
-		_show_notice("DARJA: %d" % lvl, "Yangi darajalar tez kunda navbatdagi katta yangilanishda taqdim etiladi!")
+		_show_notice(
+			LocaleManager.t("level_header", [lvl]),
+			LocaleManager.t("more_levels_soon")
+		)
 		return
 		
 	var already_beaten := SaveManager.is_level_completed(lvl)

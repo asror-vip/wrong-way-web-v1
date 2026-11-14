@@ -9,7 +9,7 @@ var unlocked_levels: Array[int] = [1]
 var level_stars: Dictionary = {}
 var level_best_times: Dictionary = {}
 var level_best_deaths: Dictionary = {}
-var overall_best_text: String = "Mavjud emas"
+var overall_best_text: String = ""
 var overall_best_ms: float = 999999999.0
 var sfx_enabled: bool = true
 var music_enabled: bool = true
@@ -19,8 +19,8 @@ var shake_enabled: bool = true
 var current_language: String = "en"
 var custom_touch_layout: Dictionary = {}
 
-# Production mode: barcha darajalar o'yinchi tomonidan ketma-ket ochilishi shart.
-var debug_unlock_all: bool = false
+# Debug / All levels unlocked mode: barcha 60 ta daraja ochiq
+var debug_unlock_all: bool = true
 
 # Ad-unlock & Navigation Context
 var ad_unlocked_levels: Array[int] = []
@@ -44,7 +44,7 @@ func load_data() -> void:
 		level_stars = config.get_value("progress", "level_stars", {})
 		level_best_times = config.get_value("progress", "level_best_times", {})
 		level_best_deaths = config.get_value("progress", "level_best_deaths", {})
-		overall_best_text = config.get_value("progress", "overall_best_text", "Mavjud emas")
+		overall_best_text = config.get_value("progress", "overall_best_text", "")
 		overall_best_ms = config.get_value("progress", "overall_best_ms", 999999999.0)
 		ad_unlocked_levels = Array(config.get_value("progress", "ad_unlocked_levels", []), TYPE_INT, "", null)
 		attempted_levels = Array(config.get_value("progress", "attempted_levels", []), TYPE_INT, "", null)
@@ -56,14 +56,14 @@ func load_data() -> void:
 		shake_enabled = config.get_value("settings", "shake_enabled", true)
 		current_language = config.get_value("settings", "current_language", "en")
 		custom_touch_layout = config.get_value("settings", "custom_touch_layout", {})
-		debug_unlock_all = config.get_value("settings", "debug_unlock_all", false)
+		debug_unlock_all = config.get_value("settings", "debug_unlock_all", true)
 
-	debug_unlock_all = false
+	debug_unlock_all = true
 
-	# Test davomida saqlanib qolgan "barcha darajalar ochiq" holatini birlamchi 1-darajaga qaytarish:
-	if unlocked_levels.size() >= 60 and level_stars.is_empty():
-		unlocked_levels = [1]
-		save_data()
+	# Barcha 60 ta darajani o'yinchi uchun ochiq holatga keltirish:
+	for l in range(1, 61):
+		if not unlocked_levels.has(l):
+			unlocked_levels.append(l)
 
 func save_data() -> void:
 	var config := ConfigFile.new()
@@ -125,7 +125,7 @@ func reset_touch_layout() -> void:
 
 func is_level_unlocked(lvl: int) -> bool:
 	if debug_unlock_all:
-		return true
+		return lvl >= 1 and lvl <= 60
 	if lvl == 1:
 		return true
 	return unlocked_levels.has(lvl) or ad_unlocked_levels.has(lvl)
@@ -164,7 +164,8 @@ func record_result(lvl: int, time_ms: float, deaths: int) -> int:
 
 	if time_ms < overall_best_ms:
 		overall_best_ms = time_ms
-		overall_best_text = "%.2fs (%d-lvl)" % [time_ms / 1000.0, lvl]
+		var lvl_str := LocaleManager.t("level_header", [lvl])
+		overall_best_text = "%.2fs (%s)" % [time_ms / 1000.0, lvl_str]
 
 	if stars >= 2:
 		var next_lvl := lvl + 1
@@ -251,6 +252,9 @@ func get_level_stars(lvl: int) -> int:
 	return int(level_stars.get(str(lvl), 0))
 
 func get_overall_best_text() -> String:
+	if overall_best_ms >= 999999000.0 or overall_best_text == "Mavjud emas" \
+			or overall_best_text.is_empty():
+		return LocaleManager.t("not_available")
 	return overall_best_text
 
 func record_level_attempt(lvl: int) -> void:
@@ -426,7 +430,7 @@ func get_chapter_total_time_sec(chapter: int) -> int:
 
 func is_chapter_unlocked(chapter: int) -> bool:
 	if debug_unlock_all:
-		return true
+		return chapter >= 1 and chapter <= 3
 	if chapter == 1:
 		return true
 	elif chapter == 2:
@@ -442,14 +446,16 @@ func get_level_time_text(lvl: int) -> String:
 	return "--"
 
 func reset_progress() -> void:
-	unlocked_levels = [1]
+	unlocked_levels = []
+	for l in range(1, 61):
+		unlocked_levels.append(l)
 	ad_unlocked_levels.clear()
 	attempted_levels.clear()
 	last_ad_unlocked_level = 0
 	level_stars.clear()
 	level_best_times.clear()
 	level_best_deaths.clear()
-	overall_best_text = "Mavjud emas"
+	overall_best_text = ""
 	overall_best_ms = 999999999.0
 	save_data()
 
