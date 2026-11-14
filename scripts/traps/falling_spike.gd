@@ -89,20 +89,16 @@ func _draw() -> void:
 	if gm and gm.has_method("get_current_chapter"):
 		ch = gm.get_current_chapter()
 
+	# Shift tikanlari bilan 100% bir xil rang (hech qanday oq yoki yorqin hoshiyasiz!)
 	var teeth_col := Color("#1c1a22")
-	var stroke_col := Color("#1c1a22", 0.0)
 	if ch == 2:
 		teeth_col = Color(0.22, 0.74, 0.97, 0.92)
-		stroke_col = Color("#ffffff")
 	elif ch == 3:
-		teeth_col = Color("#14532d")
-		stroke_col = Color("#4ade80")
+		teeth_col = Color("#166534")
 	elif ch == 4:
-		teeth_col = Color("#78350f")
-		stroke_col = Color("#fcd34d")
+		teeth_col = Color("#b45309")
 	elif ch == 5:
-		teeth_col = Color("#450a0a")
-		stroke_col = Color("#f97316")
+		teeth_col = Color("#7f1d1d")
 
 	var pts := PackedVector2Array([
 		Vector2(-16, 0),
@@ -111,8 +107,6 @@ func _draw() -> void:
 	])
 
 	draw_colored_polygon(pts, teeth_col)
-	if stroke_col.a > 0.0:
-		draw_polyline(pts, stroke_col, 1.2)
 
 func _handle_overlap(body: Node2D) -> void:
 	if not is_falling:
