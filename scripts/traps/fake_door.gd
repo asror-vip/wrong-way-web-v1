@@ -35,33 +35,23 @@ func _physics_process(delta: float) -> void:
 			if dist < run_away_distance:
 				_run_away(player)
 
-func _run_away(player: Node2D) -> void:
+func _run_away(_player: Node2D) -> void:
 	is_triggered = true
-
-	# Ehtiyot qismi: Faqat player haqiqiy PlayerController bo'lsagina ishlaydi
-	if not is_instance_valid(player) or not player.has_method("enter_door"):
-		return
-
 	var sm = get_node_or_null("/root/SoundManager")
 	if sm and sm.has_method("play"):
-		sm.play("win") # O'yinchini ishontirish uchun "Win" (Yutuq) musiqasi!
-
-	# 1. Pleyerni soxta eshik ichiga kirgandek yutadi
-	player.enter_door(global_position)
+		sm.play("trap")
 	
-	# 2. Qisqa vaqt o'tgach troll (o'lim va spawn ga qaytarish) bo'ladi
-	var tw := create_tween()
-	tw.tween_interval(1.1)
-	tw.tween_callback(func():
-		if sm and sm.has_method("play"):
-			sm.play("die") # Va ustidan kulgandek o'lim ovozi
-
-		var gm = get_node_or_null("/root/GameManager")
-		if gm and gm.has_signal("request_screen_shake"):
-			gm.request_screen_shake.emit(8.0)
-
-		if is_instance_valid(player) and player.has_method("respawn"):
-			player.respawn(player.spawn_position)
+	# Eshik pastga pol ichiga tushib yo'qoladi (o'yinchini tortib ketmaydi)
+	if runaway_tween and runaway_tween.is_valid():
+		runaway_tween.kill()
+	runaway_tween = create_tween()
+	runaway_tween.tween_property(self, "position:y", start_pos.y - 3.0, 0.05)
+	runaway_tween.tween_property(self, "position:y", start_pos.y + 120.0, 0.28)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	runaway_tween.tween_callback(func():
+		visible = false
+		if col_shape:
+			col_shape.disabled = true
 	)
 
 func _draw() -> void:
