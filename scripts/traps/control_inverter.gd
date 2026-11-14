@@ -60,13 +60,35 @@ func reset_trap() -> void:
 		queue_redraw()
 
 func _draw() -> void:
+	var ch: int = 1
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
 	var w := zone_size.x
 	var h := zone_size.y
 	var alpha := 0.35 + 0.15 * sin(pulse_time)
-	
-	# Binafsha teskari boshqaruv portali
-	draw_rect(Rect2(0, 0, w, h), Color(0.65, 0.2, 0.9, alpha * 0.4), true)
-	draw_rect(Rect2(0, 0, w, h), Color(0.75, 0.3, 1.0, alpha), false, 1.5)
+
+	# Biomlarga mos portal ranglari
+	var fill_col := Color(0.65, 0.2, 0.9, alpha * 0.4) # Binafsha (Ch 1)
+	var stroke_col := Color(0.75, 0.3, 1.0, alpha)
+
+	if ch == 2:
+		fill_col = Color(0.2, 0.7, 1.0, alpha * 0.4) # Muzlik ko'k
+		stroke_col = Color(0.4, 0.9, 1.0, alpha)
+	elif ch == 3:
+		fill_col = Color(0.2, 0.9, 0.3, alpha * 0.4) # Zaharli yashil
+		stroke_col = Color(0.4, 1.0, 0.5, alpha)
+	elif ch == 4:
+		fill_col = Color(0.9, 0.7, 0.2, alpha * 0.4) # Sahro qumrang
+		stroke_col = Color(1.0, 0.8, 0.4, alpha)
+	elif ch == 5:
+		fill_col = Color(0.9, 0.2, 0.1, alpha * 0.4) # Lava qizil
+		stroke_col = Color(1.0, 0.4, 0.2, alpha)
+
+	# Teskari boshqaruv portali
+	draw_rect(Rect2(0, 0, w, h), fill_col, true)
+	draw_rect(Rect2(0, 0, w, h), stroke_col, false, 1.5)
 	
 	# Teskari strelka belgisi (<->)
 	var mid_y := h * 0.5

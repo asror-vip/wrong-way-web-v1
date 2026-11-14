@@ -64,16 +64,40 @@ func reset_trap() -> void:
 func _draw() -> void:
 	if not is_revealed:
 		return
-		
+
+	var ch: int = 1
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
+	var base_col := Color(0.06, 0.08, 0.12, 0.95)
+	var edge_col := Color(0.25, 0.32, 0.45, 0.8)
+	var crack_col := Color(0.18, 0.22, 0.32)
+
+	if ch == 2:
+		base_col = Color("#0d131f")
+		edge_col = Color(0.49, 0.86, 0.99, 0.8)
+		crack_col = Color("#1e293b")
+	elif ch == 3:
+		base_col = Color("#062319")
+		edge_col = Color("#4ade80")
+		crack_col = Color("#064e3b")
+	elif ch == 4:
+		base_col = Color("#291c14")
+		edge_col = Color("#fcd34d")
+		crack_col = Color("#451a03")
+	elif ch == 5:
+		base_col = Color("#1a0505")
+		edge_col = Color("#f97316")
+		crack_col = Color("#450a0a")
+
 	var rect := Rect2(0, 0, block_size.x, block_size.y)
-	# To'q obsidian tosh tana
-	draw_rect(rect, Color(0.06, 0.08, 0.12, 0.95), true)
-	# Nozik tosh hoshiyasi
-	draw_rect(rect, Color(0.25, 0.32, 0.45, 0.8), false, 1.2)
+	draw_rect(rect, base_col, true)
+	draw_rect(rect, edge_col, false, 1.2)
 	
 	# Tosh yoriqlari (Cracked stone texture)
 	var cx := block_size.x * 0.5
 	var cy := block_size.y * 0.5
-	draw_line(Vector2(cx - 6, cy - 8), Vector2(cx + 2, cy), Color(0.18, 0.22, 0.32), 1.0)
-	draw_line(Vector2(cx + 2, cy), Vector2(cx - 3, cy + 8), Color(0.18, 0.22, 0.32), 1.0)
+	draw_line(Vector2(cx - 6, cy - 8), Vector2(cx + 2, cy), crack_col, 1.0)
+	draw_line(Vector2(cx + 2, cy), Vector2(cx - 3, cy + 8), crack_col, 1.0)
 

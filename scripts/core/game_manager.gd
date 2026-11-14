@@ -14,9 +14,7 @@ var level_start_time: float = 0.0
 var level_timer_ms: float = 0.0
 var is_level_running: bool = false
 var is_custom_editor_mode: bool = false
-var is_duel_mode: bool = false
 var is_countdown_active: bool = false
-var duel_random_seed: int = 0
 
 var levels_beaten_this_session: int = 0
 
@@ -33,6 +31,15 @@ func get_current_chapter() -> int:
 
 func is_winter_theme() -> bool:
 	return get_current_chapter() == 2
+
+func is_forest_theme() -> bool:
+	return get_current_chapter() == 3
+
+func is_desert_theme() -> bool:
+	return get_current_chapter() == 4
+
+func is_lava_theme() -> bool:
+	return get_current_chapter() == 5
 
 func _enter_tree() -> void:
 	if get_tree() and get_tree().root:
@@ -56,7 +63,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func start_game(level_id: int) -> void:
-	is_duel_mode = false
 	is_countdown_active = false
 	get_tree().paused = false
 	current_level_id = level_id
@@ -78,20 +84,6 @@ func start_game(level_id: int) -> void:
 	get_tree().change_scene_to_file("res://scenes/game/gameplay.tscn")
 	# change_scene_to_file is deferred, so we shouldn't emit level_started here.
 	# The gameplay.gd's _ready will call _load_level directly.
-
-func start_duel_game(level_id: int, random_seed_num: int = 0) -> void:
-	is_duel_mode = true
-	is_countdown_active = true
-	duel_random_seed = random_seed_num
-	seed(random_seed_num)
-	get_tree().paused = false
-	current_level_id = level_id
-	level_deaths = 0
-	level_timer_ms = 0.0
-	level_start_time = Time.get_ticks_msec()
-	is_level_running = false
-	get_tree().change_scene_to_file("res://scenes/game/gameplay.tscn")
-	# Deferred change, gameplay.gd will handle it.
 
 func record_death() -> void:
 	if is_custom_editor_mode:

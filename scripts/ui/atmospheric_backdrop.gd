@@ -228,9 +228,14 @@ func _load_texture(path: String) -> void:
 			bg_texture_rect.visible = true
 		queue_redraw()
 
+func _get_screen_w() -> float:
+	if is_inside_tree():
+		return maxf(1200.0, get_viewport_rect().size.x)
+	return 1200.0
+
 func _init_particles() -> void:
 	_particles.clear()
-	var screen_w := maxf(1200.0, get_viewport_rect().size.x if is_inside_tree() else 1200.0)
+	var screen_w := _get_screen_w()
 	var is_mob := OS.has_feature("mobile")
 	var is_frost := _current_theme == "frost_peak"
 	var count := (30 if is_frost else 16) if is_mob else (65 if is_frost else 28)
@@ -292,7 +297,7 @@ var _redraw_skip: int = 0
 func _process(delta: float) -> void:
 	_time += delta
 	if show_particles:
-		var screen_w := maxf(1200.0, get_viewport_rect().size.x if is_inside_tree() else 1200.0)
+		var screen_w := _get_screen_w()
 		for p in _particles:
 			if _current_theme == "frost_peak":
 				p.y += delta * p.speed

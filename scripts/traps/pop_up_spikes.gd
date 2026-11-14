@@ -98,10 +98,25 @@ func _draw() -> void:
 	if current_height <= 1.0:
 		return
 
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
+	var teeth_col := Color("#1c1a22")
+	var stroke_col := Color("#1c1a22", 0.0)
+	if ch == 2:
+		teeth_col = Color(0.22, 0.74, 0.97, 0.90)
+		stroke_col = Color("#ffffff")
+	elif ch == 3:
+		teeth_col = Color("#14532d")
+		stroke_col = Color("#4ade80")
+	elif ch == 4:
+		teeth_col = Color("#78350f")
+		stroke_col = Color("#fcd34d")
+	elif ch == 5:
+		teeth_col = Color("#450a0a")
+		stroke_col = Color("#f97316")
 		
 	var w := spike_width
 	var count := int(maxf(1.0, w / 16.0))
@@ -118,11 +133,9 @@ func _draw() -> void:
 			Vector2(sx1, -current_height),
 			Vector2(sx2, 2.0)
 		])
-		if is_winter:
-			draw_colored_polygon(tri, Color(0.22, 0.74, 0.97, 0.90))
-		else:
-			# Pol bilan 100% bir xil qorong'u siluet (#1c1a22), bo'shliqlarsiz
-			draw_colored_polygon(tri, Color("#1c1a22"))
+		draw_colored_polygon(tri, teeth_col)
+		if stroke_col.a > 0.0:
+			draw_polyline(tri, stroke_col, 1.2)
 
 func _on_body_entered(body: Node2D) -> void:
 	if is_active:

@@ -69,15 +69,15 @@ trigger_distance = 240
 shake_duration = 0.35
 
 [node name="RollingBoulderLower" parent="Traps" instance=ExtResource("8_tr")]
-position = Vector2(620, 350)
-roll_direction = -1
-roll_speed = 340
-trigger_distance = 220
+position = Vector2(200, 350)
+roll_direction = 1
+roll_speed = 250
+trigger_distance = 60
 
 [node name="SpringToUpper" parent="Traps" instance=ExtResource("9_tr")]
 position = Vector2(670, 380)
 spring_size = Vector2(40, 16)
-launch_velocity = -740
+launch_velocity = -800
 bounce_force = 0
 
 [node name="FakeDoorUpper" parent="Traps" instance=ExtResource("10_tr")]

@@ -30,8 +30,8 @@ position = Vector2(430, 380)
 platform_size = Vector2(400, 160)
 
 [node name="UpperFinish" parent="Platforms" instance=ExtResource("3_sp")]
-position = Vector2(820, 230)
-platform_size = Vector2(140, 30)
+position = Vector2(860, 230)
+platform_size = Vector2(100, 30)
 
 [node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(0, 0)
@@ -87,7 +87,7 @@ orbit_speed = 2.2
 [node name="SpringFinish" parent="Traps" instance=ExtResource("5_tr")]
 position = Vector2(790, 380)
 spring_size = Vector2(40, 16)
-launch_velocity = -740
+launch_velocity = -880
 bounce_force = 0
 
 [node name="ExitDoor" parent="." instance=ExtResource("4_ed")]

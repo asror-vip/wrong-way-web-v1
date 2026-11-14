@@ -46,17 +46,38 @@ func _draw() -> void:
 	if not is_springing or extension <= 1.0:
 		return
 
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
 	var w := spring_size.x
 	var h := extension
 	var y_top := -h
 
+	var base_col := Color("#1c1a22")
+	var spring_col1 := Color("#475569")
+	var spring_col2 := Color("#1e293b")
+
+	if ch == 2:
+		base_col = Color("#0d131f")
+		spring_col1 = Color("#94a3b8")
+		spring_col2 = Color("#64748b")
+	elif ch == 3:
+		base_col = Color("#062319")
+		spring_col1 = Color("#166534")
+		spring_col2 = Color("#064e3b")
+	elif ch == 4:
+		base_col = Color("#291c14")
+		spring_col1 = Color("#b45309")
+		spring_col2 = Color("#78350f")
+	elif ch == 5:
+		base_col = Color("#1a0505")
+		spring_col1 = Color("#ea580c")
+		spring_col2 = Color("#991b1b")
+
 	# Poydevor (pol sirtiga jips birlashgan)
-	draw_rect(Rect2(0, -3.0, w, 4.0), Color("#1c1a22"), true)
+	draw_rect(Rect2(0, -3.0, w, 4.0), base_col, true)
 
 	# Yuqoriga otiluvchi spiral halqalar
 	var coils := 4
@@ -65,16 +86,28 @@ func _draw() -> void:
 		var cy0 := -3.0 - float(i) * coil_h
 		var cy1 := cy0 - coil_h * 0.5
 		var cy2 := cy0 - coil_h
-		draw_line(Vector2(4, cy0), Vector2(w - 4, cy1), Color("#94a3b8"), 2.2)
-		draw_line(Vector2(w - 4, cy1), Vector2(4, cy2), Color("#64748b"), 2.2)
+		draw_line(Vector2(4, cy0), Vector2(w - 4, cy1), spring_col1, 2.2)
+		draw_line(Vector2(w - 4, cy1), Vector2(4, cy2), spring_col2, 2.2)
 
 	# Sakrash yostig'i (Top pad)
-	if is_winter:
-		draw_rect(Rect2(2, y_top - 5, w - 4, 6), Color("#38bdf8"), true)
-		draw_rect(Rect2(4, y_top - 5, w - 8, 2), Color("#ffffff"), true)
-	else:
-		draw_rect(Rect2(2, y_top - 5, w - 4, 6), Color("#f59e0b"), true)
-		draw_rect(Rect2(4, y_top - 5, w - 8, 2), Color("#fef08a"), true)
+	var pad_col := Color("#f59e0b")
+	var hl_col := Color("#fef08a")
+
+	if ch == 2:
+		pad_col = Color("#38bdf8")
+		hl_col = Color("#ffffff")
+	elif ch == 3:
+		pad_col = Color("#22c55e")
+		hl_col = Color("#86efac")
+	elif ch == 4:
+		pad_col = Color("#fcd34d")
+		hl_col = Color("#fffbeb")
+	elif ch == 5:
+		pad_col = Color("#ef4444")
+		hl_col = Color("#fef08a")
+
+	draw_rect(Rect2(2, y_top - 5, w - 4, 6), pad_col, true)
+	draw_rect(Rect2(4, y_top - 5, w - 8, 2), hl_col, true)
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is PlayerController or body.is_in_group("player"):

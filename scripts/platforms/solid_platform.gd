@@ -3,6 +3,7 @@ class_name SolidPlatform
 
 @export var platform_size: Vector2 = Vector2(350, 160)
 @export var has_ceiling_teeth: bool = false
+@export var is_extension_or_wall: bool = false
 
 var _crusher_ranges: Array[Vector2] = []
 var _falling_spike_xs: Array[float] = []
@@ -13,6 +14,12 @@ func _is_ceiling_platform() -> bool:
 	if name.to_lower().contains("wall"):
 		return false
 	return global_position.y <= 30.0 and platform_size.x >= 200.0
+
+func _is_wall_or_extension() -> bool:
+	if is_extension_or_wall:
+		return true
+	var n := name.to_lower()
+	return n.contains("wall") or n.contains("extension") or n.contains("ceiling")
 
 func _ready() -> void:
 	var col = get_node_or_null("CollisionShape2D")
@@ -60,12 +67,22 @@ func _draw() -> void:
 	var is_ceiling_plat := _is_ceiling_platform()
 	if not has_ceiling_teeth and is_ceiling_plat:
 		_check_ceiling_traps()
-	var is_winter := false
-	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
 
-	var base_col := Color("#0d131f") if is_winter else Color("#1c1a22")
+	var ch: int = 1
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
+	# Asosiy tosh rangini boblarga (chapter) qarab belgilaymiz:
+	var base_col := Color("#1c1a22") # Default / Limbo
+	if ch == 2:
+		base_col = Color("#0d131f") # Winter (To'q ko'k-kulrang)
+	elif ch == 3:
+		base_col = Color("#062319") # Emerald Woods (To'q yashil)
+	elif ch == 4:
+		base_col = Color("#291c14") # Golden Canyon (To'q jigarrang)
+	elif ch == 5:
+		base_col = Color("#1a0505") # Inferno Abyss (To'q qizil-qora)
 
 	# Shift platformasida crusher bo'lsa, o'sha kichik ochiq joy uchun kichik shiftcha chizish (tepa tarafi butun shift bilan bir tekis)
 	if has_ceiling_teeth and not _crusher_ranges.is_empty():
@@ -76,17 +93,21 @@ func _draw() -> void:
 			var rx1 := clampf(r.x, 0.0, platform_size.x)
 			var rx2 := clampf(r.y, 0.0, platform_size.x)
 			if rx1 > cur_x:
-				_draw_segment(cur_x, rx1 - cur_x, base_col, is_winter)
-			_draw_top_ceiling_cap(rx1, rx2 - rx1, base_col)
+				_draw_segment(cur_x, rx1 - cur_x, base_col, ch)
+			_draw_top_ceiling_cap(rx1, rx2 - rx1, base_col, ch)
 			cur_x = maxf(cur_x, rx2)
 		if cur_x < platform_size.x:
-			_draw_segment(cur_x, platform_size.x - cur_x, base_col, is_winter)
+			_draw_segment(cur_x, platform_size.x - cur_x, base_col, ch)
 	else:
-		_draw_segment(0.0, platform_size.x, base_col, is_winter)
+		_draw_segment(0.0, platform_size.x, base_col, ch)
 
 	# Shiftning uzluksiz tikanlari va aldovchi (soxta) stalaktitlari (aniq bitta standart!)
 	if has_ceiling_teeth and platform_size.x > 64.0:
-		var teeth_col := Color(0.22, 0.74, 0.97, 0.92) if is_winter else base_col
+		var teeth_col := base_col
+		if ch == 2: teeth_col = Color(0.22, 0.74, 0.97, 0.92) # Muz
+		elif ch == 3: teeth_col = Color("#166534") # Zaharli tikan
+		elif ch == 4: teeth_col = Color("#b45309") # Qumli qoya tikan
+		elif ch == 5: teeth_col = Color("#7f1d1d") # Qizigan obsidian
 		var bot_y := platform_size.y
 		var start_x := 32.0
 		var end_x := platform_size.x - 32.0
@@ -198,14 +219,56 @@ func _draw() -> void:
 				draw_colored_polygon(tooth_pts, teeth_col)
 			cur_x += tw
 
-func _draw_segment(sx: float, sw: float, base_col: Color, _is_winter: bool) -> void:
+func _draw_segment(sx: float, sw: float, base_col: Color, ch: int) -> void:
 	if sw <= 0.0:
 		return
 	draw_rect(Rect2(sx, 0.0, sw, platform_size.y), base_col, true)
+	if _is_wall_or_extension():
+		return
 
-func _draw_top_ceiling_cap(sx: float, sw: float, base_col: Color) -> void:
+	# Boblarga mos pol qoplamalari (Top layers)
+	if ch == 2: # Winter
+		var snow_h := 5.5
+		if platform_size.x > 36.0:
+			draw_rect(Rect2(sx, 0.0, sw, snow_h), Color("#f1f5f9"), true)
+			draw_rect(Rect2(sx, 0.0, sw, 2.0), Color("#ffffff"), true)
+			draw_rect(Rect2(sx, snow_h - 1.5, sw, 1.5), Color("#94a3b8"), true)
+		else:
+			var frost_rect := Rect2(sx, 0.0, minf(sw, 2.5), platform_size.y)
+			draw_rect(frost_rect, Color(0.49, 0.86, 0.99, 0.6), true)
+	elif ch == 3: # Emerald Woods (To'q yashil mox / Moss)
+		draw_rect(Rect2(sx, 0.0, sw, 4.0), Color("#14532d"), true)
+		draw_rect(Rect2(sx, 4.0, sw, 2.0), Color("#064e3b"), true)
+	elif ch == 4: # Golden Canyon (Sahro / Qum)
+		var sand_h := 6.0
+		draw_rect(Rect2(sx, 0.0, sw, sand_h), Color("#fcd34d"), true)
+		draw_rect(Rect2(sx, sand_h - 2.0, sw, 2.0), Color("#d97706"), true)
+	elif ch == 5: # Inferno Abyss (Lava / Obsidian)
+		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#450a0a"), true)
+		draw_rect(Rect2(sx, 0.0, sw, 1.0), Color("#f97316"), true) # Lava qizishi
+	else: # Chapter 1 (Default / Limbo)
+		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#342f3a"), true)
+
+func _draw_top_ceiling_cap(sx: float, sw: float, base_col: Color, ch: int) -> void:
 	if sw <= 0.0:
 		return
 	# Ezuvchi ustidagi kichik ochiq joy uchun kichik shiftcha (tepa tarafi butun shift bilan 100% bir tekis)
 	var cap_h := 16.0
 	draw_rect(Rect2(sx, 0.0, sw, cap_h), base_col, true)
+
+	if ch == 2:
+		var snow_h := 5.5
+		draw_rect(Rect2(sx, 0.0, sw, snow_h), Color("#f1f5f9"), true)
+		draw_rect(Rect2(sx, 0.0, sw, 2.0), Color("#ffffff"), true)
+		draw_rect(Rect2(sx, snow_h - 1.5, sw, 1.5), Color("#94a3b8"), true)
+	elif ch == 3:
+		draw_rect(Rect2(sx, 0.0, sw, 4.0), Color("#14532d"), true)
+		draw_rect(Rect2(sx, 4.0, sw, 2.0), Color("#064e3b"), true)
+	elif ch == 4:
+		draw_rect(Rect2(sx, 0.0, sw, 6.0), Color("#fcd34d"), true)
+		draw_rect(Rect2(sx, 4.0, sw, 2.0), Color("#d97706"), true)
+	elif ch == 5:
+		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#450a0a"), true)
+		draw_rect(Rect2(sx, 0.0, sw, 1.0), Color("#f97316"), true)
+	else:
+		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#342f3a"), true)

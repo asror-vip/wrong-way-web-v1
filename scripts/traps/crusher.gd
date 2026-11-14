@@ -161,10 +161,10 @@ func reset_trap() -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
 	var w := crusher_size.x
 	var h := crusher_size.y
@@ -205,11 +205,16 @@ func _draw() -> void:
 		# Shift uyasi ichidagi yuqori zanjir halqasi
 		draw_circle(Vector2(chain_x, -chain_h), 4.5, Color("#262e3e"))
 
-	# Asosiy ezuvchi blok korpusi (shift ustiga chiqib ketmaydi: y >= 0 qirqiladi!)
+	# Asosiy ezuvchi blok korpusi (Y >= 0 qirqiladi)
 	var top_clip := maxf(0.0, -global_position.y)
 	var body_h := h - top_clip
 	if body_h > 0.0:
-		var body_col := Color("#0d131f") if is_winter else Color("#1c1a22")
+		var body_col := Color("#1c1a22") # Ch 1
+		if ch == 2: body_col = Color("#0d131f") # Ch 2
+		elif ch == 3: body_col = Color("#062319") # Ch 3
+		elif ch == 4: body_col = Color("#291c14") # Ch 4
+		elif ch == 5: body_col = Color("#1a0505") # Ch 5
+
 		draw_rect(Rect2(0, top_clip, w, body_h), body_col, true)
 
 	# Tishlar: shift tikanlari bilan bir xil sof rangli tishlar (borderlarsiz!)
@@ -222,13 +227,14 @@ func _draw() -> void:
 		var p1 := Vector2(float(i) * tw, h)
 		var p2 := Vector2((float(i) + 0.5) * tw, h + tooth_len)
 		var p3 := Vector2(float(i + 1) * tw, h)
-		if is_winter:
-			draw_colored_polygon(
-				PackedVector2Array([p1, p2, p3]),
-				Color(0.22, 0.74, 0.97, 0.92)
-			)
-		else:
-			draw_colored_polygon(
-				PackedVector2Array([p1, p2, p3]),
-				Color("#1c1a22")
-			)
+
+		var teeth_col := Color("#1c1a22")
+		if ch == 2: teeth_col = Color(0.22, 0.74, 0.97, 0.92)
+		elif ch == 3: teeth_col = Color("#166534")
+		elif ch == 4: teeth_col = Color("#b45309")
+		elif ch == 5: teeth_col = Color("#7f1d1d")
+
+		draw_colored_polygon(
+			PackedVector2Array([p1, p2, p3]),
+			teeth_col
+		)

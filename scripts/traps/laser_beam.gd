@@ -49,24 +49,75 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	var ch: int = 1
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
+	var base_col := Color("#1e1b29")
+	var inner_col := Color("#3f3f46")
+
+	if ch == 2:
+		base_col = Color("#0d131f")
+		inner_col = Color("#1e293b")
+	elif ch == 3:
+		base_col = Color("#062319")
+		inner_col = Color("#064e3b")
+	elif ch == 4:
+		base_col = Color("#291c14")
+		inner_col = Color("#451a03")
+	elif ch == 5:
+		base_col = Color("#1a0505")
+		inner_col = Color("#450a0a")
+
 	# Emitter asosi (kichik metall blok)
-	draw_circle(Vector2.ZERO, 9.0, Color("#1e1b29"))
-	draw_circle(Vector2.ZERO, 6.0, Color("#3f3f46"))
+	draw_circle(Vector2.ZERO, 9.0, base_col)
+	draw_circle(Vector2.ZERO, 6.0, inner_col)
 	
 	var end_pt := Vector2(0, beam_length) if is_vertical else Vector2(beam_length, 0)
 	
 	if is_active:
-		# Yorqin qizil nur va uning nurlanishi (glow)
+		# Yorqin nur (Lazer chizig'i va Glow)
 		var glow_w := 10.0 + sin(pulse_phase) * 2.0
-		draw_line(Vector2.ZERO, end_pt, Color(1.0, 0.2, 0.3, 0.35), glow_w)
-		draw_line(Vector2.ZERO, end_pt, Color(1.0, 0.4, 0.5, 0.8), 4.0)
+		var laser_glow := Color(1.0, 0.2, 0.3, 0.35)
+		var laser_core := Color(1.0, 0.4, 0.5, 0.8)
+		var emitter_light := Color("#ef4444")
+
+		# Boblarga qarab lazer ranglari (Masalan O'rmonda zaharli yashil, Qishda muzdek ko'k)
+		if ch == 2:
+			laser_glow = Color(0.2, 0.8, 1.0, 0.35)
+			laser_core = Color(0.4, 0.9, 1.0, 0.8)
+			emitter_light = Color("#0ea5e9")
+		elif ch == 3:
+			laser_glow = Color(0.3, 1.0, 0.3, 0.35)
+			laser_core = Color(0.5, 1.0, 0.5, 0.8)
+			emitter_light = Color("#22c55e")
+		elif ch == 4:
+			laser_glow = Color(1.0, 0.8, 0.2, 0.35)
+			laser_core = Color(1.0, 0.9, 0.4, 0.8)
+			emitter_light = Color("#eab308")
+
+		draw_line(Vector2.ZERO, end_pt, laser_glow, glow_w)
+		draw_line(Vector2.ZERO, end_pt, laser_core, 4.0)
 		draw_line(Vector2.ZERO, end_pt, Color(1.0, 1.0, 1.0, 0.95), 1.5)
 		# Emitter nuri
-		draw_circle(Vector2.ZERO, 4.0, Color("#ef4444"))
+		draw_circle(Vector2.ZERO, 4.0, emitter_light)
 	else:
 		# Ogohlantiruvchi xira nuqtali / nozik nur
-		draw_line(Vector2.ZERO, end_pt, Color(1.0, 0.2, 0.2, 0.15), 2.0)
-		draw_circle(Vector2.ZERO, 3.0, Color(0.6, 0.2, 0.2, 0.4))
+		var idle_beam := Color(1.0, 0.2, 0.2, 0.15)
+		var idle_dot := Color(0.6, 0.2, 0.2, 0.4)
+		if ch == 2:
+			idle_beam = Color(0.2, 0.8, 1.0, 0.15)
+			idle_dot = Color(0.2, 0.6, 0.8, 0.4)
+		elif ch == 3:
+			idle_beam = Color(0.3, 1.0, 0.3, 0.15)
+			idle_dot = Color(0.2, 0.6, 0.2, 0.4)
+		elif ch == 4:
+			idle_beam = Color(1.0, 0.8, 0.2, 0.15)
+			idle_dot = Color(0.8, 0.6, 0.2, 0.4)
+
+		draw_line(Vector2.ZERO, end_pt, idle_beam, 2.0)
+		draw_circle(Vector2.ZERO, 3.0, idle_dot)
 
 func _on_body_entered(body: Node2D) -> void:
 	if is_active and (body is PlayerController or body.is_in_group("player")):

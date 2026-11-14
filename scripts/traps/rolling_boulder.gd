@@ -166,8 +166,39 @@ func reset_trap() -> void:
 
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, roll_rotation, Vector2.ONE)
-	
-	# 1. Shar atrofidagi o'tkir metall-qizil tikanlar (Spikes around boulder)
+
+	var ch: int = 1
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
+	var base_col := Color(0.08, 0.10, 0.15, 1.0)
+	var edge_col := Color(0.35, 0.45, 0.60, 0.9)
+	var crack_col := Color(0.03, 0.04, 0.07, 0.95)
+	var spike_col := Color("#2a2536")
+
+	if ch == 2:
+		base_col = Color("#0f172a") # To'q qor/muz shar
+		edge_col = Color("#e0f2fe")
+		crack_col = Color("#1e293b")
+		spike_col = Color("#0284c7")
+	elif ch == 3:
+		base_col = Color("#064e3b") # Zaharli log
+		edge_col = Color("#4ade80")
+		crack_col = Color("#14532d")
+		spike_col = Color("#166534")
+	elif ch == 4:
+		base_col = Color("#78350f") # Qadimgi g'isht
+		edge_col = Color("#fcd34d")
+		crack_col = Color("#451a03")
+		spike_col = Color("#b45309")
+	elif ch == 5:
+		base_col = Color("#450a0a") # Lovullagan meteor
+		edge_col = Color("#f97316")
+		crack_col = Color("#7f1d1d")
+		spike_col = Color("#ef4444")
+
+	# 1. Shar atrofidagi o'tkir metall/tosh tikanlar
 	var num_spikes := 8
 	for i in range(num_spikes):
 		var ang := float(i) * (TAU / float(num_spikes))
@@ -176,19 +207,18 @@ func _draw() -> void:
 		var base1 := dir * (boulder_radius - 2.0) - norm * 6.0
 		var base2 := dir * (boulder_radius - 2.0) + norm * 6.0
 		var tip := dir * (boulder_radius + 12.0)
-		draw_colored_polygon(PackedVector2Array([base1, tip, base2]), Color("#1e1b26"))
-		draw_colored_polygon(PackedVector2Array([base1 + norm * 2.0, tip, base2]), Color("#2a2536"))
+		draw_colored_polygon(PackedVector2Array([base1 + norm * 2.0, tip, base2]), spike_col)
 
 	# 2. Asosiy obsidian qoya toshi tanasi
-	draw_circle(Vector2.ZERO, boulder_radius, Color(0.08, 0.10, 0.15, 1.0))
+	draw_circle(Vector2.ZERO, boulder_radius, base_col)
 	# Qoya xoshiyasi
-	draw_arc(Vector2.ZERO, boulder_radius, -PI, PI, 32, Color(0.35, 0.45, 0.60, 0.9), 2.0)
+	draw_arc(Vector2.ZERO, boulder_radius, -PI, PI, 32, edge_col, 2.0)
 	
-	# 3. Ichki tosh qatlamlari va yoriqlari (Limbo silhouette rock cracks)
-	draw_line(Vector2(-16, -10), Vector2(4, -4), Color(0.03, 0.04, 0.07, 0.95), 2.5)
-	draw_line(Vector2(4, -4), Vector2(16, -14), Color(0.03, 0.04, 0.07, 0.95), 2.0)
-	draw_line(Vector2(4, -4), Vector2(0, 15), Color(0.03, 0.04, 0.07, 0.95), 2.2)
-	draw_line(Vector2(0, 15), Vector2(-12, 18), Color(0.03, 0.04, 0.07, 0.95), 1.8)
+	# 3. Ichki tosh qatlamlari va yoriqlari
+	draw_line(Vector2(-16, -10), Vector2(4, -4), crack_col, 2.5)
+	draw_line(Vector2(4, -4), Vector2(16, -14), crack_col, 2.0)
+	draw_line(Vector2(4, -4), Vector2(0, 15), crack_col, 2.2)
+	draw_line(Vector2(0, 15), Vector2(-12, 18), crack_col, 1.8)
 	
 	# Markaziy temir yadrosi
 	draw_circle(Vector2.ZERO, 6.0, Color("#36435c"))

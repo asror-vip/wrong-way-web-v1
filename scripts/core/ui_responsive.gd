@@ -16,8 +16,8 @@ static func get_safe_insets(caller: Control = null) -> Dictionary:
 	var vp_size := Vector2(960.0, 540.0)
 	if caller and caller.is_inside_tree():
 		vp_size = caller.get_viewport_rect().size
-	elif Engine.get_main_loop() and Engine.get_main_loop().root:
-		vp_size = Engine.get_main_loop().root.get_viewport().get_visible_rect().size
+	elif Engine.get_main_loop() and Engine.get_main_loop().root and Engine.get_main_loop().root.is_inside_tree():
+		vp_size = Vector2(Engine.get_main_loop().root.get_visible_rect().size)
 		
 	var scale_x := vp_size.x / float(win_size.x)
 	var scale_y := vp_size.y / float(win_size.y)
@@ -38,8 +38,8 @@ static func get_safe_insets(caller: Control = null) -> Dictionary:
 static func get_viewport_size(caller: Control = null) -> Vector2:
 	if caller and caller.is_inside_tree():
 		return caller.get_viewport_rect().size
-	elif Engine.get_main_loop() and Engine.get_main_loop().root:
-		return Engine.get_main_loop().root.get_viewport().get_visible_rect().size
+	elif Engine.get_main_loop() and Engine.get_main_loop().root and Engine.get_main_loop().root.is_inside_tree():
+		return Vector2(Engine.get_main_loop().root.get_visible_rect().size)
 	return Vector2(960.0, 540.0)
 
 ## Computes responsive, ergonomic touch button layout across any aspect ratio and resolution.

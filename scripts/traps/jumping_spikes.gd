@@ -85,16 +85,38 @@ func reset_trap() -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	var ch: int = 1
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
+
 	var w := spike_width
 	var h := spike_height
 	var count := int(max(1.0, w / 16.0))
 	var step := w / float(count)
-	
+
+	var base_col := Color("#0a0b10")
+	var stroke_col := Color("#262e3e")
+	var teeth_col := Color("#0a0b10")
+	var edge_col := Color(0, 0, 0, 0) # Tikanlarga hoshiya kerak bo'lsa
+
+	if ch == 2:
+		teeth_col = Color(0.22, 0.74, 0.97, 0.90)
+		edge_col = Color("#ffffff")
+	elif ch == 3:
+		teeth_col = Color("#14532d")
+		edge_col = Color("#4ade80")
+	elif ch == 4:
+		teeth_col = Color("#78350f")
+		edge_col = Color("#fcd34d")
+	elif ch == 5:
+		teeth_col = Color("#450a0a")
+		edge_col = Color("#f97316")
+
 	# Poydevor (oddiy qorong'i polga mos)
-	draw_rect(Rect2(0, -3.0, w, 3.0), Color("#0a0b10"), true)
-	draw_rect(Rect2(0, -3.0, w, 1.5), Color("#262e3e"), true)
+	draw_rect(Rect2(0, -3.0, w, 3.0), base_col, true)
+	draw_rect(Rect2(0, -3.0, w, 1.5), stroke_col, true)
 	
-	# Oddiy qora Limbo tikanlari (o'yinchi oddiy tikan deb o'ylab sakraydi)
 	for i in range(count):
 		var x0 := i * step
 		var x1 := x0 + step * 0.5
@@ -104,4 +126,6 @@ func _draw() -> void:
 			Vector2(x1, -h),
 			Vector2(x2, -3.0)
 		])
-		draw_colored_polygon(pts, Color("#0a0b10"))
+		draw_colored_polygon(pts, teeth_col)
+		if edge_col.a > 0.0:
+			draw_polyline(pts, edge_col, 1.2)

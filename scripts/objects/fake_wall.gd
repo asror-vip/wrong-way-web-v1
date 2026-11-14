@@ -11,15 +11,16 @@ func _ready() -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
-	var base_col := Color("#0d131f") if is_winter else Color("#1c1a22")
+	var base_col := Color("#1c1a22")
+	if ch == 2: base_col = Color("#0d131f")
+	elif ch == 3: base_col = Color("#062319")
+	elif ch == 4: base_col = Color("#291c14")
+	elif ch == 5: base_col = Color("#1a0505")
+
 	draw_rect(Rect2(0, 0, wall_size.x, wall_size.y), base_col, true)
-	if is_winter:
-		draw_rect(Rect2(Vector2.ZERO, Vector2(2.5, wall_size.y)), Color(0.49, 0.86, 0.99, 0.6), true)
-	else:
-		draw_rect(Rect2(0, 0, wall_size.x, 3.0), Color("#342f3a"), true)
 

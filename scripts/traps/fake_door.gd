@@ -35,36 +35,52 @@ func _physics_process(delta: float) -> void:
 			if dist < run_away_distance:
 				_run_away(player)
 
-func _run_away(_player: Node2D) -> void:
+func _run_away(player: Node2D) -> void:
 	is_triggered = true
+
+	# Ehtiyot qismi: Faqat player haqiqiy PlayerController bo'lsagina ishlaydi
+	if not is_instance_valid(player) or not player.has_method("enter_door"):
+		return
+
 	var sm = get_node_or_null("/root/SoundManager")
 	if sm and sm.has_method("play"):
-		sm.play("trap")
+		sm.play("win") # O'yinchini ishontirish uchun "Win" (Yutuq) musiqasi!
+
+	# 1. Pleyerni soxta eshik ichiga kirgandek yutadi
+	player.enter_door(global_position)
 	
-	# Eshik pastga pol ichiga tushib yo'qoladi (Falls down and vanishes)
-	runaway_tween = create_tween()
-	runaway_tween.tween_property(self, "position:y", start_pos.y - 3.0, 0.05)
-	runaway_tween.tween_property(self, "position:y", start_pos.y + 120.0, 0.28)\
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	runaway_tween.tween_callback(func():
-		visible = false
-		if col_shape:
-			col_shape.disabled = true
+	# 2. Qisqa vaqt o'tgach troll (o'lim va spawn ga qaytarish) bo'ladi
+	var tw := create_tween()
+	tw.tween_interval(1.1)
+	tw.tween_callback(func():
+		if sm and sm.has_method("play"):
+			sm.play("die") # Va ustidan kulgandek o'lim ovozi
+
+		var gm = get_node_or_null("/root/GameManager")
+		if gm and gm.has_signal("request_screen_shake"):
+			gm.request_screen_shake.emit(8.0)
+
+		if is_instance_valid(player) and player.has_method("respawn"):
+			player.respawn(player.spawn_position)
 	)
 
 func _draw() -> void:
 	# Haqiqiy ExitDoor bilan 100% bir xil vizual ko'rinish
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
 	var w := door_size.x
 	var h := door_size.y
 	var half_w := w / 2.0
 	var post_w := 5.0
 	var lintel_h := 5.5
-	var frame_col := Color(0.85, 0.95, 1.0, 1.0) if is_winter else Color(1.0, 1.0, 1.0, 1.0)
+	var frame_col := Color(1.0, 1.0, 1.0, 1.0)
+	if ch == 2: frame_col = Color(0.85, 0.95, 1.0, 1.0)
+	elif ch == 3: frame_col = Color(0.75, 1.0, 0.85, 1.0)
+	elif ch == 4: frame_col = Color(1.0, 0.9, 0.7, 1.0)
+	elif ch == 5: frame_col = Color(1.0, 0.7, 0.7, 1.0)
 	
 	var top_y := -h
 	var lintel_bottom := top_y + lintel_h

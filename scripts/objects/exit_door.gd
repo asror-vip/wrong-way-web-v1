@@ -84,17 +84,21 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _draw() -> void:
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
 	var w := door_size.x
 	var h := door_size.y
 	var half_w := w / 2.0
 	var post_w := 5.0
 	var lintel_h := 5.5
-	var frame_col := Color(0.85, 0.95, 1.0, 1.0) if is_winter else Color(1.0, 1.0, 1.0, 1.0)
+	var frame_col := Color(1.0, 1.0, 1.0, 1.0)
+	if ch == 2: frame_col = Color(0.85, 0.95, 1.0, 1.0)
+	elif ch == 3: frame_col = Color(0.75, 1.0, 0.85, 1.0)
+	elif ch == 4: frame_col = Color(1.0, 0.9, 0.7, 1.0)
+	elif ch == 5: frame_col = Color(1.0, 0.7, 0.7, 1.0)
 	
 	# Pol sathidan (y = 0) yuqorida qolgan eshik qismi
 	# sink_amount 0.0 dan h gacha oshadi va eshik to'g'ridan-to'g'ri pol ichiga kirib boradi.

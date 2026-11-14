@@ -82,15 +82,28 @@ func reset_trap() -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
-	var base_col := Color("#0d131f") if is_winter else Color("#1c1a22")
+	var base_col := Color("#1c1a22")
+	var edge_col := Color("#342f3a")
+
+	if ch == 2:
+		base_col = Color("#0d131f")
+		edge_col = Color(0.49, 0.86, 0.99, 0.6)
+	elif ch == 3:
+		base_col = Color("#062319")
+		edge_col = Color("#4ade80")
+	elif ch == 4:
+		base_col = Color("#291c14")
+		edge_col = Color("#fcd34d")
+	elif ch == 5:
+		base_col = Color("#1a0505")
+		edge_col = Color("#f97316")
+
 	var rect := Rect2(0, 0, ceiling_size.x, ceiling_size.y)
 	draw_rect(rect, base_col, true)
 	
-	# SolidPlatform kabi chegaraviy chiziq
-	var edge_col := Color(0.49, 0.86, 0.99, 0.6) if is_winter else Color("#342f3a")
 	draw_line(Vector2(0, ceiling_size.y), Vector2(ceiling_size.x, ceiling_size.y), edge_col, 3.0)

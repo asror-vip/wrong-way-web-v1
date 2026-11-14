@@ -92,10 +92,10 @@ func _draw() -> void:
 	if trigger_distance > 0.0 and not is_triggered:
 		return
 
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
 	var teeth_count := 8
 	var outer_r := radius
@@ -113,13 +113,45 @@ func _draw() -> void:
 		pts.append(Vector2(cos(a1), sin(a1)) * outer_r)
 		pts.append(Vector2(cos(a2), sin(a2)) * inner_r)
 		
-	if is_winter:
+	if ch == 2:
 		draw_colored_polygon(pts, Color(0.22, 0.74, 0.97, 0.95))
 		draw_polyline(pts, Color("#ffffff"), 1.2)
 		draw_circle(Vector2.ZERO, inner_r * 0.85, Color("#0f172a"))
 		draw_circle(Vector2.ZERO, inner_r * 0.65, Color("#0284c7"))
 		draw_circle(Vector2.ZERO, 3.5, Color("#1e293b"))
 		draw_circle(Vector2.ZERO, 1.5, Color("#e0f2fe"))
+	elif ch == 3:
+		draw_colored_polygon(pts, Color("#22c55e"))
+		draw_polyline(pts, Color("#86efac"), 1.2)
+		draw_circle(Vector2.ZERO, inner_r * 0.85, Color("#1c1917"))
+		draw_circle(Vector2.ZERO, inner_r * 0.65, Color("#166534"))
+		draw_circle(Vector2.ZERO, 3.5, Color("#451a03"))
+		draw_circle(Vector2.ZERO, 1.5, Color("#fef08a"))
+	elif ch == 4:
+		teeth_count = 6
+		pts.clear()
+		step = (PI * 2.0) / float(teeth_count)
+		inner_r = radius * 0.75
+		for i in range(teeth_count):
+			var a0 := rotation_angle + float(i) * step
+			var a1 := a0 + step * 0.50
+			var a2 := a0 + step * 1.0
+			pts.append(Vector2(cos(a0), sin(a0)) * inner_r)
+			pts.append(Vector2(cos(a1), sin(a1)) * outer_r)
+			pts.append(Vector2(cos(a2), sin(a2)) * inner_r)
+		draw_colored_polygon(pts, Color("#d97706"))
+		draw_polyline(pts, Color("#fcd34d"), 1.5)
+		draw_circle(Vector2.ZERO, inner_r * 0.80, Color("#451a03"))
+		draw_circle(Vector2.ZERO, inner_r * 0.55, Color("#b45309"))
+		draw_circle(Vector2.ZERO, 4.0, Color("#78350f"))
+		draw_rect(Rect2(-2, -2, 4, 4), Color("#fef3c7"), true)
+	elif ch == 5:
+		draw_colored_polygon(pts, Color("#ef4444"))
+		draw_polyline(pts, Color("#f97316"), 1.5)
+		draw_circle(Vector2.ZERO, inner_r * 0.90, Color("#1a0505"))
+		draw_circle(Vector2.ZERO, inner_r * 0.70, Color("#991b1b"))
+		draw_circle(Vector2.ZERO, inner_r * 0.45, Color("#ea580c"))
+		draw_circle(Vector2.ZERO, 2.5, Color("#fef08a"))
 	else:
 		draw_colored_polygon(pts, Color("#94a3b8"))
 		draw_polyline(pts, Color("#f1f5f9"), 1.0)

@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://level01scn"]
+
+[ext_resource type="Script" path="res://scripts/levels/base_level.gd" id="1_bl"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_pl"]
+[ext_resource type="PackedScene" path="res://scenes/objects/solid_platform.tscn" id="3_sp"]
+[ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="4_ed"]
+[ext_resource type="PackedScene" path="res://scenes/traps/spikes.tscn" id="5_tr"]
+[ext_resource type="PackedScene" path="res://scenes/traps/trap_floor.tscn" id="6_tr"]
+
+[node name="Level01" type="Node2D"]
+script = ExtResource("1_bl")
+level_number = 87
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Ceiling" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(0, 0)
+platform_size = Vector2(960, 70)
+
+[node name="GroundStart" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(0, 380)
+platform_size = Vector2(320, 160)
+
+[node name="GroundMid" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(400, 380)
+platform_size = Vector2(180, 160)
+
+[node name="GroundEnd" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(680, 380)
+platform_size = Vector2(280, 160)
+
+[node name="WallLeft" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(0, 0)
+platform_size = Vector2(32, 540)
+
+[node name="WallRight" parent="Platforms" instance=ExtResource("3_sp")]
+position = Vector2(928, 0)
+platform_size = Vector2(32, 540)
+
+[node name="Traps" type="Node2D" parent="."]
+
+[node name="SpikesStart" parent="Traps" instance=ExtResource("5_tr")]
+position = Vector2(200, 348)
+spike_size = Vector2(48, 32)
+
+[node name="TrapFloorMid" parent="Traps" instance=ExtResource("6_tr")]
+position = Vector2(580, 380)
+platform_size = Vector2(100, 160)
+
+[node name="ExitDoor" parent="." instance=ExtResource("4_ed")]
+position = Vector2(860, 380)
+
+[node name="Player" parent="." instance=ExtResource("2_pl")]
+position = Vector2(80, 380)

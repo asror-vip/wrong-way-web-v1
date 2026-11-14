@@ -34,8 +34,8 @@ position = Vector2(430, 440)
 platform_size = Vector2(80, 100)
 
 [node name="Tier4SkyLedge" parent="Platforms" instance=ExtResource("3_sp")]
-position = Vector2(520, 240)
-platform_size = Vector2(180, 30)
+position = Vector2(550, 240)
+platform_size = Vector2(150, 30)
 
 [node name="Tier5Approach" parent="Platforms" instance=ExtResource("3_sp")]
 position = Vector2(700, 380)
@@ -106,7 +106,7 @@ inactive_time = 1.4
 [node name="SpringLauncher" parent="Traps" instance=ExtResource("10_tr")]
 position = Vector2(450, 440)
 spring_size = Vector2(32, 32)
-launch_velocity = -840
+launch_velocity = -940
 
 [node name="CircularSawSkyA" parent="Traps" instance=ExtResource("11_tr")]
 position = Vector2(560, 200)
@@ -145,4 +145,4 @@ run_away_distance = 80
 position = Vector2(895, 380)
 
 [node name="Player" parent="." instance=ExtResource("2_pl")]
-position = Vector2(100, 380)
+position = Vector2(60, 380)

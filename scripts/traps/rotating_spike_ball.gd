@@ -61,40 +61,79 @@ func _draw() -> void:
 	_draw_spiked_ball(ball_offset)
 
 func _draw_spiked_ball(pos: Vector2) -> void:
-	var is_winter := false
+	var ch: int = 1
 	var gm = get_node_or_null("/root/GameManager")
-	if gm and gm.has_method("is_winter_theme"):
-		is_winter = gm.is_winter_theme()
+	if gm and gm.has_method("get_current_chapter"):
+		ch = gm.get_current_chapter()
 
 	var spikes_count := 8
 	var core_radius := 11.0
 	var spike_len := 5.0 # core + spike = 16.0px radius (32px diameter)
 	var step := (PI * 2.0) / float(spikes_count)
-	
-	# Konus tikanlar: qishda muz kristallari
+
+	var teeth_col := Color("#1e1b26")
+	var stroke_col := Color("#1e1b26", 0.0)
+	var base_col := Color("#18181b")
+	var inner_col := Color("#27272a")
+	var hl_1 := Color("#52525b")
+	var hl_2 := Color("#a1a1aa")
+
+	if ch == 2:
+		teeth_col = Color(0.22, 0.74, 0.97, 0.92)
+		stroke_col = Color("#ffffff")
+		base_col = Color("#0f172a")
+		inner_col = Color("#1e293b")
+		hl_1 = Color("#38bdf8")
+		hl_2 = Color("#ffffff")
+	elif ch == 3:
+		teeth_col = Color("#14532d")
+		stroke_col = Color("#4ade80")
+		base_col = Color("#064e3b")
+		inner_col = Color("#1c1917")
+		hl_1 = Color("#86efac")
+		hl_2 = Color("#bbf7d0")
+	elif ch == 4:
+		teeth_col = Color("#78350f")
+		stroke_col = Color("#fcd34d")
+		base_col = Color("#d97706")
+		inner_col = Color("#b45309")
+		hl_1 = Color("#fef3c7")
+		hl_2 = Color("#fffbeb")
+	elif ch == 5:
+		teeth_col = Color("#450a0a")
+		stroke_col = Color("#f97316")
+		base_col = Color("#991b1b")
+		inner_col = Color("#ea580c")
+		hl_1 = Color("#fef08a")
+		hl_2 = Color("#ffffff")
+
+	# Konus tikanlar
 	for i in range(spikes_count):
 		var ang := current_angle + float(i) * step
 		var tip := pos + Vector2(cos(ang), sin(ang)) * (core_radius + spike_len)
 		var left_pt := pos + Vector2(cos(ang - 0.25), sin(ang - 0.25)) * core_radius
 		var right_pt := pos + Vector2(cos(ang + 0.25), sin(ang + 0.25)) * core_radius
-		
+
 		var spike_poly := PackedVector2Array([left_pt, tip, right_pt])
-		if is_winter:
-			draw_colored_polygon(spike_poly, Color(0.22, 0.74, 0.97, 0.92))
-		else:
-			draw_colored_polygon(spike_poly, Color("#1e1b26"))
-		
+		draw_colored_polygon(spike_poly, teeth_col)
+		if stroke_col.a > 0.0:
+			draw_polyline(spike_poly, stroke_col, 1.2)
+
 	# Asosiy shar
-	var base_col := Color("#0f172a") if is_winter else Color("#18181b")
 	draw_circle(pos, core_radius, base_col)
-	draw_circle(pos, core_radius * 0.85, Color("#1e293b") if is_winter else Color("#27272a"))
-	
+	draw_circle(pos, core_radius * 0.85, inner_col)
+
 	# Yaltirash (Highlight)
-	draw_circle(pos + Vector2(-3.0, -3.0), core_radius * 0.35, Color("#38bdf8") if is_winter else Color("#52525b"))
-	draw_circle(pos + Vector2(-4.0, -4.0), 2.0, Color("#ffffff") if is_winter else Color("#a1a1aa"))
+	draw_circle(pos + Vector2(-3.0, -3.0), core_radius * 0.35, hl_1)
+	draw_circle(pos + Vector2(-4.0, -4.0), 2.0, hl_2)
 	
 	# Zanjir qulfi / o'rnatgich
-	draw_circle(pos, 3.5, Color("#38bdf8") if is_winter else Color("#3f3f46"))
+	var lock_col := Color("#3f3f46")
+	if ch == 2: lock_col = Color("#38bdf8")
+	elif ch == 3: lock_col = Color("#86efac")
+	elif ch == 4: lock_col = Color("#fef3c7")
+	elif ch == 5: lock_col = Color("#fef08a")
+	draw_circle(pos, 3.5, lock_col)
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is PlayerController or body.is_in_group("player"):
