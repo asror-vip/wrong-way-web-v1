@@ -56,14 +56,7 @@ func load_data() -> void:
 		shake_enabled = config.get_value("settings", "shake_enabled", true)
 		current_language = config.get_value("settings", "current_language", "en")
 		custom_touch_layout = config.get_value("settings", "custom_touch_layout", {})
-		debug_unlock_all = config.get_value("settings", "debug_unlock_all", true)
-
-	debug_unlock_all = true
-
-	# Barcha 60 ta darajani o'yinchi uchun ochiq holatga keltirish:
-	for l in range(1, 61):
-		if not unlocked_levels.has(l):
-			unlocked_levels.append(l)
+		debug_unlock_all = config.get_value("settings", "debug_unlock_all", false)
 
 func save_data() -> void:
 	var config := ConfigFile.new()
@@ -428,15 +421,24 @@ func get_chapter_total_time_sec(chapter: int) -> int:
 			total_sec += sec
 	return total_sec
 
+func get_chapter_target_stars(chapter: int) -> int:
+	if chapter == 1:
+		return 50
+	elif chapter == 2:
+		return 55
+	return 60
+
 func is_chapter_unlocked(chapter: int) -> bool:
 	if debug_unlock_all:
 		return chapter >= 1 and chapter <= 3
 	if chapter == 1:
 		return true
 	elif chapter == 2:
-		return is_level_completed(20) or unlocked_levels.has(21) or ad_unlocked_levels.has(21)
+		return get_chapter_stars(1) >= 50 or ad_unlocked_levels.has(21)
 	elif chapter == 3:
-		return is_level_completed(40) or unlocked_levels.has(41) or ad_unlocked_levels.has(41)
+		return get_chapter_stars(2) >= 55 or ad_unlocked_levels.has(41)
+	elif chapter >= 4:
+		return get_chapter_stars(chapter - 1) >= 60
 	return false
 
 func get_level_time_text(lvl: int) -> String:

@@ -646,7 +646,8 @@ func _update_top_bar_data() -> void:
 	if total_stars_chip:
 		if current_chapter <= 3:
 			var ch_stars := SaveManager.get_chapter_stars(current_chapter)
-			total_stars_chip.text = "     %d / 60" % ch_stars
+			var target_stars := SaveManager.get_chapter_target_stars(current_chapter)
+			total_stars_chip.text = "     %d / %d" % [ch_stars, target_stars]
 		else:
 			total_stars_chip.text = "     " + LocaleManager.t("coming_soon_caps")
 
