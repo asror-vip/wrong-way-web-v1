@@ -28,7 +28,8 @@ func _ready() -> void:
 		col.shape.size = platform_size
 		col.position = platform_size / 2.0
 	
-	# Shift platformasi bo'lsa, har doim tikanli bo'lishi va ezuvchidan oldi qatlamda (z_index=10) turishi kerak
+	# Shift platformasi har doim tikanli bo'lishi va ezuvchidan oldi qatlamda
+	# (z_index=10) turishi kerak
 	var is_ceiling := _is_ceiling_platform()
 	if is_ceiling:
 		has_ceiling_teeth = true
@@ -84,7 +85,8 @@ func _draw() -> void:
 	elif ch == 5:
 		base_col = Color("#1a0505") # Inferno Abyss (To'q qizil-qora)
 
-	# Shift platformasida crusher bo'lsa, o'sha kichik ochiq joy uchun kichik shiftcha chizish (tepa tarafi butun shift bilan bir tekis)
+	# Shift platformasida crusher bo'lsa, o'sha ochiq joy uchun kichik shiftcha chizish
+	# (tepa tarafi butun shift bilan bir tekis qoplanadi)
 	if has_ceiling_teeth and not _crusher_ranges.is_empty():
 		var ranges := _crusher_ranges.duplicate()
 		ranges.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
@@ -101,7 +103,7 @@ func _draw() -> void:
 	else:
 		_draw_segment(0.0, platform_size.x, base_col, ch)
 
-	# Shiftning uzluksiz tikanlari va aldovchi (soxta) stalaktitlari (aniq bitta standart!)
+	# Shiftning uzluksiz tikanlari va aldovchi (soxta) stalaktitlari
 	if has_ceiling_teeth and platform_size.x > 64.0:
 		var teeth_col := base_col
 		if ch == 2: teeth_col = Color(0.22, 0.74, 0.97, 0.92) # Muz
@@ -112,44 +114,27 @@ func _draw() -> void:
 		var start_x := 32.0
 		var end_x := platform_size.x - 32.0
 		var spike_w := 32.0
-		var slot_w := 96.0
-		var cycle_w := spike_w + slot_w # 128.0
+		var cycle_w := 128.0
 
-		# 1. Katta tikanlar uchun yagona standart setka (Grid anchor)
-		var anchor_x := start_x + 96.0
-		if not _crusher_ranges.is_empty():
-			var cr: Vector2 = _crusher_ranges[0]
-			var cr_center := (cr.x + cr.y) / 2.0
-			var ideal_spike_x := cr_center - (slot_w / 2.0 + spike_w)
-			anchor_x = ideal_spike_x
-			while anchor_x > (start_x + cycle_w):
-				anchor_x -= cycle_w
-			while anchor_x < start_x:
-				anchor_x += cycle_w
-
-		# 2. Standart setka bo'yicha katta tikanlar joylashuvini hisoblash
-		var big_spikes: Array[float] = []
-		var bx := anchor_x
-		while bx <= (end_x - spike_w):
-			big_spikes.append(bx)
-			bx += cycle_w
-		bx = anchor_x - cycle_w
-		while bx >= start_x:
-			big_spikes.push_front(bx)
-			bx -= cycle_w
-
-		# Ezuvchi bilan to'qnashuvchi katta tikanlarni filtrlash
+		# 1. Soxta katta tikanlarni real tushuvchi tikanlar va ezuvchilardan xoli joyga qo'yish
 		var valid_big_spikes: Array[float] = []
-		for sp_x in big_spikes:
+		var bx := start_x + 64.0
+		while bx <= (end_x - spike_w):
 			var collides := false
 			for cr in _crusher_ranges:
-				if (sp_x + spike_w) > (cr.x - 8.0) and sp_x < (cr.y + 8.0):
+				if (bx + spike_w) > (cr.x - 16.0) and bx < (cr.y + 16.0):
 					collides = true
 					break
 			if not collides:
-				valid_big_spikes.append(sp_x)
+				for sx in _falling_spike_xs:
+					if absf((bx + 16.0) - sx) < 48.0:
+						collides = true
+						break
+			if not collides:
+				valid_big_spikes.append(bx)
+			bx += cycle_w
 
-		# Katta tikanlarni chizish (borderlarsiz, toza poligon)
+		# Soxta katta tikanlarni chizish (32px kenglik, 32px chuqurlik)
 		for sp_x in valid_big_spikes:
 			var pts := PackedVector2Array([
 				Vector2(sp_x, bot_y),
@@ -158,66 +143,55 @@ func _draw() -> void:
 			])
 			draw_colored_polygon(pts, teeth_col)
 
-		# 3. Katta tikanlar va ezuvchilar orasidagi zonalarni 16px tishlar bilan to'ldirish
-		var cur_x := start_x
-		while cur_x < end_x:
-			# Katta tikan zonasida bo'lsa, uni o'tkazib yuborish
-			var in_big := false
-			for sp_x in valid_big_spikes:
-				if cur_x >= (sp_x - 1.0) and cur_x < (sp_x + spike_w - 1.0):
-					cur_x = sp_x + spike_w
-					in_big = true
-					break
-			if in_big:
-				continue
+		# 2. Band bo'lgan zonalarni birlashtirish (Ezuvchilar, real stalaktitlar, soxta stalaktitlar)
+		var occupied_zones: Array[Vector2] = []
+		for cr in _crusher_ranges:
+			occupied_zones.append(Vector2(cr.x, cr.y))
+		for sx in _falling_spike_xs:
+			occupied_zones.append(Vector2(sx - 16.0, sx + 16.0))
+		for sp_x in valid_big_spikes:
+			occupied_zones.append(Vector2(sp_x, sp_x + 32.0))
 
-			# Ezuvchi zonasida bo'lsa, o'tkazib yuborish (Crusher o'z tishlarini chizadi)
-			var in_crusher := false
-			for cr in _crusher_ranges:
-				if cur_x >= (cr.x - 1.0) and cur_x < (cr.y - 1.0):
-					cur_x = cr.y
-					in_crusher = true
-					break
-			if in_crusher:
-				continue
+		occupied_zones.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
 
-			# Haqiqiy tushuvchi tikan zonasini tekshirish
-			var in_falling := false
-			for sx in _falling_spike_xs:
-				if cur_x >= (sx - 17.0) and cur_x < (sx + 15.0):
-					cur_x = sx + 16.0
-					in_falling = true
-					break
-			if in_falling:
-				continue
+		# Ustma-ust tushgan zonalarni bitta oraliqqa birlashtirish (Merge intervals)
+		var merged_zones: Array[Vector2] = []
+		for z in occupied_zones:
+			if merged_zones.is_empty():
+				merged_zones.append(z)
+			else:
+				var last := merged_zones[-1]
+				if z.x <= last.y:
+					merged_zones[-1] = Vector2(last.x, maxf(last.y, z.y))
+				else:
+					merged_zones.append(z)
 
-			# Navbatdagi to'siqqacha bo'lgan masofa
-			var next_bound := end_x
-			for sp_x in valid_big_spikes:
-				if sp_x > cur_x and sp_x < next_bound:
-					next_bound = sp_x
-			for cr in _crusher_ranges:
-				if cr.x > cur_x and cr.x < next_bound:
-					next_bound = cr.x
-			for sx in _falling_spike_xs:
-				var z_left := sx - 16.0
-				if z_left > cur_x and z_left < next_bound:
-					next_bound = z_left
+		# 3. Zonalarning orasidagi bo'sh oraliqlarni bir tekis (uniform) tishlar bilan to'ldirish
+		var cur_pos := start_x
+		for z in merged_zones:
+			var gap_start := cur_pos
+			var gap_end := minf(z.x, end_x)
+			if gap_end > gap_start:
+				_draw_uniform_teeth(gap_start, gap_end, bot_y, teeth_col)
+			cur_pos = maxf(cur_pos, z.y)
 
-			var rem := next_bound - cur_x
-			if rem <= 0.0:
-				cur_x = next_bound
-				continue
+		if cur_pos < end_x:
+			_draw_uniform_teeth(cur_pos, end_x, bot_y, teeth_col)
 
-			var tw := minf(16.0, rem)
-			if tw >= 6.0:
-				var tooth_pts := PackedVector2Array([
-					Vector2(cur_x, bot_y),
-					Vector2(cur_x + tw * 0.5, bot_y + 13.0),
-					Vector2(cur_x + tw, bot_y)
-				])
-				draw_colored_polygon(tooth_pts, teeth_col)
-			cur_x += tw
+func _draw_uniform_teeth(x1: float, x2: float, bot_y: float, teeth_col: Color) -> void:
+	var span := x2 - x1
+	if span < 8.0:
+		return
+	var count := maxi(1, int(round(span / 16.0)))
+	var tw := span / float(count)
+	for i in range(count):
+		var tx := x1 + float(i) * tw
+		var tooth_pts := PackedVector2Array([
+			Vector2(tx, bot_y),
+			Vector2(tx + tw * 0.5, bot_y + 13.0),
+			Vector2(tx + tw, bot_y)
+		])
+		draw_colored_polygon(tooth_pts, teeth_col)
 
 func _draw_segment(sx: float, sw: float, base_col: Color, ch: int) -> void:
 	if sw <= 0.0:
@@ -249,26 +223,10 @@ func _draw_segment(sx: float, sw: float, base_col: Color, ch: int) -> void:
 	else: # Chapter 1 (Default / Limbo)
 		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#342f3a"), true)
 
-func _draw_top_ceiling_cap(sx: float, sw: float, base_col: Color, ch: int) -> void:
+func _draw_top_ceiling_cap(sx: float, sw: float, base_col: Color, _ch: int) -> void:
 	if sw <= 0.0:
 		return
-	# Ezuvchi ustidagi kichik ochiq joy uchun kichik shiftcha (tepa tarafi butun shift bilan 100% bir tekis)
+	# Ezuvchi ustidagi uya butun shift kabi to'q tosh rangi bilan bir xil bo'ladi.
+	# Hech qanday oq chiziq yoki qor chizilmaydi, toki ezuvchi joyi sezilib qolmasin!
 	var cap_h := 16.0
 	draw_rect(Rect2(sx, 0.0, sw, cap_h), base_col, true)
-
-	if ch == 2:
-		var snow_h := 5.5
-		draw_rect(Rect2(sx, 0.0, sw, snow_h), Color("#f1f5f9"), true)
-		draw_rect(Rect2(sx, 0.0, sw, 2.0), Color("#ffffff"), true)
-		draw_rect(Rect2(sx, snow_h - 1.5, sw, 1.5), Color("#94a3b8"), true)
-	elif ch == 3:
-		draw_rect(Rect2(sx, 0.0, sw, 4.0), Color("#14532d"), true)
-		draw_rect(Rect2(sx, 4.0, sw, 2.0), Color("#064e3b"), true)
-	elif ch == 4:
-		draw_rect(Rect2(sx, 0.0, sw, 6.0), Color("#fcd34d"), true)
-		draw_rect(Rect2(sx, 4.0, sw, 2.0), Color("#d97706"), true)
-	elif ch == 5:
-		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#450a0a"), true)
-		draw_rect(Rect2(sx, 0.0, sw, 1.0), Color("#f97316"), true)
-	else:
-		draw_rect(Rect2(sx, 0.0, sw, 3.0), Color("#342f3a"), true)
