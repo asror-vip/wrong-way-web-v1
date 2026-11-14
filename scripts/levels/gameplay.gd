@@ -10,6 +10,7 @@ var solid_platform_scene = preload("res://scenes/objects/solid_platform.tscn")
 func _ready() -> void:
 	arena_extensions = Node2D.new()
 	arena_extensions.name = "ArenaExtensions"
+	arena_extensions.z_index = 5
 	add_child(arena_extensions)
 	move_child(arena_extensions, 0)
 	get_viewport().size_changed.connect(_adapt_arena_boundaries)
@@ -116,6 +117,7 @@ func _adapt_arena_boundaries() -> void:
 	if not arena_extensions or not is_inside_tree():
 		return
 	for c in arena_extensions.get_children():
+		arena_extensions.remove_child(c)
 		c.queue_free()
 		
 	var vp := get_viewport_rect().size
@@ -126,32 +128,42 @@ func _adapt_arena_boundaries() -> void:
 	if world_tl.x < 0.0:
 		var left_w := -world_tl.x + 36.0
 		var h := (world_br.y - world_tl.y) + 128.0
-		_create_extension_block(Vector2(world_tl.x - 32.0, world_tl.y - 64.0), Vector2(left_w, h))
-		# Yer qanoti (chap tomon polining uzluksiz davomi)
-		_create_extension_block(Vector2(world_tl.x - 32.0, 380.0), Vector2(left_w, (world_br.y - 380.0) + 128.0))
+		_create_extension_block(
+			Vector2(world_tl.x - 32.0, world_tl.y - 64.0),
+			Vector2(left_w, h)
+		)
 		
 	if world_br.x > 960.0:
 		var right_w := (world_br.x - 928.0) + 64.0
 		var h := (world_br.y - world_tl.y) + 128.0
-		_create_extension_block(Vector2(928.0, world_tl.y - 64.0), Vector2(right_w, h))
-		# Yer qanoti (o'ng tomon polining uzluksiz davomi)
-		_create_extension_block(Vector2(928.0, 380.0), Vector2(right_w, (world_br.y - 380.0) + 128.0))
+		_create_extension_block(
+			Vector2(928.0, world_tl.y - 64.0),
+			Vector2(right_w, h)
+		)
 		
 	# Vertikal qanotlar (16:10, 4:3, planshet va baland ekranlar)
 	if world_br.y > 540.0:
 		var bot_h := (world_br.y - 540.0) + 64.0
 		var total_w := (world_br.x - world_tl.x) + 128.0
-		_create_extension_block(Vector2(world_tl.x - 64.0, 540.0), Vector2(total_w, bot_h))
+		_create_extension_block(
+			Vector2(world_tl.x - 64.0, 540.0),
+			Vector2(total_w, bot_h)
+		)
 		
 	if world_tl.y < 0.0:
 		var top_h := -world_tl.y + 64.0
 		var total_w := (world_br.x - world_tl.x) + 128.0
-		_create_extension_block(Vector2(world_tl.x - 64.0, world_tl.y - 64.0), Vector2(total_w, top_h))
+		_create_extension_block(
+			Vector2(world_tl.x - 64.0, world_tl.y - 64.0),
+			Vector2(total_w, top_h)
+		)
 
 func _create_extension_block(pos: Vector2, sz: Vector2) -> void:
 	if sz.x <= 0.0 or sz.y <= 0.0:
 		return
 	var p = solid_platform_scene.instantiate()
+	p.name = "ArenaExtension"
+	p.is_extension_or_wall = true
 	p.position = pos
 	p.platform_size = sz
 	arena_extensions.add_child(p)

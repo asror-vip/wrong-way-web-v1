@@ -9,17 +9,28 @@ var _crusher_ranges: Array[Vector2] = []
 var _falling_spike_xs: Array[float] = []
 
 func _is_ceiling_platform() -> bool:
-	if name.to_lower().contains("ceiling"):
-		return true
-	if name.to_lower().contains("wall"):
+	if is_extension_or_wall:
 		return false
+	var p_node := get_parent()
+	if p_node and p_node.name.to_lower().contains("extension"):
+		return false
+	var n := name.to_lower()
+	if n.contains("extension") or n.contains("wall"):
+		return false
+	if n.contains("ceiling"):
+		return true
 	return global_position.y <= 30.0 and platform_size.x >= 200.0
 
 func _is_wall_or_extension() -> bool:
 	if is_extension_or_wall:
 		return true
 	var n := name.to_lower()
-	return n.contains("wall") or n.contains("extension") or n.contains("ceiling")
+	if n.contains("wall") or n.contains("extension") or n.contains("ceiling"):
+		return true
+	var p_node := get_parent()
+	if p_node and p_node.name.to_lower().contains("extension"):
+		return true
+	return false
 
 func _ready() -> void:
 	var col = get_node_or_null("CollisionShape2D")
